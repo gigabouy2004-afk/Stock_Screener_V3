@@ -94,7 +94,10 @@ Sprint 1 has started with the foundation layer:
 - Python package skeleton under `src/stock_screener_v3`.
 - Core dataclasses for universe records, evidence packs, stage evaluations, scores, and backtest results.
 - CSV universe loader with metadata preservation.
+- Sector/exchange filtering and deterministic sampling.
 - Historical slicing helpers for no-lookahead tests.
+- BacktestEngine v1 with pluggable price provider and stage evaluator contracts.
+- Candidate-density and candidate-only forward hit-rate summaries.
 - Standard-library unit tests under `tests/`.
 
 Run tests with:

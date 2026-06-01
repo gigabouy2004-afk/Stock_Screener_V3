@@ -21,6 +21,27 @@ Run the production signal engine as of a historical D date and validate the resu
 - Produce detail CSV and summary markdown.
 - Produce aggregate comparison scorecards.
 
+## V1 Foundation Status
+
+Implemented foundation pieces:
+
+- Backtest engine shell.
+- Price provider protocol.
+- Stage evaluator protocol.
+- In-memory price provider for tests.
+- Historical as-of slicing.
+- Candidate-density calculation.
+- Candidate-only forward hit-rate summary.
+
+Not yet implemented:
+
+- Production data provider.
+- Production stage evaluators.
+- Detail CSV writer.
+- Summary markdown writer.
+- Multi-date scorecards.
+- Failure-category classification.
+
 ## Required Run Modes
 
 | Mode | Purpose |
@@ -56,4 +77,3 @@ Run the production signal engine as of a historical D date and validate the resu
 - Do not hide skipped symbols.
 - Do not compare first-N-candidate tests against ranked full-universe tests as equivalent.
 - Do not tune rules from a single ticker.
-

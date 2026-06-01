@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import random
 from datetime import date
 from pathlib import Path
 from typing import Iterable
@@ -99,3 +100,32 @@ def load_universe_records(path: str | Path) -> list[UniverseRecord]:
             )
     return records
 
+
+def filter_records(
+    records: Iterable[UniverseRecord],
+    sectors: Iterable[str] = (),
+    exchanges: Iterable[str] = (),
+) -> list[UniverseRecord]:
+    sector_set = {sector.strip().upper() for sector in sectors if sector.strip()}
+    exchange_set = {exchange.strip().upper() for exchange in exchanges if exchange.strip()}
+    filtered: list[UniverseRecord] = []
+    for record in records:
+        if sector_set and (record.sector or "").strip().upper() not in sector_set:
+            continue
+        if exchange_set and (record.exchange or "").strip().upper() not in exchange_set:
+            continue
+        filtered.append(record)
+    return filtered
+
+
+def deterministic_sample(
+    records: list[UniverseRecord],
+    sample_size: int | None,
+    random_seed: int | None,
+) -> list[UniverseRecord]:
+    if sample_size is None or sample_size >= len(records):
+        return list(records)
+    if sample_size < 0:
+        raise ValueError("sample_size cannot be negative.")
+    rng = random.Random(random_seed)
+    return rng.sample(records, sample_size)

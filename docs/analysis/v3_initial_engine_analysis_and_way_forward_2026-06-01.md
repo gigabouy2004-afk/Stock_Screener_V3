@@ -291,7 +291,11 @@ Sprint 1 implementation status:
 - Package skeleton created under `src/stock_screener_v3`.
 - Core model contracts created in `models.py`.
 - Universe CSV loader created in `universe.py`.
+- Universe sector/exchange filtering and deterministic sampling added.
 - Historical slicing and forward-return helpers created in `backtesting.py`.
+- BacktestEngine v1 created in `backtest_engine.py`.
+- BacktestEngine v1 supports pluggable price providers and stage evaluators.
+- BacktestEngine v1 reports symbols attempted, processed, skipped, candidates found, candidate density, and candidate-only forward hit rates.
 - Sample US and NSE universe fixtures added under `data/samples`.
 - Unit tests added under `tests`.
 - Initial test command passed:
@@ -299,6 +303,13 @@ Sprint 1 implementation status:
 ```powershell
 $env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
 python -m unittest discover -s tests -v
+```
+
+Current test count:
+
+```text
+Ran 11 tests
+OK
 ```
 
 Why this first:
