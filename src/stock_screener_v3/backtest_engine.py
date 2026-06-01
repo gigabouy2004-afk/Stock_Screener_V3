@@ -112,9 +112,16 @@ class BacktestEngine:
             "ReviewPriority": evaluation.review_priority.value,
             "Confidence": evaluation.confidence,
             "TotalScore": evaluation.score.total_score,
+            "RouteScore": evaluation.score.route_score,
+            "TimingScore": evaluation.score.timing_score,
+            "StructureScore": evaluation.score.structure_score,
+            "ParticipationScore": evaluation.score.participation_score,
+            "ContextScore": evaluation.score.context_score,
+            "RiskScore": evaluation.score.risk_score,
             "ReasonCodes": ",".join(evaluation.reason_codes),
             "RiskTags": ",".join(evaluation.risk_tags),
         }
+        row.update(evaluation.diagnostics)
         for days in forward_days:
             row[f"DPlus{days}ReturnPct"] = forward_return(full_daily, cutoff, days)
         return row

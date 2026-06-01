@@ -106,6 +106,9 @@ Sprint 1 has started with the foundation layer:
 - V2-compatible offline CSV header contract.
 - Workspace-safe input/output path resolution.
 - File and console run logging with explicit logger close support for Windows.
+- First production Crossover evaluator slice with deterministic daily evidence calculations.
+- Reusable run orchestrator and CLI entry point.
+- Initial Python web UI wrapper in `web_app_v3.py`.
 - Standard-library unit tests under `tests/`.
 
 Run tests with:
@@ -114,3 +117,18 @@ Run tests with:
 $env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
 python -m unittest discover -s tests -v
 ```
+
+Run a V3 backtest from PowerShell:
+
+```powershell
+$env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
+python -m stock_screener_v3.cli backtest --workspace-root D:\Tools\Stock_Screener_V3 --universe-file data\samples\us_master_sample.csv --d-date 2026-02-11 --forward-days 1,2,5
+```
+
+Run the initial V3 web UI:
+
+```powershell
+python D:\Tools\Stock_Screener_V3\web_app_v3.py
+```
+
+The UI opens at `http://127.0.0.1:8010`.

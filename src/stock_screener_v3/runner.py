@@ -1,0 +1,100 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import date
+import json
+from pathlib import Path
+
+from stock_screener_v3.backtest_engine import BacktestEngine, PriceProvider, StageEvaluator
+from stock_screener_v3.data_provider import YahooPriceProvider
+from stock_screener_v3.evaluators import CrossoverEvaluator
+from stock_screener_v3.models import BacktestResult, BacktestRunConfig
+from stock_screener_v3.run_io import RunPaths, close_run_logger, configure_run_logger, write_run_artifacts
+from stock_screener_v3.universe import load_universe_records
+
+
+@dataclass(frozen=True)
+class EngineRunResult:
+    result: BacktestResult
+    paths: RunPaths
+
+
+def run_backtest(
+    *,
+    workspace_root: str | Path,
+    universe_file: str | Path,
+    d_date: date,
+    sectors: tuple[str, ...] = (),
+    exchanges: tuple[str, ...] = (),
+    sample_size: int | None = None,
+    random_seed: int | None = None,
+    forward_days: tuple[int, ...] = (1, 2, 5),
+    run_label: str = "v3_backtest",
+    details_output: str | Path | None = None,
+    summary_output: str | Path | None = None,
+    log_file: str | Path | None = None,
+    price_provider: PriceProvider | None = None,
+    evaluator: StageEvaluator | None = None,
+) -> EngineRunResult:
+    paths = RunPaths.for_backtest(
+        workspace_root,
+        universe_file,
+        d_date,
+        run_label=run_label,
+        details_output=details_output,
+        summary_output=summary_output,
+        log_file=log_file,
+    )
+    logger = configure_run_logger(paths.log_file)
+    run_parameters = {
+        "workspace_root": str(paths.workspace_root),
+        "universe_file": str(paths.input_path),
+        "d_date": d_date.isoformat(),
+        "sectors": sectors,
+        "exchanges": exchanges,
+        "sample_size": sample_size,
+        "random_seed": random_seed,
+        "forward_days": forward_days,
+        "details_output": str(paths.details_output),
+        "summary_output": str(paths.summary_output),
+        "log_file": str(paths.log_file),
+    }
+    logger.info("V3 run queued with parameters: %s", json.dumps(run_parameters, sort_keys=True))
+    try:
+        logger.info("V3 run started.")
+        records = load_universe_records(paths.input_path)
+        logger.info("Loaded universe records: %s", len(records))
+        config = BacktestRunConfig(
+            universe_file=str(paths.input_path),
+            d_date=d_date,
+            stage_families=("CROSSOVER",),
+            forward_days=forward_days,
+            sector_filters=sectors,
+            exchange_filters=exchanges,
+            sample_mode="sample" if sample_size is not None else "full",
+            sample_size=sample_size,
+            random_seed=random_seed,
+        )
+        engine = BacktestEngine(
+            price_provider=price_provider or YahooPriceProvider(period="5y"),
+            evaluator=evaluator or CrossoverEvaluator(),
+        )
+        result = engine.run(records, config)
+        write_run_artifacts(result, paths)
+        logger.info(
+            "V3 run completed. attempted=%s processed=%s skipped=%s candidates=%s details=%s summary=%s",
+            result.symbols_attempted,
+            result.symbols_processed,
+            result.symbols_skipped,
+            result.candidates_found,
+            paths.details_output,
+            paths.summary_output,
+        )
+        if result.skip_reasons:
+            logger.info("Skip reasons: %s", json.dumps(result.skip_reasons, sort_keys=True))
+        return EngineRunResult(result=result, paths=paths)
+    except Exception:
+        logger.exception("V3 run failed.")
+        raise
+    finally:
+        close_run_logger(logger)

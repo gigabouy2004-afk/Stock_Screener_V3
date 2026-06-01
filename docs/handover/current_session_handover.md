@@ -8,7 +8,7 @@ GitHub: `https://github.com/gigabouy2004-afk/Stock_Screener_V3.git`
 
 Branch: `main`
 
-Latest confirmed pushed commit: `205ee71 Add current session handover`
+Latest confirmed pushed commit before current in-progress engine slice: `9dbcf7f Update artifact purpose wording in handover`
 
 ## Purpose Of This Document
 
@@ -33,7 +33,7 @@ Expected status at this handover:
 Expected tests at this handover:
 
 ```text
-23 tests passing
+26 tests passing
 ```
 
 ## Current Decision
@@ -81,6 +81,11 @@ Foundation code:
 - File and console run logger with explicit close support for Windows.
 - V2-compatible offline CSV column contract.
 - Guardrail that log, detail CSV, and summary report must be physically separate files.
+- First production Crossover evaluator slice.
+- Daily evidence builder for MACD, RSI, ADX, Bollinger, EMA, volume, and price structure.
+- Reusable run orchestrator.
+- CLI entry point.
+- Initial Python web UI wrapper.
 
 Tests:
 
@@ -115,6 +120,12 @@ Core source:
 - `src/stock_screener_v3/reports.py`
 - `src/stock_screener_v3/run_io.py`
 - `src/stock_screener_v3/output_contracts.py`
+- `src/stock_screener_v3/indicators.py`
+- `src/stock_screener_v3/evidence.py`
+- `src/stock_screener_v3/evaluators.py`
+- `src/stock_screener_v3/runner.py`
+- `src/stock_screener_v3/cli.py`
+- `web_app_v3.py`
 
 Key docs:
 
@@ -139,6 +150,7 @@ Tests:
 ## Recent Commit Trace
 
 ```text
+9dbcf7f Update artifact purpose wording in handover
 205ee71 Add current session handover
 05c5953 Clarify log and output artifact purposes
 6e3f40b Enforce separate run forensic artifacts
@@ -152,36 +164,27 @@ f808289 Preserve V2 output parity contract
 
 ## What Is Not Yet Built
 
-The actual V3 production engine logic is not implemented yet:
+The actual V3 production engine logic has started but is not complete yet:
 
-- No production `EvidencePack` builder.
-- No production Crossover evaluator.
+- Crossover v1 exists, but it is a first slice and needs historical calibration.
 - No production Momentum Trading evaluator.
 - No production Divergence evaluator.
 - No scoring calibration beyond data model contracts.
-- No V3 web UI yet.
-- No CLI adapter that runs the whole V3 engine end to end.
-- No live execution workflow beyond provider/report/run I/O foundations.
+- V3 web UI exists only as an initial Python wrapper.
+- CLI exists for single-date backtest execution.
 
 ## Recommended Next Session Start
 
-Start with the production engine design, not the UI.
+Start with Crossover validation and calibration, not UI expansion.
 
 Recommended next implementation order:
 
-1. Create an evidence-builder module that converts `PriceDataBundle` into `EvidencePack`.
-2. Port only stable, useful V2 indicator calculations into clean helper functions.
-3. Implement the first production `StageEvaluator`, probably Crossover, with separated outputs:
-   - route validity
-   - timing
-   - structure
-   - participation
-   - context risk
-   - final `CandidateClass`
-   - `ReviewPriority`
-   - reason codes
-4. Run the evaluator through the existing backtest engine on fixed historical D dates.
-5. Only after the engine produces explainable candidates, build the V3 CLI/web adapter.
+1. Run Crossover v1 through fixed historical D dates with known universes.
+2. Inspect `Output.csv` for per-symbol calculation evidence.
+3. Calibrate route/timing/structure/participation thresholds based on backtest evidence.
+4. Add failure-category classification.
+5. Add market/sector benchmark context.
+6. Then build Momentum Trading and Divergence evaluators.
 
 ## Carry-Forward Rules
 

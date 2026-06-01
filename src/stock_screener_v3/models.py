@@ -96,6 +96,7 @@ class StageEvaluation:
     score: ScoreResult
     reason_codes: tuple[str, ...] = ()
     risk_tags: tuple[str, ...] = ()
+    diagnostics: dict[str, Any] = field(default_factory=dict)
 
     def is_candidate(self) -> bool:
         return self.candidate_class in {CandidateClass.SELECTED, CandidateClass.WATCH}
@@ -148,4 +149,3 @@ class BacktestResult:
             "candidate_density": self.candidate_density,
             "skip_reasons": dict(self.skip_reasons),
         }
-
