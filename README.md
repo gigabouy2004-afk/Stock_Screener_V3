@@ -98,6 +98,8 @@ Sprint 1 has started with the foundation layer:
 - Historical slicing helpers for no-lookahead tests.
 - BacktestEngine v1 with pluggable price provider and stage evaluator contracts.
 - Candidate-density and candidate-only forward hit-rate summaries.
+- Yahoo data-provider wrapper behind a provider interface.
+- Detail CSV and summary markdown report writers.
 - Standard-library unit tests under `tests/`.
 
 Run tests with:

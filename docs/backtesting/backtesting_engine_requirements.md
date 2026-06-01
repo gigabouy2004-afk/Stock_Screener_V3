@@ -29,16 +29,16 @@ Implemented foundation pieces:
 - Price provider protocol.
 - Stage evaluator protocol.
 - In-memory price provider for tests.
+- Yahoo price provider wrapper.
 - Historical as-of slicing.
 - Candidate-density calculation.
 - Candidate-only forward hit-rate summary.
+- Detail CSV writer.
+- Summary markdown writer.
 
 Not yet implemented:
 
-- Production data provider.
 - Production stage evaluators.
-- Detail CSV writer.
-- Summary markdown writer.
 - Multi-date scorecards.
 - Failure-category classification.
 

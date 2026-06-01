@@ -5,8 +5,8 @@ description = "V3 rebuild of the stock screener engine with explicit contracts a
 requires-python = ">=3.12"
 dependencies = [
     "pandas>=2.0",
+    "yfinance>=0.2",
 ]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
-

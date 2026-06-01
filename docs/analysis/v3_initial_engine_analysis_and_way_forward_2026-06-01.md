@@ -296,6 +296,8 @@ Sprint 1 implementation status:
 - BacktestEngine v1 created in `backtest_engine.py`.
 - BacktestEngine v1 supports pluggable price providers and stage evaluators.
 - BacktestEngine v1 reports symbols attempted, processed, skipped, candidates found, candidate density, and candidate-only forward hit rates.
+- Yahoo data provider wrapper created in `data_provider.py`.
+- Backtest detail CSV and summary markdown writers created in `reports.py`.
 - Sample US and NSE universe fixtures added under `data/samples`.
 - Unit tests added under `tests`.
 - Initial test command passed:
@@ -308,7 +310,7 @@ python -m unittest discover -s tests -v
 Current test count:
 
 ```text
-Ran 11 tests
+Ran 15 tests
 OK
 ```
 
