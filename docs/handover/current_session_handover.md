@@ -83,6 +83,7 @@ Foundation code:
 - Guardrail that log, detail CSV, and summary report must be physically separate files.
 - First production Crossover evaluator slice.
 - Daily evidence builder for MACD, RSI, ADX, Bollinger, EMA, volume, and price structure.
+- Crossover route classifier that separates bullish transition, pullback re-entry, and continuation opportunity types.
 - Reusable run orchestrator.
 - CLI entry point.
 - Initial Python web UI wrapper.
@@ -170,6 +171,7 @@ f808289 Preserve V2 output parity contract
 The actual V3 production engine logic has started but is not complete yet:
 
 - Crossover v1 exists, but it is a first slice and needs historical calibration.
+- Crossover route labels are now less overloaded, but bearish crossover routing and separate Momentum/Divergence evaluators are still not built.
 - Failure categories are first-pass diagnostics and still need validation against broader historical runs.
 - No production Momentum Trading evaluator.
 - No production Divergence evaluator.
@@ -183,12 +185,11 @@ Start with Crossover validation and calibration, not UI expansion.
 
 Recommended next implementation order:
 
-1. Run Crossover v1 through fixed historical D dates with known universes.
-2. Inspect `Output.csv` for per-symbol calculation evidence.
-3. Calibrate route/timing/structure/participation thresholds based on backtest evidence.
+1. Continue engine architecture around stage routing, evidence, scoring, and ranking before expanding UI or validation convenience tooling.
+2. Add market/sector context to the neutral evidence pack so ranking can account for broad and sector regime.
+3. Build remaining Crossover directions/opportunity types, then Momentum Trading and Divergence evaluators.
 4. Review failure-category counts across the validation pack and refine labels only with evidence.
-5. Add market/sector benchmark context.
-6. Then build Momentum Trading and Divergence evaluators.
+5. Run fixed historical D dates with known universes to calibrate route/timing/structure/participation thresholds.
 
 ## Carry-Forward Rules
 
