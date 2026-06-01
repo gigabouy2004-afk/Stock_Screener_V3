@@ -42,7 +42,14 @@ Do not continue tuning the old V2 Crossover monolith.
 
 V3 is a clean rebuild that should preserve the useful V2 operating model, output visibility, and validation discipline while rebuilding the engine logic with cleaner module boundaries.
 
-The actual production signal engine/stage evaluators are not yet implemented.
+The same engine must support both new capital entry and existing capital exit/preservation:
+
+- `PRE_BULL_CROSSOVER`: bull transition / new capital entry review.
+- `PRE_BEAR_CROSSOVER`: bear transition / exit or capital-preservation review.
+
+Momentum Setup is a bull-phase continuation/re-entry family, not the same thing as classical MACD crossover transition.
+
+The actual production signal engine/stage evaluators are not yet complete.
 
 ## Completed Groundwork
 
@@ -84,6 +91,7 @@ Foundation code:
 - First production Crossover evaluator slice.
 - Daily evidence builder for MACD, RSI, ADX, Bollinger, EMA, volume, and price structure.
 - Crossover route classifier that separates bullish transition, pullback re-entry, and continuation opportunity types.
+- Direction-aware Crossover scoring for bull transition entry signals and bear transition exit/preservation signals.
 - Reusable run orchestrator.
 - CLI entry point.
 - Initial Python web UI wrapper.
@@ -171,7 +179,7 @@ f808289 Preserve V2 output parity contract
 The actual V3 production engine logic has started but is not complete yet:
 
 - Crossover v1 exists, but it is a first slice and needs historical calibration.
-- Crossover route labels are now less overloaded, but bearish crossover routing and separate Momentum/Divergence evaluators are still not built.
+- Crossover route labels are now less overloaded, but separate Momentum/Divergence evaluators are still not built.
 - Failure categories are first-pass diagnostics and still need validation against broader historical runs.
 - No production Momentum Trading evaluator.
 - No production Divergence evaluator.
@@ -186,8 +194,8 @@ Start with Crossover validation and calibration, not UI expansion.
 Recommended next implementation order:
 
 1. Continue engine architecture around stage routing, evidence, scoring, and ranking before expanding UI or validation convenience tooling.
-2. Add market/sector context to the neutral evidence pack so ranking can account for broad and sector regime.
-3. Build remaining Crossover directions/opportunity types, then Momentum Trading and Divergence evaluators.
+2. Keep Crossover focused on bull/bear phase transition; move pullback re-entry and continuation into Momentum Setup once that evaluator exists.
+3. Add market/sector context to the neutral evidence pack so ranking can account for broad and sector regime.
 4. Review failure-category counts across the validation pack and refine labels only with evidence.
 5. Run fixed historical D dates with known universes to calibrate route/timing/structure/participation thresholds.
 

@@ -48,6 +48,7 @@ def evaluate_crossover(evidence: EvidencePack) -> StageEvaluation:
     crossover_state = str(momentum.get("MACD_1D_CrossoverState") or "UNKNOWN")
     macd_distance = _number(momentum.get("MACD_1D_CrossoverDistance"))
     histogram = _number(momentum.get("MACD_1D_Histogram"))
+    previous_histogram = _number(momentum.get("MACD_1D_PreviousHistogram"))
     rsi = _number(momentum.get("RSI_1D"))
     close_location = _number(evidence.stock_baseline.get("DailyCloseLocationPct"))
     volume_vs_20 = _number(volume.get("IntradayVolumeVs20Avg"))
@@ -59,11 +60,13 @@ def evaluate_crossover(evidence: EvidencePack) -> StageEvaluation:
     minus_di = _number(trend.get("MinusDI_1D"))
 
     histogram_improving = bool(momentum.get("MACDHistogramImproving"))
+    histogram_deteriorating = _is_deteriorating(previous_histogram, histogram)
     route = _classify_crossover_route(
         crossover_state=crossover_state,
         macd_distance=macd_distance,
         histogram=histogram,
         histogram_improving=histogram_improving,
+        histogram_deteriorating=histogram_deteriorating,
         latest_price=latest_price,
         ema20=ema20,
         ema50=ema50,
@@ -71,14 +74,23 @@ def evaluate_crossover(evidence: EvidencePack) -> StageEvaluation:
         minus_di=minus_di,
         ema20_reclaim=bool(structure.get("EMA20_Reclaim")),
         higher_low=bool(structure.get("HigherLow_5D")),
+        lower_high=bool(structure.get("LowerHigh_5D")),
+        ema20_below=bool(structure.get("EMA20_Below")),
         price_ladder=bool(structure.get("PriceLadder_Passed")),
     )
     route_score = route.route_score
-    timing_score = _timing_score(crossover_state, momentum.get("MACDHistogramImproving"))
-    structure_score = _structure_score(latest_price, ema20, ema200, bool(structure.get("HigherLow_5D")))
-    participation_score = _participation_score(volume_vs_20, plus_di, minus_di)
-    context_score = _context_score(rsi, close_location)
-    risk_score = _risk_score(bool(risk.get("LowLiquidity")), bool(risk.get("BelowEMA200")))
+    timing_score = _timing_score(route.direction, crossover_state, histogram_improving, histogram_deteriorating)
+    structure_score = _structure_score(
+        route.direction,
+        latest_price,
+        ema20,
+        ema200,
+        bool(structure.get("HigherLow_5D")),
+        bool(structure.get("LowerHigh_5D")),
+    )
+    participation_score = _participation_score(route.direction, volume_vs_20, plus_di, minus_di)
+    context_score = _context_score(route.direction, rsi, close_location)
+    risk_score = _risk_score(route.direction, bool(risk.get("LowLiquidity")), bool(risk.get("BelowEMA200")))
     total = round(route_score + timing_score + structure_score + participation_score + context_score + risk_score, 2)
 
     reason_codes: list[str] = []
@@ -86,14 +98,14 @@ def evaluate_crossover(evidence: EvidencePack) -> StageEvaluation:
     reason_codes.append(route.reason_code)
 
     if structure_score >= 14:
-        reason_codes.append("CONSTRUCTIVE_PRICE_STRUCTURE")
+        reason_codes.append("CONSTRUCTIVE_PRICE_STRUCTURE" if route.direction == "BULLISH" else "BEARISH_PRICE_STRUCTURE")
     if participation_score >= 10:
-        reason_codes.append("PARTICIPATION_SUPPORT")
+        reason_codes.append("PARTICIPATION_SUPPORT" if route.direction == "BULLISH" else "SELLER_PARTICIPATION_SUPPORT")
     if context_score >= 8:
-        reason_codes.append("ACCEPTANCE_SUPPORT")
+        reason_codes.append("ACCEPTANCE_SUPPORT" if route.direction == "BULLISH" else "BEARISH_ACCEPTANCE_SUPPORT")
     if risk.get("LowLiquidity"):
         risk_tags.append("LOW_LIQUIDITY")
-    if risk.get("BelowEMA200"):
+    if route.direction == "BULLISH" and risk.get("BelowEMA200"):
         risk_tags.append("BELOW_EMA200")
 
     if not route.is_valid:
@@ -172,6 +184,7 @@ def _classify_crossover_route(
     macd_distance: float | None,
     histogram: float | None,
     histogram_improving: bool,
+    histogram_deteriorating: bool,
     latest_price: float | None,
     ema20: float | None,
     ema50: float | None,
@@ -179,6 +192,8 @@ def _classify_crossover_route(
     minus_di: float | None,
     ema20_reclaim: bool,
     higher_low: bool,
+    lower_high: bool,
+    ema20_below: bool,
     price_ladder: bool,
 ) -> CrossoverRoute:
     if crossover_state == "BULL_CROSS":
@@ -190,7 +205,32 @@ def _classify_crossover_route(
             reason_code="DAILY_MACD_BULL_CROSS",
             timing_profile="fresh",
         )
+    if crossover_state == "BEAR_CROSS":
+        return CrossoverRoute(
+            candidate_state="PRE_BEAR_CROSSOVER",
+            opportunity_type="BEARISH_TRANSITION_CROSSOVER",
+            direction="BEARISH",
+            route_score=30.0,
+            reason_code="DAILY_MACD_BEAR_CROSS",
+            timing_profile="fresh",
+        )
     if crossover_state == "ABOVE_SIGNAL":
+        if (
+            histogram_deteriorating
+            and macd_distance is not None
+            and histogram is not None
+            and macd_distance < 0.15
+            and histogram < 0.15
+            and (ema20_below or lower_high or _di_supports_bears(plus_di, minus_di))
+        ):
+            return CrossoverRoute(
+                candidate_state="PRE_BEAR_CROSSOVER",
+                opportunity_type="BEARISH_NEAR_TRANSITION",
+                direction="BEARISH",
+                route_score=18.0,
+                reason_code="DAILY_MACD_NEAR_BEAR_TRANSITION",
+                timing_profile="early",
+            )
         if _above(latest_price, ema20) and (ema20_reclaim or higher_low):
             return CrossoverRoute(
                 candidate_state="BULL_PULLBACK_REENTRY",
@@ -218,6 +258,15 @@ def _classify_crossover_route(
                 reason_code="DAILY_MACD_ABOVE_SIGNAL_IMPROVING",
                 timing_profile="developing",
             )
+    if crossover_state == "BELOW_SIGNAL" and histogram_deteriorating and (ema20_below or lower_high):
+        return CrossoverRoute(
+            candidate_state="PRE_BEAR_CROSSOVER",
+            opportunity_type="BEARISH_BELOW_SIGNAL_DETERIORATING",
+            direction="BEARISH",
+            route_score=20.0,
+            reason_code="DAILY_MACD_BELOW_SIGNAL_DETERIORATING",
+            timing_profile="developing",
+        )
     if histogram_improving and macd_distance is not None and histogram is not None and macd_distance > -0.15 and histogram > -0.15:
         return CrossoverRoute(
             candidate_state="PRE_BULL_CROSSOVER",
@@ -237,49 +286,72 @@ def _classify_crossover_route(
     )
 
 
-def _timing_score(crossover_state: str, improving: object) -> float:
+def _timing_score(direction: str, crossover_state: str, improving: bool, deteriorating: bool) -> float:
     score = 0.0
-    if crossover_state == "BULL_CROSS":
+    if direction == "BULLISH" and crossover_state == "BULL_CROSS":
         score += 10.0
-    if bool(improving):
+    if direction == "BEARISH" and crossover_state == "BEAR_CROSS":
+        score += 10.0
+    if direction == "BULLISH" and improving:
+        score += 10.0
+    if direction == "BEARISH" and deteriorating:
         score += 10.0
     return min(score, 20.0)
 
 
-def _structure_score(price: float | None, ema20: float | None, ema200: float | None, higher_low: bool) -> float:
+def _structure_score(
+    direction: str,
+    price: float | None,
+    ema20: float | None,
+    ema200: float | None,
+    higher_low: bool,
+    lower_high: bool,
+) -> float:
     score = 0.0
-    if price is not None and ema20 is not None and price >= ema20:
+    if direction == "BULLISH" and price is not None and ema20 is not None and price >= ema20:
         score += 8.0
-    if price is not None and ema200 is not None and price >= ema200:
+    if direction == "BEARISH" and price is not None and ema20 is not None and price <= ema20:
+        score += 8.0
+    if direction == "BULLISH" and price is not None and ema200 is not None and price >= ema200:
         score += 7.0
-    if higher_low:
+    if direction == "BEARISH" and price is not None and ema200 is not None and price <= ema200:
+        score += 7.0
+    if direction == "BULLISH" and higher_low:
+        score += 5.0
+    if direction == "BEARISH" and lower_high:
         score += 5.0
     return score
 
 
-def _participation_score(volume_vs_20: float | None, plus_di: float | None, minus_di: float | None) -> float:
+def _participation_score(direction: str, volume_vs_20: float | None, plus_di: float | None, minus_di: float | None) -> float:
     score = 0.0
     if volume_vs_20 is not None and volume_vs_20 >= 100:
         score += 8.0
-    if plus_di is not None and minus_di is not None and plus_di >= minus_di:
+    if direction == "BULLISH" and plus_di is not None and minus_di is not None and plus_di >= minus_di:
+        score += 7.0
+    if direction == "BEARISH" and plus_di is not None and minus_di is not None and minus_di >= plus_di:
         score += 7.0
     return score
 
 
-def _context_score(rsi: float | None, close_location: float | None) -> float:
+def _context_score(direction: str, rsi: float | None, close_location: float | None) -> float:
     score = 0.0
-    if rsi is not None and 45 <= rsi <= 70:
+    if direction == "BULLISH" and rsi is not None and 45 <= rsi <= 70:
         score += 5.0
-    if close_location is not None and close_location >= 60:
+    if direction == "BEARISH" and rsi is not None and 30 <= rsi <= 55:
+        score += 5.0
+    if direction == "BULLISH" and close_location is not None and close_location >= 60:
+        score += 5.0
+    if direction == "BEARISH" and close_location is not None and close_location <= 40:
         score += 5.0
     return score
 
 
-def _risk_score(low_liquidity: bool, below_ema200: bool) -> float:
+def _risk_score(direction: str, low_liquidity: bool, below_ema200: bool) -> float:
     score = 10.0
     if low_liquidity:
         score -= 5.0
-    if below_ema200:
+    if direction == "BULLISH" and below_ema200:
         score -= 5.0
     return max(score, 0.0)
 
@@ -311,8 +383,16 @@ def _number(value: object) -> float | None:
         return None
 
 
+def _is_deteriorating(previous: float | None, current: float | None) -> bool:
+    return bool(previous is not None and current is not None and current < previous)
+
+
 def _di_supports_bulls(plus_di: float | None, minus_di: float | None) -> bool:
     return bool(plus_di is not None and minus_di is not None and plus_di >= minus_di)
+
+
+def _di_supports_bears(plus_di: float | None, minus_di: float | None) -> bool:
+    return bool(plus_di is not None and minus_di is not None and minus_di >= plus_di)
 
 
 def _above(value: float | None, reference: float | None) -> bool:

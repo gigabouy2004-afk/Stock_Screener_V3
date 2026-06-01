@@ -112,9 +112,12 @@ class EvidenceBuilder:
         }
         structure = {
             "EMA20_Above": _above(latest_close, latest_ema20),
+            "EMA20_Below": _below(latest_close, latest_ema20),
             "EMA20_Reclaim": _reclaimed(close, ema20),
             "HigherLow_5D": _higher_low(low, lookback=5),
+            "LowerHigh_5D": _lower_high(high, lookback=5),
             "RangeBreakoutUp_20D": _breakout(close, high, lookback=20),
+            "RangeBreakdownDown_20D": _breakdown(close, low, lookback=20),
             "PriceLadder_Passed": _above(latest_close, latest_ema20) and _above(latest_ema20, latest_ema50),
         }
 
@@ -225,6 +228,10 @@ def _above(value: float | None, reference: float | None) -> bool:
     return bool(value is not None and reference is not None and value >= reference)
 
 
+def _below(value: float | None, reference: float | None) -> bool:
+    return bool(value is not None and reference is not None and value <= reference)
+
+
 def _reclaimed(close: pd.Series, reference: pd.Series) -> bool:
     if len(close.dropna()) < 2 or len(reference.dropna()) < 2:
         return False
@@ -238,9 +245,23 @@ def _higher_low(low: pd.Series, lookback: int) -> bool:
     return bool(cleaned.iloc[-1] > cleaned.iloc[-lookback:-1].min())
 
 
+def _lower_high(high: pd.Series, lookback: int) -> bool:
+    cleaned = pd.to_numeric(high, errors="coerce").dropna()
+    if len(cleaned) <= lookback:
+        return False
+    return bool(cleaned.iloc[-1] < cleaned.iloc[-lookback:-1].max())
+
+
 def _breakout(close: pd.Series, high: pd.Series, lookback: int) -> bool:
     if len(close.dropna()) <= lookback or len(high.dropna()) <= lookback:
         return False
     prior_high = high.iloc[-lookback - 1 : -1].max()
     return bool(close.iloc[-1] > prior_high)
+
+
+def _breakdown(close: pd.Series, low: pd.Series, lookback: int) -> bool:
+    if len(close.dropna()) <= lookback or len(low.dropna()) <= lookback:
+        return False
+    prior_low = low.iloc[-lookback - 1 : -1].min()
+    return bool(close.iloc[-1] < prior_low)
 

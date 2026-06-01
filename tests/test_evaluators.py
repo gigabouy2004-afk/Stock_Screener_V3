@@ -70,6 +70,22 @@ class CrossoverEvaluatorTests(unittest.TestCase):
         self.assertEqual(evaluation.diagnostics["CrossoverOpportunityType"], "BULLISH_CONTINUATION_MOMENTUM")
         self.assertIn("BULL_CONTINUATION_ROUTE", evaluation.reason_codes)
 
+    def test_crossover_evaluator_classifies_pre_bear_crossover_for_exit(self) -> None:
+        evaluation = evaluate_crossover(make_bear_evidence(crossover_state="BEAR_CROSS"))
+
+        self.assertEqual(evaluation.candidate_state, "PRE_BEAR_CROSSOVER")
+        self.assertEqual(evaluation.diagnostics["CrossoverDirection"], "BEARISH")
+        self.assertEqual(evaluation.diagnostics["CrossoverOpportunityType"], "BEARISH_TRANSITION_CROSSOVER")
+        self.assertIn(evaluation.candidate_class, {CandidateClass.SELECTED, CandidateClass.WATCH})
+        self.assertIn("DAILY_MACD_BEAR_CROSS", evaluation.reason_codes)
+
+    def test_crossover_evaluator_classifies_near_bear_transition(self) -> None:
+        evaluation = evaluate_crossover(make_bear_evidence(crossover_state="ABOVE_SIGNAL"))
+
+        self.assertEqual(evaluation.candidate_state, "PRE_BEAR_CROSSOVER")
+        self.assertEqual(evaluation.diagnostics["CrossoverOpportunityType"], "BEARISH_NEAR_TRANSITION")
+        self.assertIn("DAILY_MACD_NEAR_BEAR_TRANSITION", evaluation.reason_codes)
+
 
 def make_evidence(structure: dict[str, object]) -> EvidencePack:
     return EvidencePack(
@@ -94,6 +110,39 @@ def make_evidence(structure: dict[str, object]) -> EvidencePack:
         volume={"IntradayVolumeVs20Avg": 130.0},
         structure=structure,
         risk_context={"LowLiquidity": False, "BelowEMA200": False},
+    )
+
+
+def make_bear_evidence(crossover_state: str) -> EvidencePack:
+    return EvidencePack(
+        record=UniverseRecord(symbol="BBB", yahoo_symbol="BBB", sector="Technology", exchange="NASDAQ"),
+        as_of=pd.Timestamp("2026-02-11"),
+        stock_baseline={"LatestPrice": 88.0, "DailyCloseLocationPct": 24.0},
+        momentum={
+            "RSI_1D": 42.0,
+            "MACD_1D_CrossoverState": crossover_state,
+            "MACD_1D_Histogram": 0.04 if crossover_state == "ABOVE_SIGNAL" else -0.08,
+            "MACD_1D_PreviousHistogram": 0.12,
+            "MACD_1D_CrossoverDistance": 0.04 if crossover_state == "ABOVE_SIGNAL" else -0.08,
+            "MACDHistogramImproving": False,
+        },
+        trend={
+            "EMA20": 92.0,
+            "EMA50": 95.0,
+            "EMA200": 98.0,
+            "ADX_1D": 24.0,
+            "PlusDI_1D": 14.0,
+            "MinusDI_1D": 31.0,
+        },
+        volume={"IntradayVolumeVs20Avg": 140.0},
+        structure={
+            "EMA20_Below": True,
+            "EMA20_Reclaim": False,
+            "HigherLow_5D": False,
+            "LowerHigh_5D": True,
+            "PriceLadder_Passed": False,
+        },
+        risk_context={"LowLiquidity": False, "BelowEMA200": True},
     )
 
 
