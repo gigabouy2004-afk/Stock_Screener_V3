@@ -170,9 +170,16 @@ Responsibility:
 
 Convert evaluations into CSV, markdown, HTML, or UI rows.
 
+Required behavior:
+
+- Preserve the V2-compatible offline CSV column block defined by `V2_COMPAT_EXPORT_COLUMNS`.
+- Preserve the V2-compatible visible UI diagnostic column baseline defined by `V2_COMPAT_UI_COLUMNS`.
+- Append V3-specific fields after the V2-compatible CSV block.
+- Write CSV headers even when no candidate rows are produced.
+- Keep run logs, detail CSV, and summary reports as first-class artifacts.
+
 Non-responsibilities:
 
 - Reclassifying candidates.
 - Applying hidden gates.
 - Mutating scores.
-

@@ -6,16 +6,15 @@ from typing import Any
 
 from stock_screener_v3.backtest_engine import summarize_result
 from stock_screener_v3.models import BacktestResult
+from stock_screener_v3.output_contracts import DEFAULT_DETAIL_CSV_COLUMNS
 
 
-def write_detail_csv(result: BacktestResult, path: str | Path) -> None:
+def write_detail_csv(result: BacktestResult, path: str | Path, columns: list[str] | None = None) -> None:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
     rows = list(result.detail_rows)
-    if not rows:
-        output.write_text("", encoding="utf-8")
-        return
-    fieldnames = list(dict.fromkeys(key for row in rows for key in row.keys()))
+    base_columns = list(columns or DEFAULT_DETAIL_CSV_COLUMNS)
+    fieldnames = list(dict.fromkeys(base_columns + [key for row in rows for key in row.keys()]))
     with output.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
@@ -63,4 +62,3 @@ def write_summary_markdown(result: BacktestResult, path: str | Path) -> None:
 def row_value(row: dict[str, Any], key: str) -> str:
     value = row.get(key)
     return "" if value is None else str(value)
-

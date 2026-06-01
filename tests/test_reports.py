@@ -6,6 +6,7 @@ import tempfile
 import unittest
 
 from stock_screener_v3.models import BacktestResult, BacktestRunConfig
+from stock_screener_v3.output_contracts import V2_COMPAT_EXPORT_COLUMNS
 from stock_screener_v3.reports import render_summary_markdown, write_detail_csv, write_summary_markdown
 
 
@@ -49,7 +50,44 @@ class ReportTests(unittest.TestCase):
             self.assertIn("Symbol", detail.read_text(encoding="utf-8"))
             self.assertIn("V3 Backtest Summary", summary.read_text(encoding="utf-8"))
 
+    def test_detail_csv_preserves_v2_compatible_header_order(self) -> None:
+        result = BacktestResult(
+            config=BacktestRunConfig(universe_file="memory", d_date=date(2026, 2, 11), stage_families=("MOCK",)),
+            generated_at=datetime(2026, 6, 2),
+            symbols_attempted=1,
+            symbols_processed=1,
+            symbols_skipped=0,
+            candidates_found=1,
+            detail_rows=({"Symbol": "AAA", "CandidateClass": "SELECTED", "CustomDiagnostic": "kept"},),
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            detail = Path(tmpdir) / "details.csv"
+
+            write_detail_csv(result, detail)
+
+            header = detail.read_text(encoding="utf-8").splitlines()[0].split(",")
+            self.assertEqual(V2_COMPAT_EXPORT_COLUMNS, header[: len(V2_COMPAT_EXPORT_COLUMNS)])
+            self.assertIn("CandidateClass", header)
+            self.assertIn("CustomDiagnostic", header)
+
+    def test_detail_csv_writes_headers_even_when_no_rows(self) -> None:
+        result = BacktestResult(
+            config=BacktestRunConfig(universe_file="memory", d_date=date(2026, 2, 11), stage_families=("MOCK",)),
+            generated_at=datetime(2026, 6, 2),
+            symbols_attempted=1,
+            symbols_processed=1,
+            symbols_skipped=0,
+            candidates_found=0,
+            detail_rows=(),
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            detail = Path(tmpdir) / "empty.csv"
+
+            write_detail_csv(result, detail)
+
+            header = detail.read_text(encoding="utf-8").splitlines()[0].split(",")
+            self.assertEqual(V2_COMPAT_EXPORT_COLUMNS, header[: len(V2_COMPAT_EXPORT_COLUMNS)])
+
 
 if __name__ == "__main__":
     unittest.main()
-

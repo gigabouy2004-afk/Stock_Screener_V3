@@ -21,6 +21,7 @@ The engine is not intended to perform automated trading, position sizing, capita
 
 - Fresh charter: [docs/charter/engine_program_charter_fresh_2026-06-01.md](docs/charter/engine_program_charter_fresh_2026-06-01.md)
 - Current engine gap analysis: [docs/analysis/current_engine_gap_analysis_against_fresh_charter_2026-06-01.md](docs/analysis/current_engine_gap_analysis_against_fresh_charter_2026-06-01.md)
+- V2 operational parity contract: [docs/architecture/v2_operational_parity_contract.md](docs/architecture/v2_operational_parity_contract.md)
 
 Archived reference documents from the previous engine are kept under `docs/`.
 
@@ -101,6 +102,7 @@ Sprint 1 has started with the foundation layer:
 - Yahoo data-provider wrapper behind a provider interface.
 - Detail CSV and summary markdown report writers.
 - Run I/O helpers for V2-style artifact naming under `validation/runs/`.
+- V2-compatible offline CSV header contract.
 - Workspace-safe input/output path resolution.
 - File and console run logging with explicit logger close support for Windows.
 - Standard-library unit tests under `tests/`.
