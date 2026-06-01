@@ -286,6 +286,21 @@ Sprint 1 scope:
 4. Add backtest run config and summary structures.
 5. Add unit tests for metadata preservation and historical slicing.
 
+Sprint 1 implementation status:
+
+- Package skeleton created under `src/stock_screener_v3`.
+- Core model contracts created in `models.py`.
+- Universe CSV loader created in `universe.py`.
+- Historical slicing and forward-return helpers created in `backtesting.py`.
+- Sample US and NSE universe fixtures added under `data/samples`.
+- Unit tests added under `tests`.
+- Initial test command passed:
+
+```powershell
+$env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
+python -m unittest discover -s tests -v
+```
+
 Why this first:
 
 - It prevents V3 from repeating V2's monolithic pattern.
@@ -337,4 +352,3 @@ Use V2 only as:
 - historical replay reference.
 
 The first implementation milestone is not a working scanner. It is a reliable foundation that makes a working scanner testable.
-

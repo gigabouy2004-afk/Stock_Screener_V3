@@ -1,0 +1,12 @@
+[project]
+name = "stock-screener-v3"
+version = "0.1.0"
+description = "V3 rebuild of the stock screener engine with explicit contracts and backtesting-first validation."
+requires-python = ">=3.12"
+dependencies = [
+    "pandas>=2.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+

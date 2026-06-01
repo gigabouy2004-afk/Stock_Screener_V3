@@ -87,3 +87,19 @@ No signal-rule change should be promoted without a backtest report that includes
 - Score-bucket behavior.
 - Failure categories.
 
+## Current Implementation Status
+
+Sprint 1 has started with the foundation layer:
+
+- Python package skeleton under `src/stock_screener_v3`.
+- Core dataclasses for universe records, evidence packs, stage evaluations, scores, and backtest results.
+- CSV universe loader with metadata preservation.
+- Historical slicing helpers for no-lookahead tests.
+- Standard-library unit tests under `tests/`.
+
+Run tests with:
+
+```powershell
+$env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
+python -m unittest discover -s tests -v
+```
