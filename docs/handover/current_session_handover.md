@@ -67,7 +67,7 @@ Foundation code:
   - `StageEvaluation`
   - `BacktestRunConfig`
   - `BacktestResult`
-- CSV universe loader with metadata preservation.
+- CSV universe loader with metadata preservation for mixed NSE/BSE/NYSE/NASDAQ files.
 - Sector/exchange filtering.
 - Deterministic sampling.
 - Historical as-of slicing helpers.
@@ -192,6 +192,8 @@ Recommended next implementation order:
 - Do not tune a rule from one stock/event.
 - Do not promote signal-rule changes without a backtest report.
 - Preserve sector/exchange metadata from the input universe in output rows.
+- Accept mixed-market CSV inputs with NSE, BSE, NYSE, and NASDAQ codes.
+- Normalize NSE symbols to `.NS` and BSE symbols to `.BO`; keep NYSE/NASDAQ unsuffixed unless `YahooSymbol` is provided.
 - Preserve V2-compatible offline CSV headers.
 - Keep log, output CSV, and summary report separate.
 - Keep the handover document updated after every meaningful change.

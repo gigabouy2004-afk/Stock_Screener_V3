@@ -8,7 +8,7 @@ It exists to keep the new program charter, architecture analysis, backtesting pl
 
 Build a user-driven tactical technical-analysis scanner that can:
 
-- Load a user-selected universe.
+- Load a user-selected CSV universe containing NSE, BSE, NYSE, and NASDAQ stock codes.
 - Establish market, sector, and stock context.
 - Route stocks into stage families.
 - Produce explainable candidates.
@@ -95,7 +95,7 @@ Sprint 1 has started with the foundation layer:
 
 - Python package skeleton under `src/stock_screener_v3`.
 - Core dataclasses for universe records, evidence packs, stage evaluations, scores, and backtest results.
-- CSV universe loader with metadata preservation.
+- CSV universe loader with metadata preservation for mixed NSE/BSE/NYSE/NASDAQ files.
 - Sector/exchange filtering and deterministic sampling.
 - Historical slicing helpers for no-lookahead tests.
 - BacktestEngine v1 with pluggable price provider and stage evaluator contracts.

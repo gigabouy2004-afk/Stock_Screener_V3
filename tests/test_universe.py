@@ -35,6 +35,21 @@ class UniverseLoaderTests(unittest.TestCase):
         self.assertEqual(normalize_yahoo_symbol("RELIANCE", source_is_nse=True), "RELIANCE.NS")
         self.assertEqual(normalize_yahoo_symbol("AAPL", exchange="NASDAQ"), "AAPL")
         self.assertEqual(normalize_yahoo_symbol("TCS.NS", exchange="NSE"), "TCS.NS")
+        self.assertEqual(normalize_yahoo_symbol("TCS", exchange="BSE"), "TCS.BO")
+        self.assertEqual(normalize_yahoo_symbol("TCS.BO", exchange="BSE"), "TCS.BO")
+
+    def test_mixed_exchange_csv_preserves_codes_and_normalizes_yahoo_symbols(self) -> None:
+        records = load_universe_records(ROOT / "data" / "samples" / "mixed_exchange_sample.csv")
+
+        self.assertEqual(
+            [(record.symbol, record.exchange, record.yahoo_symbol) for record in records],
+            [
+                ("RELIANCE", "NSE", "RELIANCE.NS"),
+                ("TCS", "BSE", "TCS.BO"),
+                ("AAPL", "NASDAQ", "AAPL"),
+                ("XOM", "NYSE", "XOM"),
+            ],
+        )
 
     def test_filter_records_by_sector_preserves_metadata(self) -> None:
         records = load_universe_records(ROOT / "data" / "samples" / "us_master_sample.csv")

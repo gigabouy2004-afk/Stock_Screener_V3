@@ -30,6 +30,17 @@ Required fields:
 - source_file.
 - last_profile_refresh_date.
 
+Input contract:
+
+- The primary input is a CSV universe file.
+- A single CSV may contain mixed NSE, BSE, NYSE, and NASDAQ stock codes.
+- `Symbol` or `Ticker` is required.
+- `Exchange` should be provided when symbols are not already Yahoo-normalized.
+- NSE symbols without a suffix normalize to `.NS`.
+- BSE symbols without a suffix normalize to `.BO`.
+- NYSE and NASDAQ symbols remain unsuffixed unless `YahooSymbol` is explicitly provided.
+- `YahooSymbol` or `Yahoo Symbol` overrides automatic normalization.
+
 Non-responsibilities:
 
 - Fetching prices.

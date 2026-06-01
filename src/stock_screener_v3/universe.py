@@ -53,6 +53,8 @@ def normalize_yahoo_symbol(symbol: str, exchange: str | None = None, source_is_n
     exchange_norm = (exchange or "").strip().upper()
     if normalized and "." not in normalized and (source_is_nse or exchange_norm in {"NSE", "NSI"}):
         return f"{normalized}.NS"
+    if normalized and "." not in normalized and exchange_norm in {"BSE", "BOM"}:
+        return f"{normalized}.BO"
     return normalized
 
 
