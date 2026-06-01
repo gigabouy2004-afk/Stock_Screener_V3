@@ -40,6 +40,21 @@ class RunIoTests(unittest.TestCase):
             with self.assertRaises(FileNotFoundError):
                 resolve_workspace_path(tmpdir, "missing.csv", must_exist=True)
 
+    def test_run_artifact_paths_must_be_distinct(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            universe = root / "universe.csv"
+            universe.write_text("Symbol\nAAA\n", encoding="utf-8")
+
+            with self.assertRaises(ValueError):
+                RunPaths.for_backtest(
+                    root,
+                    universe,
+                    date(2026, 2, 11),
+                    details_output="validation/runs/shared.csv",
+                    log_file="validation/runs/shared.csv",
+                )
+
     def test_write_run_artifacts_creates_csv_and_summary(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

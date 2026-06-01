@@ -21,6 +21,8 @@ The first V3 UI can be cleaner than V2, but it cannot hide the diagnostics requi
 
 ## Log Minimum
 
+The log file is the forensic execution trail. It is not a replacement for the output CSV and must not contain the full symbol-detail table as its primary purpose.
+
 Each V3 run must produce a file log that records:
 
 - Run queued.
@@ -36,11 +38,15 @@ The log location must be visible to the operator and default to `validation/runs
 
 ## Offline CSV Minimum
 
+The output CSV is the symbol-level engine evidence file. It captures the detailed per-symbol diagnostics, scores, classifications, reason codes, and forward validation fields needed for offline review.
+
 V3 detail CSV output must keep the V2 offline schema as the leading column block. The exact column contract is defined in `stock_screener_v3.output_contracts.V2_COMPAT_EXPORT_COLUMNS`.
 
 V3-specific fields are appended after the V2-compatible block. Missing diagnostic values should be blank, not omitted.
 
 The CSV writer must emit headers even when a run has zero candidate rows. A blank file is not acceptable because it prevents downstream spreadsheet review and automated validation.
+
+The log file, detail CSV, and summary report must be physically separate files. V3 must reject a run configuration that points any two of those artifacts to the same path.
 
 ## Report Minimum
 
@@ -51,4 +57,3 @@ Every historical replay or live scan must produce:
 - Run log.
 
 HTML can be added after the V3 engine contracts stabilize, but the V3 UI/report layer must retain the same auditability as the V2 HTML report.
-

@@ -176,7 +176,8 @@ Required behavior:
 - Preserve the V2-compatible visible UI diagnostic column baseline defined by `V2_COMPAT_UI_COLUMNS`.
 - Append V3-specific fields after the V2-compatible CSV block.
 - Write CSV headers even when no candidate rows are produced.
-- Keep run logs, detail CSV, and summary reports as first-class artifacts.
+- Keep run logs, detail CSV, and summary reports as physically separate first-class artifacts.
+- Treat the log as execution forensics and the CSV as symbol-level engine evidence.
 
 Non-responsibilities:
 

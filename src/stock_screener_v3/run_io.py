@@ -35,7 +35,7 @@ class RunPaths:
     ) -> "RunPaths":
         root = resolve_workspace_root(workspace_root)
         date_token = d_date.strftime("%Y%m%d")
-        return cls(
+        paths = cls(
             workspace_root=root,
             input_path=resolve_workspace_path(root, universe_file, must_exist=True),
             details_output=resolve_workspace_path(
@@ -51,6 +51,8 @@ class RunPaths:
                 log_file or RUNS_DIR / f"{run_label}_{date_token}.log",
             ),
         )
+        validate_distinct_run_artifacts(paths)
+        return paths
 
 
 def resolve_workspace_root(workspace_root: str | Path) -> Path:
@@ -95,6 +97,19 @@ def configure_run_logger(log_file: str | Path, *, name: str = "stock_screener_v3
     logger.addHandler(file_handler)
     logger.addHandler(stream_handler)
     return logger
+
+
+def validate_distinct_run_artifacts(paths: RunPaths) -> None:
+    artifacts = {
+        "details_output": paths.details_output.resolve(),
+        "summary_output": paths.summary_output.resolve(),
+        "log_file": paths.log_file.resolve(),
+    }
+    seen: dict[Path, str] = {}
+    for label, path in artifacts.items():
+        if path in seen:
+            raise ValueError(f"Run artifact paths must be distinct: {seen[path]} and {label} both use {path}")
+        seen[path] = label
 
 
 def close_run_logger(logger: logging.Logger) -> None:
