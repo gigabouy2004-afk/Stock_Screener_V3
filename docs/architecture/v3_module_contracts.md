@@ -177,7 +177,7 @@ Required behavior:
 - Append V3-specific fields after the V2-compatible CSV block.
 - Write CSV headers even when no candidate rows are produced.
 - Keep run logs, detail CSV, and summary reports as physically separate first-class artifacts.
-- Treat the log as execution summary/timeline and the CSV as symbol-level forensic calculation evidence.
+- Treat the log as the execution summary report and the CSV as symbol-level forensic calculation evidence.
 
 Non-responsibilities:
 

@@ -21,7 +21,7 @@ The first V3 UI can be cleaner than V2, but it cannot hide the diagnostics requi
 
 ## Log Minimum
 
-The log file is the execution summary and run timeline. It is not a replacement for the output CSV and must not contain the full symbol-detail table as its primary purpose.
+The log file is the execution summary report for the run. It is not a replacement for the output CSV and must not contain the full symbol-detail table as its primary purpose.
 
 Each V3 run must produce a file log that records:
 
