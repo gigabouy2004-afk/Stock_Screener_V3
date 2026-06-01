@@ -33,7 +33,7 @@ Expected status at this handover:
 Expected tests at this handover:
 
 ```text
-26 tests passing
+28 tests passing
 ```
 
 ## Current Decision
@@ -86,6 +86,9 @@ Foundation code:
 - Reusable run orchestrator.
 - CLI entry point.
 - Initial Python web UI wrapper.
+- Backtest outcome classification for candidate follow-through.
+- Failure-category summary reporting for failed candidate follow-through.
+- Candidate score-bucket summary reporting.
 
 Tests:
 
@@ -93,7 +96,7 @@ Tests:
 - Backtesting utility tests.
 - Backtest engine tests.
 - Data provider tests.
-- Report/output contract tests.
+- Report/output contract tests, including score-bucket and failure-category summaries.
 - Run I/O and log artifact tests.
 
 ## Artifact Purpose Definitions
@@ -167,6 +170,7 @@ f808289 Preserve V2 output parity contract
 The actual V3 production engine logic has started but is not complete yet:
 
 - Crossover v1 exists, but it is a first slice and needs historical calibration.
+- Failure categories are first-pass diagnostics and still need validation against broader historical runs.
 - No production Momentum Trading evaluator.
 - No production Divergence evaluator.
 - No scoring calibration beyond data model contracts.
@@ -182,7 +186,7 @@ Recommended next implementation order:
 1. Run Crossover v1 through fixed historical D dates with known universes.
 2. Inspect `Output.csv` for per-symbol calculation evidence.
 3. Calibrate route/timing/structure/participation thresholds based on backtest evidence.
-4. Add failure-category classification.
+4. Review failure-category counts across the validation pack and refine labels only with evidence.
 5. Add market/sector benchmark context.
 6. Then build Momentum Trading and Divergence evaluators.
 

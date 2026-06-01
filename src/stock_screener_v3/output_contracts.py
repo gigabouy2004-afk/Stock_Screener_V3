@@ -215,10 +215,11 @@ V3_BACKTEST_EXTRA_COLUMNS = [
     "RiskScore",
     "ReasonCodes",
     "RiskTags",
+    "OutcomeCategory",
+    "FailureCategory",
     "DPlus1ReturnPct",
     "DPlus2ReturnPct",
     "DPlus5ReturnPct",
 ]
 
 DEFAULT_DETAIL_CSV_COLUMNS = V2_COMPAT_EXPORT_COLUMNS + V3_BACKTEST_EXTRA_COLUMNS
-

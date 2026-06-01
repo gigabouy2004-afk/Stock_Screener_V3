@@ -20,7 +20,12 @@ class ReportTests(unittest.TestCase):
             symbols_skipped=0,
             candidates_found=1,
             detail_rows=(
-                {"Symbol": "AAA", "CandidateClass": "SELECTED", "DPlus1ReturnPct": 2.0},
+                {
+                    "Symbol": "AAA",
+                    "CandidateClass": "SELECTED",
+                    "TotalScore": 72.0,
+                    "DPlus1ReturnPct": 2.0,
+                },
                 {"Symbol": "BBB", "CandidateClass": "STATUS_QUO", "DPlus1ReturnPct": -1.0},
             ),
         )
@@ -29,6 +34,32 @@ class ReportTests(unittest.TestCase):
 
         self.assertIn("Candidate density: 0.5000", markdown)
         self.assertIn("| D+1 | 1 | 1 | 100.00% |", markdown)
+        self.assertIn("## Score Buckets", markdown)
+        self.assertIn("| 70-79 | 1 |", markdown)
+
+    def test_render_summary_markdown_includes_failure_categories(self) -> None:
+        result = BacktestResult(
+            config=BacktestRunConfig(universe_file="memory", d_date=date(2026, 2, 11), stage_families=("MOCK",), forward_days=(1,)),
+            generated_at=datetime(2026, 6, 2),
+            symbols_attempted=1,
+            symbols_processed=1,
+            symbols_skipped=0,
+            candidates_found=1,
+            detail_rows=(
+                {
+                    "Symbol": "AAA",
+                    "CandidateClass": "SELECTED",
+                    "TotalScore": 65.0,
+                    "FailureCategory": "PARTICIPATION_FAILURE",
+                    "DPlus1ReturnPct": -2.0,
+                },
+            ),
+        )
+
+        markdown = render_summary_markdown(result)
+
+        self.assertIn("## Failure Categories", markdown)
+        self.assertIn("- PARTICIPATION_FAILURE: 1", markdown)
 
     def test_write_reports_creates_files(self) -> None:
         result = BacktestResult(

@@ -77,6 +77,8 @@ class BacktestEngineTests(unittest.TestCase):
         self.assertAlmostEqual(result.candidate_density, 2 / 3)
         aaa = next(row for row in result.detail_rows if row["Symbol"] == "AAA")
         self.assertEqual(aaa["CandidateClass"], "SELECTED")
+        self.assertEqual(aaa["OutcomeCategory"], "POSITIVE_FOLLOW_THROUGH")
+        self.assertEqual(aaa["FailureCategory"], "")
         self.assertEqual(aaa["DPlus1ReturnPct"], 1.9802)
         self.assertEqual(aaa["DPlus2ReturnPct"], 2.9703)
 
@@ -117,6 +119,8 @@ class BacktestEngineTests(unittest.TestCase):
         self.assertEqual(summary["d_plus_1_evaluated"], 2)
         self.assertEqual(summary["d_plus_1_positive"], 1)
         self.assertAlmostEqual(summary["d_plus_1_hit_rate"], 1 / 2)
+        self.assertEqual(summary["failure_categories"], {"STRUCTURE_FAILURE": 1})
+        self.assertEqual(summary["score_buckets"], {"70-79": 2})
 
 
 if __name__ == "__main__":

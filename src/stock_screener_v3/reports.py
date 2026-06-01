@@ -46,6 +46,18 @@ def render_summary_markdown(result: BacktestResult) -> str:
         positive = int(summary.get(f"d_plus_{days}_positive", 0))
         hit_rate = float(summary.get(f"d_plus_{days}_hit_rate", 0.0))
         lines.append(f"| D+{days} | {evaluated} | {positive} | {hit_rate:.2%} |")
+    score_buckets = summary.get("score_buckets", {})
+    if score_buckets:
+        lines.extend(["", "## Score Buckets", "", "| Bucket | Candidates |", "|---|---:|"])
+        for bucket in ["80+", "70-79", "60-69", "50-59", "<50"]:
+            count = int(score_buckets.get(bucket, 0))  # type: ignore[union-attr]
+            if count:
+                lines.append(f"| {bucket} | {count} |")
+    failure_categories = summary.get("failure_categories", {})
+    if failure_categories:
+        lines.extend(["", "## Failure Categories", ""])
+        for category, count in sorted(failure_categories.items(), key=lambda item: (-item[1], item[0])):  # type: ignore[union-attr]
+            lines.append(f"- {category}: {count}")
     if result.skip_reasons:
         lines.extend(["", "## Skip Reasons", ""])
         for reason, count in sorted(result.skip_reasons.items(), key=lambda item: (-item[1], item[0])):

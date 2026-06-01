@@ -124,6 +124,8 @@ class BacktestEngine:
         row.update(evaluation.diagnostics)
         for days in forward_days:
             row[f"DPlus{days}ReturnPct"] = forward_return(full_daily, cutoff, days)
+        row["OutcomeCategory"] = outcome_category(row, forward_days)
+        row["FailureCategory"] = failure_category(row, forward_days)
         return row
 
 
@@ -141,4 +143,69 @@ def summarize_result(result: BacktestResult) -> dict[str, object]:
         summary[f"d_plus_{days}_evaluated"] = len(values)
         summary[f"d_plus_{days}_positive"] = len(positive)
         summary[f"d_plus_{days}_hit_rate"] = len(positive) / len(values) if values else 0.0
+    summary["failure_categories"] = dict(_counter_for_key(detail_rows, "FailureCategory"))
+    summary["score_buckets"] = dict(_score_buckets(detail_rows))
     return summary
+
+
+def outcome_category(row: dict[str, object], forward_days: tuple[int, ...]) -> str:
+    if row.get("CandidateClass") not in {CandidateClass.SELECTED.value, CandidateClass.WATCH.value}:
+        return "NOT_CANDIDATE"
+    values = [_number(row.get(f"DPlus{days}ReturnPct")) for days in forward_days]
+    evaluated = [value for value in values if value is not None]
+    if not evaluated:
+        return "UNEVALUATED"
+    if any(value > 0 for value in evaluated):
+        return "POSITIVE_FOLLOW_THROUGH"
+    return "FAILED_FOLLOW_THROUGH"
+
+
+def failure_category(row: dict[str, object], forward_days: tuple[int, ...]) -> str:
+    if outcome_category(row, forward_days) != "FAILED_FOLLOW_THROUGH":
+        return ""
+
+    risk_tags = {
+        tag.strip()
+        for tag in str(row.get("RiskTags") or "").split(",")
+        if tag.strip()
+    }
+    if "LOW_LIQUIDITY" in risk_tags:
+        return "LIQUIDITY_RISK"
+    if "BELOW_EMA200" in risk_tags or _number(row.get("StructureScore"), 0.0) < 10:
+        return "STRUCTURE_FAILURE"
+    if _number(row.get("ParticipationScore"), 0.0) < 10:
+        return "PARTICIPATION_FAILURE"
+    if _number(row.get("ContextScore"), 0.0) < 8:
+        return "ACCEPTANCE_CONTEXT_FAILURE"
+    return "FOLLOW_THROUGH_FAILURE"
+
+
+def _counter_for_key(rows: list[dict[str, object]], key: str) -> Counter[str]:
+    values = [str(row.get(key)) for row in rows if row.get(key)]
+    return Counter(values)
+
+
+def _score_buckets(rows: list[dict[str, object]]) -> Counter[str]:
+    buckets: Counter[str] = Counter()
+    for row in rows:
+        score = _number(row.get("TotalScore"))
+        if score is None:
+            continue
+        if score >= 80:
+            buckets["80+"] += 1
+        elif score >= 70:
+            buckets["70-79"] += 1
+        elif score >= 60:
+            buckets["60-69"] += 1
+        elif score >= 50:
+            buckets["50-59"] += 1
+        else:
+            buckets["<50"] += 1
+    return buckets
+
+
+def _number(value: object, default: float | None = None) -> float | None:
+    try:
+        return default if value is None else float(value)
+    except (TypeError, ValueError):
+        return default
