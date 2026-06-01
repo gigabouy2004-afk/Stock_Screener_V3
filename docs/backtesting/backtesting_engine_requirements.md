@@ -35,10 +35,14 @@ Implemented foundation pieces:
 - Candidate-only forward hit-rate summary.
 - Detail CSV writer.
 - Summary markdown writer.
+- Run artifact path manager with dated default CSV, summary, and log filenames.
+- Workspace-safe input and output path validation.
+- File-backed run logger for queued/started/completed/failed run evidence.
 
 Not yet implemented:
 
 - Production stage evaluators.
+- CLI or web adapter that invokes the run I/O helpers end to end.
 - Multi-date scorecards.
 - Failure-category classification.
 

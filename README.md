@@ -100,6 +100,9 @@ Sprint 1 has started with the foundation layer:
 - Candidate-density and candidate-only forward hit-rate summaries.
 - Yahoo data-provider wrapper behind a provider interface.
 - Detail CSV and summary markdown report writers.
+- Run I/O helpers for V2-style artifact naming under `validation/runs/`.
+- Workspace-safe input/output path resolution.
+- File and console run logging with explicit logger close support for Windows.
 - Standard-library unit tests under `tests/`.
 
 Run tests with:

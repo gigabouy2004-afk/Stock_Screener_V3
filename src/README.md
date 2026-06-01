@@ -10,4 +10,4 @@ Initial planned modules:
 - stage evaluators.
 - scoring and ranking.
 - backtesting engine.
-
+- run input/output and logging helpers.
