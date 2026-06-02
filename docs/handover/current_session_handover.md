@@ -8,11 +8,15 @@ GitHub: `https://github.com/gigabouy2004-afk/Stock_Screener_V3.git`
 
 Branch: `main`
 
-Latest confirmed pushed commit before current in-progress engine slice: `f635e3d Add configurable regime benchmarks`
+Latest confirmed pushed code baseline before signoff documentation: `6df0f7e Mark regime engine v1 complete`
 
 ## Purpose Of This Document
 
 This is the restart trace for the next session. Keep this document updated whenever the working direction, completed foundation, next step, or open risk changes.
+
+Canonical signoff/restart document for the current transition:
+
+- `docs/handover/transition_signoff_2026-06-02.md`
 
 If the computer/session restarts, start here first, then run:
 
@@ -176,16 +180,16 @@ Tests:
 ## Recent Commit Trace
 
 ```text
-9dbcf7f Update artifact purpose wording in handover
-205ee71 Add current session handover
-05c5953 Clarify log and output artifact purposes
-6e3f40b Enforce separate run forensic artifacts
-f808289 Preserve V2 output parity contract
-4f505ef Add V3 run artifact IO validation
-183b3e1 Add V3 data provider and backtest reports
-5e244a6 Add V3 backtesting engine foundation
-99b431c Add V3 foundation models and universe loader
-71c759a Add V3 analysis and execution plan
+6df0f7e Mark regime engine v1 complete
+f635e3d Add configurable regime benchmarks
+d9dc18d Add baseline regime router
+b915718 Add V3 evidence stage matrix
+faf5398 Add momentum setup stage evaluator
+bd5d782 Add bear transition crossover route
+bd693ac Split crossover route opportunity states
+2dc2e6f Add backtest failure category reporting
+021c9e0 Support mixed exchange universe inputs
+4e4dcce Add first V3 crossover engine slice
 ```
 
 ## What Is Not Yet Built
@@ -213,15 +217,15 @@ The actual V3 production engine logic has started but is not complete yet:
 
 ## Recommended Next Session Start
 
-Start with Crossover validation and calibration, not UI expansion.
+Start with the lower-level stock traversal path layer, not UI expansion and not new indicator tuning.
 
 Recommended next implementation order:
 
-1. Continue engine architecture around stage routing, evidence, scoring, and ranking before expanding UI or validation convenience tooling.
-2. Use `docs/architecture/v3_evidence_stage_matrix.md` as the governing map before adding or changing stage rules.
-3. Add a user-editable benchmark mapping file or config loader for market, geography, sector, and theme regimes.
-4. Add Divergence evaluator after context and ranking contracts are stable.
-5. Review failure-category counts across the validation pack and refine labels only with evidence.
+1. Add an explicit `StockTraversalPlan` or equivalent route object between `BaselineDecision` and family evaluators.
+2. Move allowed/blocked family and direction decisions into that route object while preserving current behavior.
+3. Emit route diagnostics even when the final state is `STATUS_QUO`.
+4. Use `docs/architecture/v3_baseline_decision_tree.md` and `docs/architecture/v3_evidence_stage_matrix.md` as the governing maps before adding or changing stage rules.
+5. Add Divergence only after traversal and ranking contracts are stable.
 
 ## Carry-Forward Rules
 

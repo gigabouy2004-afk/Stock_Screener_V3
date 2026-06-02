@@ -70,8 +70,8 @@ No failed check should disappear silently. It should become a reason code, risk 
 | `volume` | `VolumeLatest`, `Volume20Avg`, `IntradayVolumeVs20Avg` | Participation confirmation. |
 | `structure` | `EMA20_Above`, `EMA20_Below`, `EMA20_Reclaim`, `HigherLow_5D`, `LowerHigh_5D`, `RangeBreakoutUp_20D`, `RangeBreakdownDown_20D`, `PriceLadder_Passed` | Price-structure route and quality evidence. |
 | `risk_context` | `LowLiquidity`, `BelowEMA200` | Risk tags and review priority context. |
-| `market_context` | Not implemented yet | Broad market regime and relative strength. |
-| `sector_context` | Not implemented yet | Sector regime and relative strength. |
+| `market_context` | `MarketRegime` | Broad market regime from configured benchmark data. Relative strength is not implemented yet. |
+| `sector_context` | `SectorRegime` | Sector regime from configured benchmark data. Relative strength is not implemented yet. |
 
 ## 5. Evidence Role Matrix
 
@@ -284,13 +284,15 @@ Implemented:
 - `CROSSOVER` evaluator with `PRE_BULL_CROSSOVER` and `PRE_BEAR_CROSSOVER`.
 - `MOMENTUM_SETUP` evaluator with `BULL_PULLBACK_REENTRY` and `BULL_CONTINUATION_MOMENTUM`.
 - Stage-family dispatcher for selected families.
+- Benchmark-backed market and sector regime context.
+- Baseline positive-elimination router.
 - CSV diagnostics for Crossover and Momentum Setup route outputs.
 
 Not implemented:
 
-- Explicit baseline phase router.
 - Divergence evaluator.
-- Full benchmark-backed market and sector context evidence.
+- Formal `StockTraversalPlan` layer between baseline routing and family evaluators.
+- Market/sector relative-strength evidence.
 - Lower-timeframe 4H/1H bridge and trigger evidence.
 - Stock-specific historical momentum baseline.
 - Formal ranking layer beyond best `StageEvaluation` selection.
