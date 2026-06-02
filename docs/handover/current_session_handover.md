@@ -33,7 +33,7 @@ Expected status at this handover:
 Expected tests at this handover:
 
 ```text
-34 tests passing
+38 tests passing
 ```
 
 ## Current Decision
@@ -60,6 +60,7 @@ Documentation and architecture:
 - V3 initial analysis and way-forward plan.
 - V3 module contracts.
 - V3 evidence-to-stage matrix.
+- V3 baseline decision tree.
 - Backtesting engine requirements.
 - V2 operational parity contract.
 - Validation baseline acceptance pack.
@@ -95,6 +96,8 @@ Foundation code:
 - Direction-aware Crossover scoring for bull transition entry signals and bear transition exit/preservation signals.
 - Dedicated Momentum Setup evaluator for bull-phase pullback re-entry and continuation candidates.
 - Stage-family dispatcher that can evaluate Crossover, Momentum Setup, or both from a shared evidence pack.
+- Baseline router that classifies market, sector, and stock regimes before stage-family selection.
+- Positive-elimination guardrail that blocks bullish entry/Momentum Setup when market, sector, and stock are all bearish, while preserving bear Crossover exit review.
 - CLI/run parameter support for comma-separated stage families.
 - Reusable run orchestrator.
 - CLI entry point.
@@ -111,6 +114,7 @@ Tests:
 - Data provider tests.
 - Report/output contract tests, including score-bucket and failure-category summaries.
 - Stage evaluator tests for Crossover transition, Momentum Setup re-entry/continuation, and family dispatch.
+- Baseline router tests for market/sector/stock positive elimination and bearish Crossover preservation.
 - Run I/O and log artifact tests.
 
 ## Artifact Purpose Definitions
@@ -151,6 +155,7 @@ Key docs:
 - `docs/analysis/v3_initial_engine_analysis_and_way_forward_2026-06-01.md`
 - `docs/architecture/v3_module_contracts.md`
 - `docs/architecture/v3_evidence_stage_matrix.md`
+- `docs/architecture/v3_baseline_decision_tree.md`
 - `docs/architecture/rebuild_way_forward_plan.md`
 - `docs/architecture/v2_operational_parity_contract.md`
 - `docs/backtesting/backtesting_engine_requirements.md`
@@ -187,6 +192,7 @@ The actual V3 production engine logic has started but is not complete yet:
 - Crossover v1 exists, but it is a first slice and needs historical calibration.
 - Crossover is direction-aware for bull/bear transition.
 - Momentum Setup v1 exists for bull pullback re-entry and bull continuation, but still needs calibration.
+- Baseline router v1 exists, but market/sector benchmark loading is not yet wired into the default Yahoo provider path.
 - Failure categories are first-pass diagnostics and still need validation against broader historical runs.
 - No production Divergence evaluator.
 - No scoring calibration beyond data model contracts.
@@ -201,7 +207,7 @@ Recommended next implementation order:
 
 1. Continue engine architecture around stage routing, evidence, scoring, and ranking before expanding UI or validation convenience tooling.
 2. Use `docs/architecture/v3_evidence_stage_matrix.md` as the governing map before adding or changing stage rules.
-3. Add market/sector context to the neutral evidence pack so ranking can account for broad and sector regime.
+3. Wire benchmark loading into the data provider/run path so `MarketRegime` and `SectorRegime` are populated outside tests.
 4. Add Divergence evaluator after context and ranking contracts are stable.
 5. Review failure-category counts across the validation pack and refine labels only with evidence.
 

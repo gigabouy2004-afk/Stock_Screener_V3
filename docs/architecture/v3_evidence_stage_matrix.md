@@ -248,7 +248,9 @@ Current V3 implementation:
 ```text
 StageFamilyEvaluator(stage_families)
 -> build one EvidencePack
--> evaluate selected families
+-> build BaselineDecision from market, sector, and stock regimes
+-> positively eliminate incompatible stage paths
+-> evaluate remaining selected families
 -> return highest-ranked StageEvaluation
 ```
 
@@ -288,7 +290,7 @@ Not implemented:
 
 - Explicit baseline phase router.
 - Divergence evaluator.
-- Market and sector context evidence.
+- Full benchmark-backed market and sector context evidence.
 - Lower-timeframe 4H/1H bridge and trigger evidence.
 - Stock-specific historical momentum baseline.
 - Formal ranking layer beyond best `StageEvaluation` selection.

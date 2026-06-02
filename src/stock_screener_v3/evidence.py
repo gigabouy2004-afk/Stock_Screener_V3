@@ -5,6 +5,7 @@ from typing import Any
 
 import pandas as pd
 
+from stock_screener_v3.baseline_router import classify_benchmark_regime
 from stock_screener_v3.indicators import adx, bollinger, ema, latest_number, macd, rsi
 from stock_screener_v3.models import EvidencePack, PriceDataBundle, UniverseRecord
 
@@ -124,6 +125,8 @@ class EvidenceBuilder:
         return EvidencePack(
             record=record,
             as_of=prices.as_of or pd.Timestamp(daily.index.max()),
+            market_context=_market_context(prices),
+            sector_context=_sector_context(prices),
             stock_baseline=stock_baseline,
             momentum=momentum,
             trend=trend,
@@ -140,6 +143,8 @@ class EvidenceBuilder:
 def evidence_to_diagnostics(evidence: EvidencePack) -> dict[str, Any]:
     diagnostics: dict[str, Any] = {}
     for section in (
+        evidence.market_context,
+        evidence.sector_context,
         evidence.stock_baseline,
         evidence.momentum,
         evidence.trend,
@@ -150,6 +155,29 @@ def evidence_to_diagnostics(evidence: EvidencePack) -> dict[str, Any]:
     ):
         diagnostics.update(section)
     return diagnostics
+
+
+def _market_context(prices: PriceDataBundle) -> dict[str, Any]:
+    benchmark = _benchmark_frame(prices, "market")
+    return {"MarketRegime": classify_benchmark_regime(benchmark).value}
+
+
+def _sector_context(prices: PriceDataBundle) -> dict[str, Any]:
+    benchmark = _benchmark_frame(prices, "sector")
+    return {"SectorRegime": classify_benchmark_regime(benchmark).value}
+
+
+def _benchmark_frame(prices: PriceDataBundle, kind: str) -> pd.DataFrame | None:
+    if kind in prices.benchmarks:
+        return prices.benchmarks[kind]
+    aliases = {
+        "market": ("SPY", "QQQ", "NIFTY50", "^NSEI"),
+        "sector": ("SECTOR",),
+    }
+    for alias in aliases[kind]:
+        if alias in prices.benchmarks:
+            return prices.benchmarks[alias]
+    return None
 
 
 def _normalized_daily(frame: pd.DataFrame) -> pd.DataFrame:

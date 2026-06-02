@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from stock_screener_v3.baseline_router import BaselineDecision, apply_baseline_decision, build_baseline_decision
 from stock_screener_v3.evidence import EvidenceBuilder, evidence_to_diagnostics
 from stock_screener_v3.models import (
     CandidateClass,
@@ -53,13 +54,17 @@ class StageFamilyEvaluator:
 
     def evaluate(self, record: UniverseRecord, prices: PriceDataBundle) -> StageEvaluation:
         evidence = self.evidence_builder.build(record, prices)
+        baseline_decision = build_baseline_decision(evidence)
         evaluations: list[StageEvaluation] = []
         for family in self.stage_families:
             normalized = family.upper()
             if normalized == "CROSSOVER":
-                evaluations.append(evaluate_crossover(evidence))
+                evaluations.append(apply_baseline_decision(evaluate_crossover(evidence), baseline_decision))
             elif normalized in {"MOMENTUM", "MOMENTUM_SETUP", "MOMENTUM_TRADING"}:
-                evaluations.append(evaluate_momentum_setup(evidence))
+                if "MOMENTUM_SETUP" in baseline_decision.blocked_stage_families:
+                    evaluations.append(_baseline_blocked_evaluation(evidence, baseline_decision, "MOMENTUM_SETUP"))
+                else:
+                    evaluations.append(apply_baseline_decision(evaluate_momentum_setup(evidence), baseline_decision))
             else:
                 raise ValueError(f"Unsupported stage family: {family}.")
         if not evaluations:
@@ -625,3 +630,20 @@ def _evaluation_rank(evaluation: StageEvaluation) -> tuple[int, float]:
         CandidateClass.STATUS_QUO: 1,
     }
     return (class_rank[evaluation.candidate_class], evaluation.score.total_score)
+
+
+def _baseline_blocked_evaluation(evidence: EvidencePack, baseline_decision: BaselineDecision, stage_family: str) -> StageEvaluation:
+    diagnostics = evidence_to_diagnostics(evidence)
+    diagnostics.update(baseline_decision.to_diagnostics())
+    diagnostics["BlockedStageFamily"] = stage_family
+    diagnostics["CandidateStateRaw"] = "STATUS_QUO"
+    return StageEvaluation(
+        symbol=evidence.record.yahoo_symbol,
+        candidate_state="STATUS_QUO",
+        candidate_class=CandidateClass.STATUS_QUO,
+        review_priority=ReviewPriority.NONE,
+        confidence="LOW",
+        score=ScoreResult(total_score=0.0, labels=(f"BASELINE_BLOCKED_{stage_family}",)),
+        reason_codes=(f"BASELINE_BLOCKED_{stage_family}",),
+        diagnostics=diagnostics,
+    )

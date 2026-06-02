@@ -23,6 +23,7 @@ The engine is not intended to perform automated trading, position sizing, capita
 - Current engine gap analysis: [docs/analysis/current_engine_gap_analysis_against_fresh_charter_2026-06-01.md](docs/analysis/current_engine_gap_analysis_against_fresh_charter_2026-06-01.md)
 - V2 operational parity contract: [docs/architecture/v2_operational_parity_contract.md](docs/architecture/v2_operational_parity_contract.md)
 - V3 evidence-stage matrix: [docs/architecture/v3_evidence_stage_matrix.md](docs/architecture/v3_evidence_stage_matrix.md)
+- V3 baseline decision tree: [docs/architecture/v3_baseline_decision_tree.md](docs/architecture/v3_baseline_decision_tree.md)
 - Current handover: [docs/handover/current_session_handover.md](docs/handover/current_session_handover.md)
 
 Archived reference documents from the previous engine are kept under `docs/`.
@@ -111,6 +112,7 @@ Sprint 1 has started with the foundation layer:
 - Direction-aware Crossover routes for bull transition entry and bear transition exit/preservation.
 - First Momentum Setup evaluator slice for bull pullback re-entry and bull continuation.
 - Stage-family dispatcher and CLI stage-family selection for Crossover, Momentum Setup, or both.
+- Baseline router with market/sector/stock regime diagnostics and positive elimination.
 - Reusable run orchestrator and CLI entry point.
 - Initial Python web UI wrapper in `web_app_v3.py`.
 - Standard-library unit tests under `tests/`.

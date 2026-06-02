@@ -10,6 +10,12 @@ The evidence-to-stage interpretation matrix is defined separately in:
 docs/architecture/v3_evidence_stage_matrix.md
 ```
 
+The baseline-first positive-elimination tree is defined separately in:
+
+```text
+docs/architecture/v3_baseline_decision_tree.md
+```
+
 ## 1. Universe Module
 
 Responsibility:
