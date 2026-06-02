@@ -59,6 +59,7 @@ Documentation and architecture:
 - V2 gap analysis against the fresh charter.
 - V3 initial analysis and way-forward plan.
 - V3 module contracts.
+- V3 evidence-to-stage matrix.
 - Backtesting engine requirements.
 - V2 operational parity contract.
 - Validation baseline acceptance pack.
@@ -149,6 +150,7 @@ Key docs:
 - `docs/analysis/current_engine_gap_analysis_against_fresh_charter_2026-06-01.md`
 - `docs/analysis/v3_initial_engine_analysis_and_way_forward_2026-06-01.md`
 - `docs/architecture/v3_module_contracts.md`
+- `docs/architecture/v3_evidence_stage_matrix.md`
 - `docs/architecture/rebuild_way_forward_plan.md`
 - `docs/architecture/v2_operational_parity_contract.md`
 - `docs/backtesting/backtesting_engine_requirements.md`
@@ -198,10 +200,10 @@ Start with Crossover validation and calibration, not UI expansion.
 Recommended next implementation order:
 
 1. Continue engine architecture around stage routing, evidence, scoring, and ranking before expanding UI or validation convenience tooling.
-2. Add market/sector context to the neutral evidence pack so ranking can account for broad and sector regime.
-3. Add Divergence evaluator after context and ranking contracts are stable.
-4. Review failure-category counts across the validation pack and refine labels only with evidence.
-5. Run fixed historical D dates with known universes to calibrate route/timing/structure/participation thresholds.
+2. Use `docs/architecture/v3_evidence_stage_matrix.md` as the governing map before adding or changing stage rules.
+3. Add market/sector context to the neutral evidence pack so ranking can account for broad and sector regime.
+4. Add Divergence evaluator after context and ranking contracts are stable.
+5. Review failure-category counts across the validation pack and refine labels only with evidence.
 
 ## Carry-Forward Rules
 

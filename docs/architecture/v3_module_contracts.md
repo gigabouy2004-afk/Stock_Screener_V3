@@ -4,6 +4,12 @@ Date: 2026-06-01
 
 This document defines the first-pass module contracts for the V3 engine.
 
+The evidence-to-stage interpretation matrix is defined separately in:
+
+```text
+docs/architecture/v3_evidence_stage_matrix.md
+```
+
 ## 1. Universe Module
 
 Responsibility:
