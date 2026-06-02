@@ -101,16 +101,21 @@ Each evaluator should return:
 
 ## Phase 6: Crossover V2
 
-Goal: avoid overloading one Pre-Bull state.
+Goal: avoid overloading Crossover with every bullish opportunity.
 
-Candidate opportunity types:
+Crossover transition types:
 
 - Below-zero bullish reversal crossover.
-- Above-zero bullish pullback re-entry.
-- Bullish continuation momentum.
 - Above-zero bearish reversal crossover.
 
 The engine should not hide valid technical signals merely because they carry context risk.
+
+Momentum Setup types:
+
+- Bullish pullback re-entry.
+- Bullish continuation momentum.
+
+These belong in the Momentum evaluator because the stock is already in bull phase rather than transitioning into it.
 
 ## Phase 7: Validation Pack
 
@@ -131,4 +136,3 @@ Promotion criteria:
 - Score buckets separate outcomes better than baseline.
 - Failure causes are explainable.
 - Improvement is not isolated to one date or one ticker.
-

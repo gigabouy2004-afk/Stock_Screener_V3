@@ -7,7 +7,7 @@ from pathlib import Path
 
 from stock_screener_v3.backtest_engine import BacktestEngine, PriceProvider, StageEvaluator
 from stock_screener_v3.data_provider import YahooPriceProvider
-from stock_screener_v3.evaluators import CrossoverEvaluator
+from stock_screener_v3.evaluators import StageFamilyEvaluator
 from stock_screener_v3.models import BacktestResult, BacktestRunConfig
 from stock_screener_v3.run_io import RunPaths, close_run_logger, configure_run_logger, write_run_artifacts
 from stock_screener_v3.universe import load_universe_records
@@ -29,6 +29,7 @@ def run_backtest(
     sample_size: int | None = None,
     random_seed: int | None = None,
     forward_days: tuple[int, ...] = (1, 2, 5),
+    stage_families: tuple[str, ...] = ("CROSSOVER", "MOMENTUM_SETUP"),
     run_label: str = "v3_backtest",
     details_output: str | Path | None = None,
     summary_output: str | Path | None = None,
@@ -55,6 +56,7 @@ def run_backtest(
         "sample_size": sample_size,
         "random_seed": random_seed,
         "forward_days": forward_days,
+        "stage_families": stage_families,
         "details_output": str(paths.details_output),
         "summary_output": str(paths.summary_output),
         "log_file": str(paths.log_file),
@@ -67,7 +69,7 @@ def run_backtest(
         config = BacktestRunConfig(
             universe_file=str(paths.input_path),
             d_date=d_date,
-            stage_families=("CROSSOVER",),
+            stage_families=stage_families,
             forward_days=forward_days,
             sector_filters=sectors,
             exchange_filters=exchanges,
@@ -77,7 +79,7 @@ def run_backtest(
         )
         engine = BacktestEngine(
             price_provider=price_provider or YahooPriceProvider(period="5y"),
-            evaluator=evaluator or CrossoverEvaluator(),
+            evaluator=evaluator or StageFamilyEvaluator(stage_families=stage_families),
         )
         result = engine.run(records, config)
         write_run_artifacts(result, paths)

@@ -107,6 +107,9 @@ Sprint 1 has started with the foundation layer:
 - Workspace-safe input/output path resolution.
 - File and console run logging with explicit logger close support for Windows.
 - First production Crossover evaluator slice with deterministic daily evidence calculations.
+- Direction-aware Crossover routes for bull transition entry and bear transition exit/preservation.
+- First Momentum Setup evaluator slice for bull pullback re-entry and bull continuation.
+- Stage-family dispatcher and CLI stage-family selection for Crossover, Momentum Setup, or both.
 - Reusable run orchestrator and CLI entry point.
 - Initial Python web UI wrapper in `web_app_v3.py`.
 - Standard-library unit tests under `tests/`.

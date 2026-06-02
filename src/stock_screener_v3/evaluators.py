@@ -37,6 +37,36 @@ class CrossoverEvaluator:
         return evaluate_crossover(evidence)
 
 
+@dataclass(frozen=True)
+class MomentumSetupEvaluator:
+    evidence_builder: EvidenceBuilder = EvidenceBuilder()
+
+    def evaluate(self, record: UniverseRecord, prices: PriceDataBundle) -> StageEvaluation:
+        evidence = self.evidence_builder.build(record, prices)
+        return evaluate_momentum_setup(evidence)
+
+
+@dataclass(frozen=True)
+class StageFamilyEvaluator:
+    stage_families: tuple[str, ...] = ("CROSSOVER", "MOMENTUM_SETUP")
+    evidence_builder: EvidenceBuilder = EvidenceBuilder()
+
+    def evaluate(self, record: UniverseRecord, prices: PriceDataBundle) -> StageEvaluation:
+        evidence = self.evidence_builder.build(record, prices)
+        evaluations: list[StageEvaluation] = []
+        for family in self.stage_families:
+            normalized = family.upper()
+            if normalized == "CROSSOVER":
+                evaluations.append(evaluate_crossover(evidence))
+            elif normalized in {"MOMENTUM", "MOMENTUM_SETUP", "MOMENTUM_TRADING"}:
+                evaluations.append(evaluate_momentum_setup(evidence))
+            else:
+                raise ValueError(f"Unsupported stage family: {family}.")
+        if not evaluations:
+            raise ValueError("At least one stage family is required.")
+        return max(evaluations, key=_evaluation_rank)
+
+
 def evaluate_crossover(evidence: EvidencePack) -> StageEvaluation:
     diagnostics = evidence_to_diagnostics(evidence)
     momentum = evidence.momentum
@@ -231,33 +261,6 @@ def _classify_crossover_route(
                 reason_code="DAILY_MACD_NEAR_BEAR_TRANSITION",
                 timing_profile="early",
             )
-        if _above(latest_price, ema20) and (ema20_reclaim or higher_low):
-            return CrossoverRoute(
-                candidate_state="BULL_PULLBACK_REENTRY",
-                opportunity_type="BULLISH_PULLBACK_REENTRY",
-                direction="BULLISH",
-                route_score=24.0,
-                reason_code="BULL_PULLBACK_REENTRY_ROUTE",
-                timing_profile="reentry",
-            )
-        if price_ladder and _above(ema20, ema50) and _di_supports_bulls(plus_di, minus_di):
-            return CrossoverRoute(
-                candidate_state="BULL_CONTINUATION_MOMENTUM",
-                opportunity_type="BULLISH_CONTINUATION_MOMENTUM",
-                direction="BULLISH",
-                route_score=22.0,
-                reason_code="BULL_CONTINUATION_ROUTE",
-                timing_profile="continuation",
-            )
-        if histogram_improving:
-            return CrossoverRoute(
-                candidate_state="PRE_BULL_CROSSOVER",
-                opportunity_type="BULLISH_ABOVE_SIGNAL_IMPROVING",
-                direction="BULLISH",
-                route_score=20.0,
-                reason_code="DAILY_MACD_ABOVE_SIGNAL_IMPROVING",
-                timing_profile="developing",
-            )
     if crossover_state == "BELOW_SIGNAL" and histogram_deteriorating and (ema20_below or lower_high):
         return CrossoverRoute(
             candidate_state="PRE_BEAR_CROSSOVER",
@@ -284,6 +287,221 @@ def _classify_crossover_route(
         reason_code="NO_CROSSOVER_ROUTE",
         timing_profile="none",
     )
+
+
+def evaluate_momentum_setup(evidence: EvidencePack) -> StageEvaluation:
+    diagnostics = evidence_to_diagnostics(evidence)
+    momentum = evidence.momentum
+    trend = evidence.trend
+    volume = evidence.volume
+    structure = evidence.structure
+    risk = evidence.risk_context
+
+    crossover_state = str(momentum.get("MACD_1D_CrossoverState") or "UNKNOWN")
+    histogram = _number(momentum.get("MACD_1D_Histogram"))
+    rsi = _number(momentum.get("RSI_1D"))
+    close_location = _number(evidence.stock_baseline.get("DailyCloseLocationPct"))
+    volume_vs_20 = _number(volume.get("IntradayVolumeVs20Avg"))
+    latest_price = _number(evidence.stock_baseline.get("LatestPrice"))
+    ema20 = _number(trend.get("EMA20"))
+    ema50 = _number(trend.get("EMA50"))
+    ema200 = _number(trend.get("EMA200"))
+    plus_di = _number(trend.get("PlusDI_1D"))
+    minus_di = _number(trend.get("MinusDI_1D"))
+
+    histogram_improving = bool(momentum.get("MACDHistogramImproving"))
+    route = _classify_momentum_route(
+        crossover_state=crossover_state,
+        histogram=histogram,
+        histogram_improving=histogram_improving,
+        latest_price=latest_price,
+        ema20=ema20,
+        ema50=ema50,
+        ema20_reclaim=bool(structure.get("EMA20_Reclaim")),
+        higher_low=bool(structure.get("HigherLow_5D")),
+        price_ladder=bool(structure.get("PriceLadder_Passed")),
+        plus_di=plus_di,
+        minus_di=minus_di,
+    )
+    route_score = route.route_score
+    timing_score = _momentum_timing_score(histogram, histogram_improving, bool(structure.get("EMA20_Reclaim")))
+    structure_score = _momentum_structure_score(
+        latest_price,
+        ema20,
+        ema50,
+        ema200,
+        bool(structure.get("HigherLow_5D")),
+        bool(structure.get("PriceLadder_Passed")),
+    )
+    participation_score = _participation_score("BULLISH", volume_vs_20, plus_di, minus_di)
+    context_score = _context_score("BULLISH", rsi, close_location)
+    risk_score = _risk_score("BULLISH", bool(risk.get("LowLiquidity")), bool(risk.get("BelowEMA200")))
+    total = round(route_score + timing_score + structure_score + participation_score + context_score + risk_score, 2)
+
+    reason_codes: list[str] = [route.reason_code]
+    risk_tags: list[str] = []
+    if structure_score >= 14:
+        reason_codes.append("BULL_PHASE_STRUCTURE_SUPPORT")
+    if participation_score >= 10:
+        reason_codes.append("PARTICIPATION_SUPPORT")
+    if context_score >= 8:
+        reason_codes.append("ACCEPTANCE_SUPPORT")
+    if risk.get("LowLiquidity"):
+        risk_tags.append("LOW_LIQUIDITY")
+    if risk.get("BelowEMA200"):
+        risk_tags.append("BELOW_EMA200")
+
+    if not route.is_valid:
+        candidate_state = "STATUS_QUO"
+        candidate_class = CandidateClass.STATUS_QUO
+        priority = ReviewPriority.NONE
+        confidence = "LOW"
+    elif total >= 72 and not risk_tags:
+        candidate_state = route.candidate_state
+        candidate_class = CandidateClass.SELECTED
+        priority = ReviewPriority.A
+        confidence = "HIGH"
+    elif total >= 58:
+        candidate_state = route.candidate_state
+        candidate_class = CandidateClass.WATCH
+        priority = ReviewPriority.B if not risk_tags else ReviewPriority.NEEDS_MANUAL_REVIEW
+        confidence = "MEDIUM"
+    else:
+        candidate_state = route.candidate_state
+        candidate_class = CandidateClass.REJECTED
+        priority = ReviewPriority.C
+        confidence = "LOW"
+
+    diagnostics.update(
+        {
+            "CandidateStateRaw": candidate_state,
+            "WeightedScore": total if candidate_class != CandidateClass.STATUS_QUO else None,
+            "MACDScore": route_score + timing_score,
+            "RSIScore": _rsi_score(rsi),
+            "ADXScore": _adx_score(_number(trend.get("ADX_1D"))),
+            "ScoreWeights": "route=30,structure=20,participation=15,acceptance=15,context=10,risk=10",
+            "ConfirmationScore": round(timing_score + structure_score + participation_score, 2),
+            "QualityContextScore": round(context_score + risk_score, 2),
+            "MomentumSetupOpportunityType": route.opportunity_type,
+            "MomentumSetupDirection": route.direction,
+            "MomentumSetupConfidence": confidence,
+            "MomentumSetupQualityScore": total,
+            "MomentumSetupQualityComponents": (
+                f"route={route_score};timing={timing_score};structure={structure_score};"
+                f"participation={participation_score};context={context_score};risk={risk_score}"
+            ),
+            "MomentumSetupTimingProfile": route.timing_profile,
+            "MomentumSetupReason": "; ".join(reason_codes),
+            "MomentumSetupReasonCodes": ",".join(reason_codes),
+            "SetupPassed": candidate_class in {CandidateClass.SELECTED, CandidateClass.WATCH},
+            "SetupScore": total,
+        }
+    )
+    return StageEvaluation(
+        symbol=evidence.record.yahoo_symbol,
+        candidate_state=candidate_state,
+        candidate_class=candidate_class,
+        review_priority=priority,
+        confidence=confidence,
+        score=ScoreResult(
+            total_score=total,
+            route_score=route_score,
+            timing_score=timing_score,
+            structure_score=structure_score,
+            participation_score=participation_score,
+            context_score=context_score,
+            risk_score=risk_score,
+            labels=tuple(reason_codes),
+        ),
+        reason_codes=tuple(reason_codes),
+        risk_tags=tuple(risk_tags),
+        diagnostics=diagnostics,
+    )
+
+
+def _classify_momentum_route(
+    *,
+    crossover_state: str,
+    histogram: float | None,
+    histogram_improving: bool,
+    latest_price: float | None,
+    ema20: float | None,
+    ema50: float | None,
+    ema20_reclaim: bool,
+    higher_low: bool,
+    price_ladder: bool,
+    plus_di: float | None,
+    minus_di: float | None,
+) -> CrossoverRoute:
+    bull_phase = crossover_state == "ABOVE_SIGNAL" and _above(latest_price, ema20)
+    if bull_phase and (ema20_reclaim or higher_low):
+        return CrossoverRoute(
+            candidate_state="BULL_PULLBACK_REENTRY",
+            opportunity_type="BULLISH_PULLBACK_REENTRY",
+            direction="BULLISH",
+            route_score=28.0,
+            reason_code="BULL_PULLBACK_REENTRY_ROUTE",
+            timing_profile="reentry",
+        )
+    if bull_phase and price_ladder and _above(ema20, ema50) and _di_supports_bulls(plus_di, minus_di):
+        return CrossoverRoute(
+            candidate_state="BULL_CONTINUATION_MOMENTUM",
+            opportunity_type="BULLISH_CONTINUATION_MOMENTUM",
+            direction="BULLISH",
+            route_score=26.0,
+            reason_code="BULL_CONTINUATION_ROUTE",
+            timing_profile="continuation",
+        )
+    if bull_phase and histogram_improving and histogram is not None and histogram > 0:
+        return CrossoverRoute(
+            candidate_state="BULL_CONTINUATION_MOMENTUM",
+            opportunity_type="BULLISH_MOMENTUM_EXPANSION",
+            direction="BULLISH",
+            route_score=22.0,
+            reason_code="BULL_MOMENTUM_EXPANSION_ROUTE",
+            timing_profile="expansion",
+        )
+    return CrossoverRoute(
+        candidate_state="STATUS_QUO",
+        opportunity_type="NO_MOMENTUM_SETUP_ROUTE",
+        direction="NONE",
+        route_score=0.0,
+        reason_code="NO_MOMENTUM_SETUP_ROUTE",
+        timing_profile="none",
+    )
+
+
+def _momentum_timing_score(histogram: float | None, improving: bool, ema20_reclaim: bool) -> float:
+    score = 0.0
+    if histogram is not None and histogram > 0:
+        score += 8.0
+    if improving:
+        score += 7.0
+    if ema20_reclaim:
+        score += 5.0
+    return min(score, 20.0)
+
+
+def _momentum_structure_score(
+    price: float | None,
+    ema20: float | None,
+    ema50: float | None,
+    ema200: float | None,
+    higher_low: bool,
+    price_ladder: bool,
+) -> float:
+    score = 0.0
+    if price is not None and ema20 is not None and price >= ema20:
+        score += 5.0
+    if ema20 is not None and ema50 is not None and ema20 >= ema50:
+        score += 5.0
+    if price is not None and ema200 is not None and price >= ema200:
+        score += 5.0
+    if higher_low:
+        score += 3.0
+    if price_ladder:
+        score += 2.0
+    return score
 
 
 def _timing_score(direction: str, crossover_state: str, improving: bool, deteriorating: bool) -> float:
@@ -397,3 +615,13 @@ def _di_supports_bears(plus_di: float | None, minus_di: float | None) -> bool:
 
 def _above(value: float | None, reference: float | None) -> bool:
     return bool(value is not None and reference is not None and value >= reference)
+
+
+def _evaluation_rank(evaluation: StageEvaluation) -> tuple[int, float]:
+    class_rank = {
+        CandidateClass.SELECTED: 4,
+        CandidateClass.WATCH: 3,
+        CandidateClass.REJECTED: 2,
+        CandidateClass.STATUS_QUO: 1,
+    }
+    return (class_rank[evaluation.candidate_class], evaluation.score.total_score)

@@ -8,7 +8,7 @@ GitHub: `https://github.com/gigabouy2004-afk/Stock_Screener_V3.git`
 
 Branch: `main`
 
-Latest confirmed pushed commit before current in-progress engine slice: `9dbcf7f Update artifact purpose wording in handover`
+Latest confirmed pushed commit before current in-progress engine slice: `bd5d782 Add bear transition crossover route`
 
 ## Purpose Of This Document
 
@@ -33,7 +33,7 @@ Expected status at this handover:
 Expected tests at this handover:
 
 ```text
-28 tests passing
+34 tests passing
 ```
 
 ## Current Decision
@@ -90,8 +90,11 @@ Foundation code:
 - Guardrail that log, detail CSV, and summary report must be physically separate files.
 - First production Crossover evaluator slice.
 - Daily evidence builder for MACD, RSI, ADX, Bollinger, EMA, volume, and price structure.
-- Crossover route classifier that separates bullish transition, pullback re-entry, and continuation opportunity types.
+- Crossover route classifier focused on bull/bear phase transition.
 - Direction-aware Crossover scoring for bull transition entry signals and bear transition exit/preservation signals.
+- Dedicated Momentum Setup evaluator for bull-phase pullback re-entry and continuation candidates.
+- Stage-family dispatcher that can evaluate Crossover, Momentum Setup, or both from a shared evidence pack.
+- CLI/run parameter support for comma-separated stage families.
 - Reusable run orchestrator.
 - CLI entry point.
 - Initial Python web UI wrapper.
@@ -106,6 +109,7 @@ Tests:
 - Backtest engine tests.
 - Data provider tests.
 - Report/output contract tests, including score-bucket and failure-category summaries.
+- Stage evaluator tests for Crossover transition, Momentum Setup re-entry/continuation, and family dispatch.
 - Run I/O and log artifact tests.
 
 ## Artifact Purpose Definitions
@@ -179,9 +183,9 @@ f808289 Preserve V2 output parity contract
 The actual V3 production engine logic has started but is not complete yet:
 
 - Crossover v1 exists, but it is a first slice and needs historical calibration.
-- Crossover route labels are now less overloaded, but separate Momentum/Divergence evaluators are still not built.
+- Crossover is direction-aware for bull/bear transition.
+- Momentum Setup v1 exists for bull pullback re-entry and bull continuation, but still needs calibration.
 - Failure categories are first-pass diagnostics and still need validation against broader historical runs.
-- No production Momentum Trading evaluator.
 - No production Divergence evaluator.
 - No scoring calibration beyond data model contracts.
 - V3 web UI exists only as an initial Python wrapper.
@@ -194,8 +198,8 @@ Start with Crossover validation and calibration, not UI expansion.
 Recommended next implementation order:
 
 1. Continue engine architecture around stage routing, evidence, scoring, and ranking before expanding UI or validation convenience tooling.
-2. Keep Crossover focused on bull/bear phase transition; move pullback re-entry and continuation into Momentum Setup once that evaluator exists.
-3. Add market/sector context to the neutral evidence pack so ranking can account for broad and sector regime.
+2. Add market/sector context to the neutral evidence pack so ranking can account for broad and sector regime.
+3. Add Divergence evaluator after context and ranking contracts are stable.
 4. Review failure-category counts across the validation pack and refine labels only with evidence.
 5. Run fixed historical D dates with known universes to calibrate route/timing/structure/participation thresholds.
 

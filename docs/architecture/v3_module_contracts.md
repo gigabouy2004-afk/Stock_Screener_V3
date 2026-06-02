@@ -125,6 +125,16 @@ Required fields:
 - reason_codes.
 - risk_tags.
 
+Stage family boundaries:
+
+- `CROSSOVER` is for phase-transition evidence:
+  - `PRE_BULL_CROSSOVER`: seller-to-buyer transition / new capital entry review.
+  - `PRE_BEAR_CROSSOVER`: buyer-to-seller transition / exit and capital-preservation review.
+- `MOMENTUM_SETUP` is for bull-phase continuation or re-entry after the bullish phase already exists:
+  - `BULL_PULLBACK_REENTRY`.
+  - `BULL_CONTINUATION_MOMENTUM`.
+- `DIVERGENCE` is for price/momentum disagreement and remains a separate evaluator family.
+
 Non-responsibilities:
 
 - Fetching data.
