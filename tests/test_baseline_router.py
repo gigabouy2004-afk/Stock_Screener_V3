@@ -4,7 +4,7 @@ import unittest
 
 import pandas as pd
 
-from stock_screener_v3.baseline_router import Regime, build_baseline_decision, classify_benchmark_regime
+from stock_screener_v3.baseline_router import Regime, build_baseline_decision, build_stock_traversal_plan, classify_benchmark_regime
 from stock_screener_v3.evaluators import StageFamilyEvaluator
 from stock_screener_v3.models import CandidateClass, EvidencePack, PriceDataBundle, UniverseRecord
 
@@ -29,6 +29,26 @@ class BaselineRouterTests(unittest.TestCase):
         self.assertFalse(decision.allow_bullish)
         self.assertTrue(decision.allow_bearish)
         self.assertIn("MOMENTUM_SETUP", decision.blocked_stage_families)
+
+    def test_stock_traversal_plan_blocks_momentum_but_preserves_bear_crossover_review(self) -> None:
+        plan = build_stock_traversal_plan(
+            make_bearish_evidence(crossover_state="BEAR_CROSS"),
+            ("CROSSOVER", "MOMENTUM_SETUP"),
+        )
+
+        self.assertEqual(plan.selected_stage_families, ("CROSSOVER", "MOMENTUM_SETUP"))
+        self.assertEqual(plan.evaluable_stage_families, ("CROSSOVER",))
+        self.assertEqual(plan.blocked_stage_families, ("MOMENTUM_SETUP",))
+        self.assertFalse(plan.allow_bullish)
+        self.assertTrue(plan.allow_bearish)
+
+    def test_stock_traversal_plan_preserves_user_family_restrictions_and_aliases(self) -> None:
+        plan = build_stock_traversal_plan(make_bullish_evidence(), ("MOMENTUM",))
+
+        self.assertEqual(plan.selected_stage_families, ("MOMENTUM_SETUP",))
+        self.assertEqual(plan.evaluable_stage_families, ("MOMENTUM_SETUP",))
+        self.assertTrue(plan.allow_bullish)
+        self.assertEqual(plan.blocked_stage_families, ())
 
     def test_stage_family_evaluator_blocks_momentum_setup_in_bearish_context(self) -> None:
         evidence = make_bearish_evidence(crossover_state="ABOVE_SIGNAL")
@@ -56,6 +76,22 @@ class BaselineRouterTests(unittest.TestCase):
         self.assertIn(evaluation.candidate_class, {CandidateClass.SELECTED, CandidateClass.WATCH})
         self.assertEqual(evaluation.diagnostics["AllowedBullishStages"], False)
         self.assertEqual(evaluation.diagnostics["AllowedBearishStages"], True)
+        self.assertEqual(evaluation.diagnostics["SelectedStageFamilies"], "CROSSOVER")
+        self.assertEqual(evaluation.diagnostics["TraversalCandidateFamilies"], "CROSSOVER")
+
+    def test_stage_family_evaluator_emits_traversal_diagnostics_for_status_quo(self) -> None:
+        evidence = make_status_quo_evidence()
+        evaluator = StageFamilyEvaluator(
+            stage_families=("CROSSOVER",),
+            evidence_builder=StaticEvidenceBuilder(evidence),  # type: ignore[arg-type]
+        )
+
+        evaluation = evaluator.evaluate(evidence.record, PriceDataBundle(symbol="CCC", daily=price_frame([1] * 90)))
+
+        self.assertEqual(evaluation.candidate_class, CandidateClass.STATUS_QUO)
+        self.assertEqual(evaluation.diagnostics["SelectedStageFamilies"], "CROSSOVER")
+        self.assertEqual(evaluation.diagnostics["TraversalCandidateFamilies"], "CROSSOVER")
+        self.assertIn("BaselineRouteReason", evaluation.diagnostics)
 
 
 def make_bearish_evidence(crossover_state: str) -> EvidencePack:
@@ -91,6 +127,78 @@ def make_bearish_evidence(crossover_state: str) -> EvidencePack:
             "PriceLadder_Passed": False,
         },
         risk_context={"LowLiquidity": False, "BelowEMA200": True},
+    )
+
+
+def make_bullish_evidence() -> EvidencePack:
+    return EvidencePack(
+        record=UniverseRecord(symbol="AAA", yahoo_symbol="AAA", sector="Technology", exchange="NASDAQ"),
+        as_of=pd.Timestamp("2026-02-11"),
+        market_context={"MarketRegime": "BULLISH"},
+        sector_context={"SectorRegime": "BULLISH"},
+        stock_baseline={"LatestPrice": 110.0, "DailyCloseLocationPct": 72.0},
+        momentum={
+            "RSI_1D": 58.0,
+            "MACD_1D_State": "BULLISH",
+            "MACD_1D_CrossoverState": "ABOVE_SIGNAL",
+            "MACD_1D_Histogram": 0.18,
+            "MACD_1D_PreviousHistogram": 0.12,
+            "MACD_1D_CrossoverDistance": 0.18,
+            "MACDHistogramImproving": True,
+        },
+        trend={
+            "EMA20": 104.0,
+            "EMA50": 100.0,
+            "EMA200": 92.0,
+            "ADX_1D": 24.0,
+            "PlusDI_1D": 31.0,
+            "MinusDI_1D": 14.0,
+        },
+        volume={"IntradayVolumeVs20Avg": 125.0},
+        structure={
+            "EMA20_Below": False,
+            "EMA20_Reclaim": False,
+            "HigherLow_5D": True,
+            "LowerHigh_5D": False,
+            "PriceLadder_Passed": True,
+        },
+        risk_context={"LowLiquidity": False, "BelowEMA200": False},
+    )
+
+
+def make_status_quo_evidence() -> EvidencePack:
+    return EvidencePack(
+        record=UniverseRecord(symbol="CCC", yahoo_symbol="CCC", sector="Energy", exchange="NYSE"),
+        as_of=pd.Timestamp("2026-02-11"),
+        market_context={"MarketRegime": "MIXED"},
+        sector_context={"SectorRegime": "MIXED"},
+        stock_baseline={"LatestPrice": 100.0, "DailyCloseLocationPct": 50.0},
+        momentum={
+            "RSI_1D": 50.0,
+            "MACD_1D_State": "BULLISH",
+            "MACD_1D_CrossoverState": "ABOVE_SIGNAL",
+            "MACD_1D_Histogram": 0.5,
+            "MACD_1D_PreviousHistogram": 0.52,
+            "MACD_1D_CrossoverDistance": 0.5,
+            "MACDHistogramImproving": False,
+        },
+        trend={
+            "EMA20": 99.0,
+            "EMA50": 98.0,
+            "EMA200": 97.0,
+            "ADX_1D": 18.0,
+            "PlusDI_1D": 22.0,
+            "MinusDI_1D": 18.0,
+        },
+        volume={"IntradayVolumeVs20Avg": 90.0},
+        structure={
+            "EMA20_Below": False,
+            "EMA20_Reclaim": False,
+            "HigherLow_5D": False,
+            "LowerHigh_5D": False,
+            "PriceLadder_Passed": False,
+        },
+        risk_context={"LowLiquidity": False, "BelowEMA200": False},
     )
 
 

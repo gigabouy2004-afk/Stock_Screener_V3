@@ -122,12 +122,18 @@ It can be downgraded to watch/manual review when:
 
 ### Divergence
 
-Divergence is not implemented yet.
+Divergence V1 is implemented for explicitly selected `DIVERGENCE` runs. Its route contract is defined in:
+
+```text
+docs/architecture/v3_divergence_contract.md
+```
 
 Future routing:
 
 - Bullish divergence can be relevant in bearish or mixed stock regimes.
 - Bearish divergence can be relevant in bullish or extended stock regimes.
+- Hidden bullish divergence is continuation-oriented and should be downgraded or risk-tagged when broad context is clearly hostile.
+- Hidden bearish divergence can remain relevant in bearish or weakening stock regimes as failed-recovery evidence.
 - Divergence must not inherit Crossover or Momentum Setup hard gates.
 
 ## 5. V3 Implementation Plan

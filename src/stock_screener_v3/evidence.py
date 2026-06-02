@@ -121,6 +121,7 @@ class EvidenceBuilder:
             "RangeBreakdownDown_20D": _breakdown(close, low, lookback=20),
             "PriceLadder_Passed": _above(latest_close, latest_ema20) and _above(latest_ema20, latest_ema50),
         }
+        structure.update(_divergence_context(close, macd_frame["Histogram"]))
 
         return EvidencePack(
             record=record,
@@ -292,4 +293,156 @@ def _breakdown(close: pd.Series, low: pd.Series, lookback: int) -> bool:
         return False
     prior_low = low.iloc[-lookback - 1 : -1].min()
     return bool(close.iloc[-1] < prior_low)
+
+
+def _divergence_context(close: pd.Series, momentum: pd.Series, lookback: int = 60, recency: int = 12) -> dict[str, object]:
+    low_candidate = _divergence_from_swings(
+        close=close,
+        momentum=momentum,
+        swing_kind="LOW",
+        lookback=lookback,
+        recency=recency,
+    )
+    high_candidate = _divergence_from_swings(
+        close=close,
+        momentum=momentum,
+        swing_kind="HIGH",
+        lookback=lookback,
+        recency=recency,
+    )
+    for candidate in (low_candidate, high_candidate):
+        if candidate["DivergenceRouteCandidate"] != "NONE":
+            return candidate
+    return _empty_divergence_context()
+
+
+def _divergence_from_swings(
+    *,
+    close: pd.Series,
+    momentum: pd.Series,
+    swing_kind: str,
+    lookback: int,
+    recency: int,
+) -> dict[str, object]:
+    close_values = pd.to_numeric(close, errors="coerce").dropna()
+    momentum_values = pd.to_numeric(momentum, errors="coerce")
+    if len(close_values) < 10:
+        return _empty_divergence_context()
+
+    swings = _swing_points(close_values.tail(lookback), kind=swing_kind)
+    if len(swings) < 2:
+        return _empty_divergence_context()
+
+    previous_index, previous_price = swings[-2]
+    latest_index, latest_price = swings[-1]
+    bars_ago = _bars_ago(close_values, latest_index)
+    if bars_ago is None or bars_ago > recency:
+        return _empty_divergence_context()
+
+    previous_momentum = _value_at(momentum_values, previous_index)
+    latest_momentum = _value_at(momentum_values, latest_index)
+    if previous_momentum is None or latest_momentum is None:
+        return _empty_divergence_context()
+
+    price_swing = _price_swing_label(swing_kind, previous_price, latest_price)
+    momentum_swing = _momentum_swing_label(swing_kind, previous_momentum, latest_momentum)
+    latest_close = latest_number(close_values)
+    confirmation = _divergence_confirmation(swing_kind, latest_close, latest_price)
+    candidate = _divergence_candidate(price_swing, momentum_swing)
+
+    return {
+        "DivergenceRouteCandidate": candidate,
+        "DivergencePriceSwing": price_swing,
+        "DivergenceMomentumSwing": momentum_swing,
+        "DivergenceBarsAgo": bars_ago,
+        "DivergenceConfirmationState": confirmation,
+        "DivergencePreviousPriceSwingValue": round(float(previous_price), 4),
+        "DivergenceLatestPriceSwingValue": round(float(latest_price), 4),
+        "DivergencePreviousMomentumSwingValue": round(float(previous_momentum), 4),
+        "DivergenceLatestMomentumSwingValue": round(float(latest_momentum), 4),
+    }
+
+
+def _empty_divergence_context() -> dict[str, object]:
+    return {
+        "DivergenceRouteCandidate": "NONE",
+        "DivergencePriceSwing": "NONE",
+        "DivergenceMomentumSwing": "NONE",
+        "DivergenceBarsAgo": None,
+        "DivergenceConfirmationState": "NONE",
+        "DivergencePreviousPriceSwingValue": None,
+        "DivergenceLatestPriceSwingValue": None,
+        "DivergencePreviousMomentumSwingValue": None,
+        "DivergenceLatestMomentumSwingValue": None,
+    }
+
+
+def _swing_points(series: pd.Series, kind: str, width: int = 2) -> list[tuple[pd.Timestamp, float]]:
+    points: list[tuple[pd.Timestamp, float]] = []
+    values = pd.to_numeric(series, errors="coerce").dropna()
+    if len(values) < (width * 2) + 1:
+        return points
+    for index in range(width, len(values) - width):
+        window = values.iloc[index - width : index + width + 1]
+        value = float(values.iloc[index])
+        if kind == "LOW" and value <= float(window.min()):
+            points.append((values.index[index], value))
+        elif kind == "HIGH" and value >= float(window.max()):
+            points.append((values.index[index], value))
+    return points
+
+
+def _bars_ago(series: pd.Series, index: pd.Timestamp) -> int | None:
+    try:
+        location = series.index.get_loc(index)
+    except KeyError:
+        return None
+    if not isinstance(location, int):
+        return None
+    return len(series) - 1 - location
+
+
+def _value_at(series: pd.Series, index: pd.Timestamp) -> float | None:
+    try:
+        value = series.loc[index]
+    except KeyError:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _price_swing_label(swing_kind: str, previous: float, latest: float) -> str:
+    if swing_kind == "LOW":
+        return "LOWER_LOW" if latest < previous else "HIGHER_LOW"
+    return "HIGHER_HIGH" if latest > previous else "LOWER_HIGH"
+
+
+def _momentum_swing_label(swing_kind: str, previous: float, latest: float) -> str:
+    if swing_kind == "LOW":
+        return "HIGHER_LOW" if latest > previous else "LOWER_LOW"
+    return "LOWER_HIGH" if latest < previous else "HIGHER_HIGH"
+
+
+def _divergence_candidate(price_swing: str, momentum_swing: str) -> str:
+    if price_swing == "LOWER_LOW" and momentum_swing == "HIGHER_LOW":
+        return "BULLISH_DIVERGENCE"
+    if price_swing == "HIGHER_HIGH" and momentum_swing == "LOWER_HIGH":
+        return "BEARISH_DIVERGENCE"
+    if price_swing == "HIGHER_LOW" and momentum_swing == "LOWER_LOW":
+        return "HIDDEN_BULLISH_DIVERGENCE"
+    if price_swing == "LOWER_HIGH" and momentum_swing == "HIGHER_HIGH":
+        return "HIDDEN_BEARISH_DIVERGENCE"
+    return "NONE"
+
+
+def _divergence_confirmation(swing_kind: str, latest_close: float | None, swing_price: float) -> str:
+    if latest_close is None:
+        return "RAW"
+    if swing_kind == "LOW" and latest_close > swing_price:
+        return "CONFIRMED"
+    if swing_kind == "HIGH" and latest_close < swing_price:
+        return "CONFIRMED"
+    return "RAW"
 

@@ -42,6 +42,32 @@ Required fields:
 - source_file.
 - last_profile_refresh_date.
 
+Enriched master universe filter/cache fields:
+
+These fields are planned for the NYSE/NASDAQ master universe to support pre-scan universe filters, such as running only on companies with `trailing_pe < 25`. They are universe filter/profile metadata unless explicitly promoted into stage-evaluation evidence.
+
+- display_name or long_name.
+- website.
+- country.
+- currency.
+- market_cap_category.
+- shares_outstanding.
+- float_shares.
+- trailing_pe.
+- forward_pe.
+- price_to_book.
+- price_to_sales.
+- dividend_rate.
+- dividend_yield.
+- ex_dividend_date.
+- dividend_date.
+- earnings_date.
+- beta.
+- fifty_two_week_high.
+- fifty_two_week_low.
+- average_volume_10d.
+- average_volume_3m.
+
 Input contract:
 
 - The primary input is a CSV universe file.
@@ -52,12 +78,22 @@ Input contract:
 - BSE symbols without a suffix normalize to `.BO`.
 - NYSE and NASDAQ symbols remain unsuffixed unless `YahooSymbol` is explicitly provided.
 - `YahooSymbol` or `Yahoo Symbol` overrides automatic normalization.
+- Additional metadata/profile columns should be preserved where practical for filtering, output, and UI use.
+- Missing optional enrichment fields must not cause a symbol to be skipped.
+
+Filter contract:
+
+- Universe filters run before price loading and stage evaluation.
+- Numeric filters should support comparisons such as less-than, greater-than, between, and missing-value handling.
+- Categorical filters should support inclusion/exclusion lists.
+- Filter reporting should preserve original universe size, filtered universe size, and exclusion counts.
 
 Non-responsibilities:
 
 - Fetching prices.
 - Calculating indicators.
 - Classifying candidates.
+- Treating current profile metadata as historical truth without an explicit freshness/source tag.
 
 ## 2. Data Provider Module
 

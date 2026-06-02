@@ -41,7 +41,7 @@ Therefore, evidence calculation must remain separate from stage classification.
 |---|---|---|
 | `CROSSOVER` | `PRE_BULL_CROSSOVER`, `PRE_BEAR_CROSSOVER` | Phase transition: seller-to-buyer entry review or buyer-to-seller exit/preservation review. |
 | `MOMENTUM_SETUP` | `BULL_PULLBACK_REENTRY`, `BULL_CONTINUATION_MOMENTUM` | Bull phase continuation or re-entry after bullish phase already exists. |
-| `DIVERGENCE` | `BULLISH_DIVERGENCE`, `BEARISH_DIVERGENCE` | Price and momentum disagreement. Not implemented yet in V3. |
+| `DIVERGENCE` | `BULLISH_DIVERGENCE`, `BEARISH_DIVERGENCE`, `HIDDEN_BULLISH_DIVERGENCE`, `HIDDEN_BEARISH_DIVERGENCE` | Price and momentum disagreement. V1 evaluator implemented; calibration pending. |
 | `STATUS_QUO` | `STATUS_QUO` | No selected family has sufficient route evidence. |
 
 `CROSSOVER` must not claim bull pullback re-entry or bull continuation. Those belong to `MOMENTUM_SETUP`.
@@ -219,9 +219,15 @@ Output:
 - `CandidateState = BULL_CONTINUATION_MOMENTUM`.
 - `MomentumSetupOpportunityType = BULLISH_CONTINUATION_MOMENTUM` or `BULLISH_MOMENTUM_EXPANSION`.
 
-## 8. Divergence Matrix Placeholder
+## 8. Divergence Matrix Contract
 
-Divergence is not yet implemented in V3. Its future matrix must not reuse Crossover hard gates.
+Divergence V1 is implemented in V3. Its contract is defined in:
+
+```text
+docs/architecture/v3_divergence_contract.md
+```
+
+Its evaluator must not reuse Crossover hard gates or Momentum Setup continuation gates.
 
 ### Bullish Divergence
 
@@ -240,6 +246,22 @@ Expected route evidence:
 - Momentum makes lower high or weakens.
 - MACD can remain above zero.
 - EMA200 is context, not a hard route gate.
+
+### Hidden Bullish Divergence
+
+Expected route evidence:
+
+- Price makes a higher low.
+- Momentum makes a lower low or deeper pullback.
+- Structure suggests continuation or pullback absorption, not a fresh Crossover transition.
+
+### Hidden Bearish Divergence
+
+Expected route evidence:
+
+- Price makes a lower high.
+- Momentum makes a higher high or stronger bounce.
+- Structure suggests failed recovery or bear continuation, not a Momentum Setup route.
 
 ## 9. Stage Router Plan
 
@@ -283,16 +305,18 @@ Implemented:
 - Neutral daily evidence pack.
 - `CROSSOVER` evaluator with `PRE_BULL_CROSSOVER` and `PRE_BEAR_CROSSOVER`.
 - `MOMENTUM_SETUP` evaluator with `BULL_PULLBACK_REENTRY` and `BULL_CONTINUATION_MOMENTUM`.
+- `DIVERGENCE` evaluator with regular and hidden bullish/bearish candidate states.
 - Stage-family dispatcher for selected families.
 - Benchmark-backed market and sector regime context.
 - Baseline positive-elimination router.
+- Explicit `StockTraversalPlan` between baseline routing and evaluator dispatch.
 - CSV diagnostics for Crossover and Momentum Setup route outputs.
+- CSV diagnostics for Divergence route outputs.
 
 Not implemented:
 
-- Divergence evaluator.
-- Formal `StockTraversalPlan` layer between baseline routing and family evaluators.
 - Market/sector relative-strength evidence.
 - Lower-timeframe 4H/1H bridge and trigger evidence.
 - Stock-specific historical momentum baseline.
 - Formal ranking layer beyond best `StageEvaluation` selection.
+- Historical calibration for Divergence thresholds and swing geometry.

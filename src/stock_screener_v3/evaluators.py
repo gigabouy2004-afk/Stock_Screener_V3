@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from stock_screener_v3.baseline_router import BaselineDecision, apply_baseline_decision, build_baseline_decision
+from stock_screener_v3.baseline_router import StockTraversalPlan, apply_traversal_plan, build_stock_traversal_plan
 from stock_screener_v3.evidence import EvidenceBuilder, evidence_to_diagnostics
 from stock_screener_v3.models import (
     CandidateClass,
@@ -20,6 +20,21 @@ class CrossoverRoute:
     candidate_state: str
     opportunity_type: str
     direction: str
+    route_score: float
+    reason_code: str
+    timing_profile: str
+
+    @property
+    def is_valid(self) -> bool:
+        return self.route_score > 0
+
+
+@dataclass(frozen=True)
+class DivergenceRoute:
+    candidate_state: str
+    opportunity_type: str
+    direction: str
+    divergence_type: str
     route_score: float
     reason_code: str
     timing_profile: str
@@ -48,23 +63,32 @@ class MomentumSetupEvaluator:
 
 
 @dataclass(frozen=True)
+class DivergenceEvaluator:
+    evidence_builder: EvidenceBuilder = EvidenceBuilder()
+
+    def evaluate(self, record: UniverseRecord, prices: PriceDataBundle) -> StageEvaluation:
+        evidence = self.evidence_builder.build(record, prices)
+        return evaluate_divergence(evidence)
+
+
+@dataclass(frozen=True)
 class StageFamilyEvaluator:
     stage_families: tuple[str, ...] = ("CROSSOVER", "MOMENTUM_SETUP")
     evidence_builder: EvidenceBuilder = EvidenceBuilder()
 
     def evaluate(self, record: UniverseRecord, prices: PriceDataBundle) -> StageEvaluation:
         evidence = self.evidence_builder.build(record, prices)
-        baseline_decision = build_baseline_decision(evidence)
+        traversal_plan = build_stock_traversal_plan(evidence, self.stage_families)
         evaluations: list[StageEvaluation] = []
-        for family in self.stage_families:
-            normalized = family.upper()
-            if normalized == "CROSSOVER":
-                evaluations.append(apply_baseline_decision(evaluate_crossover(evidence), baseline_decision))
-            elif normalized in {"MOMENTUM", "MOMENTUM_SETUP", "MOMENTUM_TRADING"}:
-                if "MOMENTUM_SETUP" in baseline_decision.blocked_stage_families:
-                    evaluations.append(_baseline_blocked_evaluation(evidence, baseline_decision, "MOMENTUM_SETUP"))
-                else:
-                    evaluations.append(apply_baseline_decision(evaluate_momentum_setup(evidence), baseline_decision))
+        for family in traversal_plan.selected_stage_families:
+            if family not in traversal_plan.evaluable_stage_families:
+                evaluations.append(_traversal_blocked_evaluation(evidence, traversal_plan, family))
+            elif family == "CROSSOVER":
+                evaluations.append(apply_traversal_plan(evaluate_crossover(evidence), traversal_plan))
+            elif family == "MOMENTUM_SETUP":
+                evaluations.append(apply_traversal_plan(evaluate_momentum_setup(evidence), traversal_plan))
+            elif family == "DIVERGENCE":
+                evaluations.append(apply_traversal_plan(evaluate_divergence(evidence), traversal_plan))
             else:
                 raise ValueError(f"Unsupported stage family: {family}.")
         if not evaluations:
@@ -424,6 +448,258 @@ def evaluate_momentum_setup(evidence: EvidencePack) -> StageEvaluation:
     )
 
 
+def evaluate_divergence(evidence: EvidencePack) -> StageEvaluation:
+    diagnostics = evidence_to_diagnostics(evidence)
+    structure = evidence.structure
+    trend = evidence.trend
+    momentum = evidence.momentum
+    volume = evidence.volume
+    risk = evidence.risk_context
+
+    route = _classify_divergence_route(str(structure.get("DivergenceRouteCandidate") or "NONE"))
+    bars_ago = _number(structure.get("DivergenceBarsAgo"))
+    confirmation_state = str(structure.get("DivergenceConfirmationState") or "NONE")
+    latest_price = _number(evidence.stock_baseline.get("LatestPrice"))
+    ema20 = _number(trend.get("EMA20"))
+    ema200 = _number(trend.get("EMA200"))
+    rsi = _number(momentum.get("RSI_1D"))
+    close_location = _number(evidence.stock_baseline.get("DailyCloseLocationPct"))
+    volume_vs_20 = _number(volume.get("IntradayVolumeVs20Avg"))
+    plus_di = _number(trend.get("PlusDI_1D"))
+    minus_di = _number(trend.get("MinusDI_1D"))
+
+    route_score = route.route_score
+    timing_score = _divergence_timing_score(bars_ago, confirmation_state)
+    structure_score = _divergence_structure_score(
+        route.direction,
+        route.divergence_type,
+        latest_price,
+        ema20,
+        ema200,
+        bool(structure.get("HigherLow_5D")),
+        bool(structure.get("LowerHigh_5D")),
+        bool(structure.get("EMA20_Reclaim")),
+        bool(structure.get("EMA20_Below")),
+    )
+    participation_score = _divergence_participation_score(route.direction, volume_vs_20, plus_di, minus_di)
+    context_score = _divergence_context_score(route.direction, rsi, close_location)
+    risk_score = _risk_score(route.direction, bool(risk.get("LowLiquidity")), bool(risk.get("BelowEMA200")))
+    total = round(route_score + timing_score + structure_score + participation_score + context_score + risk_score, 2)
+
+    reason_codes: list[str] = [route.reason_code]
+    risk_tags: list[str] = []
+    if confirmation_state == "CONFIRMED":
+        reason_codes.append("DIVERGENCE_CONFIRMED")
+    if bars_ago is not None and bars_ago <= 5:
+        reason_codes.append("RECENT_DIVERGENCE")
+    if structure_score >= 12:
+        reason_codes.append("DIVERGENCE_STRUCTURE_SUPPORT")
+    if participation_score >= 8:
+        reason_codes.append("DIVERGENCE_PARTICIPATION_CONTEXT")
+    if context_score >= 8:
+        reason_codes.append("DIVERGENCE_ACCEPTANCE_CONTEXT")
+    if risk.get("LowLiquidity"):
+        risk_tags.append("LOW_LIQUIDITY")
+    if route.direction == "BULLISH" and risk.get("BelowEMA200"):
+        risk_tags.append("BELOW_EMA200")
+
+    if not route.is_valid:
+        candidate_state = "STATUS_QUO"
+        candidate_class = CandidateClass.STATUS_QUO
+        priority = ReviewPriority.NONE
+        confidence = "LOW"
+    elif total >= 72 and not risk_tags and confirmation_state == "CONFIRMED":
+        candidate_state = route.candidate_state
+        candidate_class = CandidateClass.SELECTED
+        priority = ReviewPriority.A
+        confidence = "HIGH"
+    elif total >= 56:
+        candidate_state = route.candidate_state
+        candidate_class = CandidateClass.WATCH
+        priority = ReviewPriority.B if not risk_tags else ReviewPriority.NEEDS_MANUAL_REVIEW
+        confidence = "MEDIUM"
+    else:
+        candidate_state = route.candidate_state
+        candidate_class = CandidateClass.REJECTED
+        priority = ReviewPriority.C
+        confidence = "LOW"
+
+    diagnostics.update(
+        {
+            "CandidateStateRaw": candidate_state,
+            "WeightedScore": total if candidate_class != CandidateClass.STATUS_QUO else None,
+            "MACDScore": route_score + timing_score,
+            "RSIScore": _rsi_score(rsi),
+            "ADXScore": _adx_score(_number(trend.get("ADX_1D"))),
+            "ScoreWeights": "route=30,timing=20,structure=15,participation=10,context=15,risk=10",
+            "ConfirmationScore": round(timing_score + structure_score + participation_score, 2),
+            "QualityContextScore": round(context_score + risk_score, 2),
+            "DivergenceDirection": route.direction,
+            "DivergenceType": route.divergence_type,
+            "DivergenceOpportunityType": route.opportunity_type,
+            "DivergenceQualityScore": total,
+            "DivergenceQualityComponents": (
+                f"route={route_score};timing={timing_score};structure={structure_score};"
+                f"participation={participation_score};context={context_score};risk={risk_score}"
+            ),
+            "DivergenceTimingProfile": route.timing_profile,
+            "DivergenceReason": "; ".join(reason_codes),
+            "DivergenceReasonCodes": ",".join(reason_codes),
+            "SetupPassed": candidate_class in {CandidateClass.SELECTED, CandidateClass.WATCH},
+            "SetupScore": total,
+        }
+    )
+    return StageEvaluation(
+        symbol=evidence.record.yahoo_symbol,
+        candidate_state=candidate_state,
+        candidate_class=candidate_class,
+        review_priority=priority,
+        confidence=confidence,
+        score=ScoreResult(
+            total_score=total,
+            route_score=route_score,
+            timing_score=timing_score,
+            structure_score=structure_score,
+            participation_score=participation_score,
+            context_score=context_score,
+            risk_score=risk_score,
+            labels=tuple(reason_codes),
+        ),
+        reason_codes=tuple(reason_codes),
+        risk_tags=tuple(risk_tags),
+        diagnostics=diagnostics,
+    )
+
+
+def _classify_divergence_route(candidate: str) -> DivergenceRoute:
+    if candidate == "BULLISH_DIVERGENCE":
+        return DivergenceRoute(
+            candidate_state="BULLISH_DIVERGENCE",
+            opportunity_type="BULLISH_REGULAR_DIVERGENCE",
+            direction="BULLISH",
+            divergence_type="REGULAR",
+            route_score=30.0,
+            reason_code="BULLISH_REGULAR_DIVERGENCE_ROUTE",
+            timing_profile="reversal_watch",
+        )
+    if candidate == "BEARISH_DIVERGENCE":
+        return DivergenceRoute(
+            candidate_state="BEARISH_DIVERGENCE",
+            opportunity_type="BEARISH_REGULAR_DIVERGENCE",
+            direction="BEARISH",
+            divergence_type="REGULAR",
+            route_score=30.0,
+            reason_code="BEARISH_REGULAR_DIVERGENCE_ROUTE",
+            timing_profile="exit_watch",
+        )
+    if candidate == "HIDDEN_BULLISH_DIVERGENCE":
+        return DivergenceRoute(
+            candidate_state="HIDDEN_BULLISH_DIVERGENCE",
+            opportunity_type="HIDDEN_BULLISH_CONTINUATION",
+            direction="BULLISH",
+            divergence_type="HIDDEN",
+            route_score=28.0,
+            reason_code="HIDDEN_BULLISH_DIVERGENCE_ROUTE",
+            timing_profile="continuation",
+        )
+    if candidate == "HIDDEN_BEARISH_DIVERGENCE":
+        return DivergenceRoute(
+            candidate_state="HIDDEN_BEARISH_DIVERGENCE",
+            opportunity_type="HIDDEN_BEARISH_CONTINUATION",
+            direction="BEARISH",
+            divergence_type="HIDDEN",
+            route_score=28.0,
+            reason_code="HIDDEN_BEARISH_DIVERGENCE_ROUTE",
+            timing_profile="failed_recovery",
+        )
+    return DivergenceRoute(
+        candidate_state="STATUS_QUO",
+        opportunity_type="NO_DIVERGENCE_ROUTE",
+        direction="NONE",
+        divergence_type="NONE",
+        route_score=0.0,
+        reason_code="NO_DIVERGENCE_ROUTE",
+        timing_profile="none",
+    )
+
+
+def _divergence_timing_score(bars_ago: float | None, confirmation_state: str) -> float:
+    score = 0.0
+    if confirmation_state == "CONFIRMED":
+        score += 10.0
+    elif confirmation_state == "RAW":
+        score += 4.0
+    if bars_ago is not None:
+        if bars_ago <= 5:
+            score += 10.0
+        elif bars_ago <= 12:
+            score += 6.0
+    return min(score, 20.0)
+
+
+def _divergence_structure_score(
+    direction: str,
+    divergence_type: str,
+    price: float | None,
+    ema20: float | None,
+    ema200: float | None,
+    higher_low: bool,
+    lower_high: bool,
+    ema20_reclaim: bool,
+    ema20_below: bool,
+) -> float:
+    score = 0.0
+    if direction == "BULLISH":
+        if divergence_type == "HIDDEN" and higher_low:
+            score += 5.0
+        if ema20_reclaim:
+            score += 4.0
+        if price is not None and ema200 is not None and price >= ema200:
+            score += 4.0
+        if price is not None and ema20 is not None and price >= ema20:
+            score += 3.0
+    if direction == "BEARISH":
+        if divergence_type == "HIDDEN" and lower_high:
+            score += 5.0
+        if ema20_below:
+            score += 4.0
+        if price is not None and ema20 is not None and price <= ema20:
+            score += 4.0
+        if price is not None and ema200 is not None and price <= ema200:
+            score += 3.0
+    return min(score, 15.0)
+
+
+def _divergence_participation_score(direction: str, volume_vs_20: float | None, plus_di: float | None, minus_di: float | None) -> float:
+    score = 0.0
+    if volume_vs_20 is not None and volume_vs_20 >= 100:
+        score += 4.0
+    if direction == "BULLISH" and plus_di is not None and minus_di is not None and plus_di >= minus_di:
+        score += 6.0
+    if direction == "BEARISH" and plus_di is not None and minus_di is not None and minus_di >= plus_di:
+        score += 6.0
+    return min(score, 10.0)
+
+
+def _divergence_context_score(direction: str, rsi: float | None, close_location: float | None) -> float:
+    score = 0.0
+    if direction == "BULLISH" and rsi is not None:
+        if 35 <= rsi <= 60:
+            score += 8.0
+        elif 30 <= rsi < 35 or 60 < rsi <= 68:
+            score += 4.0
+    if direction == "BEARISH" and rsi is not None:
+        if 45 <= rsi <= 75:
+            score += 8.0
+        elif 38 <= rsi < 45 or 75 < rsi <= 82:
+            score += 4.0
+    if direction == "BULLISH" and close_location is not None and close_location >= 45:
+        score += 7.0
+    if direction == "BEARISH" and close_location is not None and close_location <= 55:
+        score += 7.0
+    return min(score, 15.0)
+
+
 def _classify_momentum_route(
     *,
     crossover_state: str,
@@ -632,9 +908,9 @@ def _evaluation_rank(evaluation: StageEvaluation) -> tuple[int, float]:
     return (class_rank[evaluation.candidate_class], evaluation.score.total_score)
 
 
-def _baseline_blocked_evaluation(evidence: EvidencePack, baseline_decision: BaselineDecision, stage_family: str) -> StageEvaluation:
+def _traversal_blocked_evaluation(evidence: EvidencePack, traversal_plan: StockTraversalPlan, stage_family: str) -> StageEvaluation:
     diagnostics = evidence_to_diagnostics(evidence)
-    diagnostics.update(baseline_decision.to_diagnostics())
+    diagnostics.update(traversal_plan.to_diagnostics())
     diagnostics["BlockedStageFamily"] = stage_family
     diagnostics["CandidateStateRaw"] = "STATUS_QUO"
     return StageEvaluation(

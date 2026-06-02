@@ -2,7 +2,7 @@
 
 from stock_screener_v3.backtest_engine import BacktestEngine, InMemoryPriceProvider
 from stock_screener_v3.data_provider import YahooPriceProvider
-from stock_screener_v3.evaluators import CrossoverEvaluator
+from stock_screener_v3.evaluators import CrossoverEvaluator, DivergenceEvaluator
 from stock_screener_v3.models import (
     BacktestResult,
     BacktestRunConfig,
@@ -21,6 +21,7 @@ __all__ = [
     "BacktestRunConfig",
     "CandidateClass",
     "CrossoverEvaluator",
+    "DivergenceEvaluator",
     "EvidencePack",
     "InMemoryPriceProvider",
     "PriceDataBundle",

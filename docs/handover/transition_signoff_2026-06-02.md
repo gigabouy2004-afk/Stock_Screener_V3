@@ -24,16 +24,32 @@ $env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
 python -m unittest discover -s tests -v
 ```
 
-Expected repository state after the signoff commit is pulled:
+Expected repository state for this WIP restart:
 
 ```text
 ## main...origin/main
+ M docs/architecture/rebuild_way_forward_plan.md
+ M docs/architecture/v3_baseline_decision_tree.md
+ M docs/architecture/v3_evidence_stage_matrix.md
+ M docs/architecture/v3_module_contracts.md
+ M docs/handover/current_session_handover.md
+ M docs/handover/transition_signoff_2026-06-02.md
+ M src/stock_screener_v3/__init__.py
+ M src/stock_screener_v3/baseline_router.py
+ M src/stock_screener_v3/evaluators.py
+ M src/stock_screener_v3/evidence.py
+ M src/stock_screener_v3/output_contracts.py
+ M tests/test_baseline_router.py
+ M tests/test_evaluators.py
+?? docs/architecture/v3_divergence_contract.md
+?? validation/runs/v3_divergence_smoke_20260211_summary.md
+?? validation/runs/v3_traversal_plan_smoke_20260211_summary.md
 ```
 
 Expected tests:
 
 ```text
-43 tests passing
+52 tests passing
 ```
 
 Optional smoke run after restart:
@@ -78,7 +94,7 @@ These definitions are settled.
 |---|---|---|
 | `CROSSOVER` | `PRE_BULL_CROSSOVER`, `PRE_BEAR_CROSSOVER` | Phase transition. Bull transition is for new capital entry review. Bear transition is for exit or capital preservation review. |
 | `MOMENTUM_SETUP` | `BULL_PULLBACK_REENTRY`, `BULL_CONTINUATION_MOMENTUM` | Bull phase continuation or re-entry after bullish conditions already exist. |
-| `DIVERGENCE` | planned `BULLISH_DIVERGENCE`, `BEARISH_DIVERGENCE` | Price and momentum disagreement. Not implemented in V3 yet. |
+| `DIVERGENCE` | `BULLISH_DIVERGENCE`, `BEARISH_DIVERGENCE`, `HIDDEN_BULLISH_DIVERGENCE`, `HIDDEN_BEARISH_DIVERGENCE` | Price and momentum disagreement. V1 evaluator implemented for explicitly selected Divergence runs; calibration pending. |
 | `STATUS_QUO` | `STATUS_QUO` | No selected family has sufficient route evidence. |
 
 Momentum Setup is a bull-phase family. It is not the same thing as classical MACD Crossover transition.
@@ -103,6 +119,9 @@ Implemented:
 - Non-fatal benchmark failure behavior. Missing benchmark data becomes `UNKNOWN`; stock evaluation continues.
 - Market, sector, and stock regime classification.
 - Baseline positive elimination before selected stage-family evaluation.
+- Explicit `StockTraversalPlan` routing layer between `BaselineDecision` and stage-family evaluation.
+- Divergence family evaluator covering regular and hidden bullish/bearish divergence.
+- Architecture/WIP track for enriched NYSE/NASDAQ master universe metadata to support pre-scan universe filters and reduce unnecessary profile fetch cycles.
 - Output diagnostics for route visibility:
   - `MarketRegime`
   - `SectorRegime`
@@ -111,6 +130,21 @@ Implemented:
   - `AllowedBearishStages`
   - `BlockedStageFamilies`
   - `BaselineRouteReason`
+  - `SelectedStageFamilies`
+  - `TraversalCandidateFamilies`
+  - `TraversalBlockedFamilies`
+  - `TraversalRouteReason`
+- Divergence diagnostics:
+  - `DivergenceDirection`
+  - `DivergenceType`
+  - `DivergenceOpportunityType`
+  - `DivergenceConfirmationState`
+  - `DivergencePriceSwing`
+  - `DivergenceMomentumSwing`
+  - `DivergenceBarsAgo`
+  - `DivergenceQualityScore`
+  - `DivergenceQualityComponents`
+  - `DivergenceReasonCodes`
 
 Current default benchmark mappings include:
 
@@ -146,7 +180,7 @@ Core source modules:
 | `src/stock_screener_v3/evidence.py` | Builds `EvidencePack` from prices and benchmarks. |
 | `src/stock_screener_v3/baseline_router.py` | Regime classification and positive elimination. |
 | `src/stock_screener_v3/regime_config.py` | Configurable benchmark mapping defaults and lookup methods. |
-| `src/stock_screener_v3/evaluators.py` | Crossover, Momentum Setup, and stage-family dispatcher. |
+| `src/stock_screener_v3/evaluators.py` | Crossover, Momentum Setup, Divergence, and stage-family dispatcher. |
 | `src/stock_screener_v3/backtest_engine.py` | Backtest orchestration, price loading, benchmark loading, forward outcomes. |
 | `src/stock_screener_v3/runner.py` | Reusable run orchestration. |
 | `src/stock_screener_v3/cli.py` | CLI entry point. |
@@ -162,7 +196,8 @@ Current implementation:
 StageFamilyEvaluator(stage_families=("CROSSOVER", "MOMENTUM_SETUP"))
 -> build one EvidencePack
 -> build BaselineDecision
--> apply positive elimination
+-> build StockTraversalPlan
+-> apply positive elimination through explicit traversal plan
 -> evaluate remaining selected stage families
 -> return the highest-ranked StageEvaluation
 ```
@@ -171,6 +206,12 @@ Current CLI default:
 
 ```text
 --stage-family CROSSOVER,MOMENTUM_SETUP
+```
+
+Divergence can be run explicitly with:
+
+```text
+--stage-family DIVERGENCE
 ```
 
 Positive elimination guardrail:
@@ -190,14 +231,16 @@ Unit tests cover:
 - Run I/O and artifact separation.
 - Crossover evaluator.
 - Momentum Setup evaluator.
+- Divergence evaluator.
 - Stage-family dispatch.
 - Baseline router.
+- Stock traversal planning.
 - Regime benchmark configuration.
 
 Last known full suite:
 
 ```text
-43 tests passing
+52 tests passing
 ```
 
 Important validation summaries:
@@ -208,6 +251,8 @@ Important validation summaries:
 - `validation/runs/v3_momentum_setup_smoke_20260211_summary.md`
 - `validation/runs/v3_baseline_router_smoke_20260211_summary.md`
 - `validation/runs/v3_regime_config_smoke_20260211_summary.md`
+- `validation/runs/v3_traversal_plan_smoke_20260211_summary.md`
+- `validation/runs/v3_divergence_smoke_20260211_summary.md`
 
 Most generated CSV/log outputs are intentionally ignored by Git.
 
@@ -219,9 +264,10 @@ Read these in this order after restart:
 2. `docs/handover/transition_signoff_2026-06-02.md`
 3. `docs/architecture/v3_baseline_decision_tree.md`
 4. `docs/architecture/v3_evidence_stage_matrix.md`
-5. `docs/architecture/v3_module_contracts.md`
-6. `docs/architecture/rebuild_way_forward_plan.md`
-7. `docs/architecture/v2_operational_parity_contract.md`
+5. `docs/architecture/v3_divergence_contract.md`
+6. `docs/architecture/v3_module_contracts.md`
+7. `docs/architecture/rebuild_way_forward_plan.md`
+8. `docs/architecture/v2_operational_parity_contract.md`
 
 The baseline decision tree and evidence stage matrix are the governing design documents for the next engine layer.
 
@@ -229,8 +275,8 @@ The baseline decision tree and evidence stage matrix are the governing design do
 
 These are not blockers for the current signoff, but they are not complete:
 
-- No formal `StockTraversalPlan` object yet. Current traversal is embedded in `BaselineDecision` plus `StageFamilyEvaluator`.
-- No production Divergence evaluator yet.
+- Divergence v1 exists for explicitly selected `DIVERGENCE` runs, but swing geometry and thresholds still need historical calibration.
+- Enriched NYSE/NASDAQ master universe CSV is not complete yet. It should include company/profile/financial filter fields such as `CompanyName`, `MarketCap`, P/E fields, dividend dates, earnings date, beta, shares/float, average-volume fields, and profile freshness metadata so scans can run on narrower symbol sets instead of always using `ALL_CODES`.
 - No user-editable external benchmark mapping file yet.
 - NSE/BSE sector-index mapping is still shallow.
 - Theme benchmark conventions exist in config shape but are not integrated into CLI/user input.
@@ -243,7 +289,7 @@ These are not blockers for the current signoff, but they are not complete:
 
 After signoff/signin, do not jump directly into more indicator rules.
 
-Build the lower-level stock traversal path layer:
+The lower-level stock traversal path layer now exists:
 
 ```text
 EvidencePack
@@ -254,22 +300,24 @@ EvidencePack
 -> ranked StageEvaluation
 ```
 
-The next layer should make route selection explicit and auditable before evaluator scoring.
+Traversal output rows have been smoke-validated on the sample universe. The next layer should make ranking more explicit before evaluator scoring is expanded.
 
-Recommended first implementation:
+Recommended next implementation:
 
-1. Add a `StockTraversalPlan` dataclass or equivalent route object.
-2. Move allowed/blocked family and direction decisions into that object.
-3. Emit route diagnostics even when no candidate is selected.
-4. Keep `CROSSOVER` and `MOMENTUM_SETUP` behavior unchanged while moving routing into the new layer.
-5. Add tests proving:
-   - bearish market/sector/stock blocks bullish entry and Momentum Setup;
-   - bearish Crossover remains available for exit review;
-   - bullish/mixed context allows bull entry review;
-   - selected user family restrictions are preserved;
-   - diagnostics remain in output rows.
+1. Define the formal ranking contract beyond current best-`StageEvaluation` selection.
+2. Add tests around ranking once that contract is settled.
+3. Decide whether to include `DIVERGENCE` in the default holistic stage-family set after ranking diagnostics are explicit.
 
-Only after this route layer is explicit should the engine proceed to Divergence or ranking calibration.
+Only after ranking diagnostics are explicit should the engine proceed to default holistic Divergence dispatch or ranking calibration.
+
+Parallel WIP track for baseline universe:
+
+1. Define the enriched NYSE/NASDAQ master universe CSV schema.
+2. Add or revive the metadata enrichment workflow for company/profile/financial filter fields.
+3. Add universe pre-filter support for predicates such as `TrailingPE < 25`, market-cap ranges, dividend yield, beta, average volume, sector, and industry.
+4. Preserve enriched metadata for scan output and UI detail panes to avoid unnecessary live profile fetches.
+5. Keep profile/financial metadata tagged with source/freshness, and do not treat current metadata as historical truth in backtests unless explicitly marked.
+6. Add tests proving enriched fields survive universe loading, filtering, and output/report generation.
 
 ## 11. Carry-Forward Guardrails
 
@@ -298,4 +346,27 @@ bd693ac Split crossover route opportunity states
 2dc2e6f Add backtest failure category reporting
 021c9e0 Support mixed exchange universe inputs
 4e4dcce Add first V3 crossover engine slice
+```
+
+## 13. Current WIP Restart Snapshot
+
+This session has not been committed yet. Do not reset or discard the working tree after restart.
+
+Implemented WIP since the last pushed baseline:
+
+- Explicit `StockTraversalPlan` route object and traversal diagnostics.
+- Divergence contract document.
+- Divergence v1 evaluator and diagnostics for regular/hidden bullish/bearish divergence.
+- Output contract additions for traversal and Divergence diagnostics.
+- Focused tests for traversal and Divergence.
+- Parallel WIP architecture track for enriched NYSE/NASDAQ master-universe filter fields.
+- Smoke summaries:
+  - `validation/runs/v3_traversal_plan_smoke_20260211_summary.md`
+  - `validation/runs/v3_divergence_smoke_20260211_summary.md`
+
+Last verification before restart:
+
+```text
+python -m unittest discover -s tests -v
+52 tests passing
 ```

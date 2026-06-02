@@ -4,7 +4,7 @@ import unittest
 
 import pandas as pd
 
-from stock_screener_v3.evaluators import CrossoverEvaluator, StageFamilyEvaluator, evaluate_crossover, evaluate_momentum_setup
+from stock_screener_v3.evaluators import CrossoverEvaluator, StageFamilyEvaluator, evaluate_crossover, evaluate_divergence, evaluate_momentum_setup
 from stock_screener_v3.models import CandidateClass, EvidencePack, PriceDataBundle, UniverseRecord
 
 
@@ -21,6 +21,14 @@ def make_price_frame(values: list[float]) -> pd.DataFrame:
         },
         index=index,
     )
+
+
+class StaticEvidenceBuilder:
+    def __init__(self, evidence: EvidencePack):
+        self.evidence = evidence
+
+    def build(self, record: UniverseRecord, prices: PriceDataBundle) -> EvidencePack:
+        return self.evidence
 
 
 class CrossoverEvaluatorTests(unittest.TestCase):
@@ -100,6 +108,61 @@ class CrossoverEvaluatorTests(unittest.TestCase):
         self.assertEqual(evaluation.candidate_state, "PRE_BEAR_CROSSOVER")
         self.assertEqual(evaluation.diagnostics["CrossoverOpportunityType"], "BEARISH_NEAR_TRANSITION")
         self.assertIn("DAILY_MACD_NEAR_BEAR_TRANSITION", evaluation.reason_codes)
+
+    def test_divergence_evaluator_classifies_regular_bullish_divergence(self) -> None:
+        evaluation = evaluate_divergence(make_divergence_evidence("BULLISH_DIVERGENCE"))
+
+        self.assertEqual(evaluation.candidate_state, "BULLISH_DIVERGENCE")
+        self.assertEqual(evaluation.diagnostics["DivergenceDirection"], "BULLISH")
+        self.assertEqual(evaluation.diagnostics["DivergenceType"], "REGULAR")
+        self.assertEqual(evaluation.diagnostics["DivergenceOpportunityType"], "BULLISH_REGULAR_DIVERGENCE")
+        self.assertIn(evaluation.candidate_class, {CandidateClass.SELECTED, CandidateClass.WATCH})
+
+    def test_divergence_evaluator_classifies_regular_bearish_divergence(self) -> None:
+        evaluation = evaluate_divergence(make_divergence_evidence("BEARISH_DIVERGENCE"))
+
+        self.assertEqual(evaluation.candidate_state, "BEARISH_DIVERGENCE")
+        self.assertEqual(evaluation.diagnostics["DivergenceDirection"], "BEARISH")
+        self.assertEqual(evaluation.diagnostics["DivergenceType"], "REGULAR")
+        self.assertEqual(evaluation.diagnostics["DivergenceOpportunityType"], "BEARISH_REGULAR_DIVERGENCE")
+        self.assertIn(evaluation.candidate_class, {CandidateClass.SELECTED, CandidateClass.WATCH})
+
+    def test_divergence_evaluator_classifies_hidden_bullish_divergence(self) -> None:
+        evaluation = evaluate_divergence(make_divergence_evidence("HIDDEN_BULLISH_DIVERGENCE"))
+
+        self.assertEqual(evaluation.candidate_state, "HIDDEN_BULLISH_DIVERGENCE")
+        self.assertEqual(evaluation.diagnostics["DivergenceDirection"], "BULLISH")
+        self.assertEqual(evaluation.diagnostics["DivergenceType"], "HIDDEN")
+        self.assertEqual(evaluation.diagnostics["DivergenceOpportunityType"], "HIDDEN_BULLISH_CONTINUATION")
+
+    def test_divergence_evaluator_classifies_hidden_bearish_divergence(self) -> None:
+        evaluation = evaluate_divergence(make_divergence_evidence("HIDDEN_BEARISH_DIVERGENCE"))
+
+        self.assertEqual(evaluation.candidate_state, "HIDDEN_BEARISH_DIVERGENCE")
+        self.assertEqual(evaluation.diagnostics["DivergenceDirection"], "BEARISH")
+        self.assertEqual(evaluation.diagnostics["DivergenceType"], "HIDDEN")
+        self.assertEqual(evaluation.diagnostics["DivergenceOpportunityType"], "HIDDEN_BEARISH_CONTINUATION")
+
+    def test_divergence_evaluator_returns_status_quo_without_route(self) -> None:
+        evaluation = evaluate_divergence(make_divergence_evidence("NONE"))
+
+        self.assertEqual(evaluation.candidate_state, "STATUS_QUO")
+        self.assertEqual(evaluation.candidate_class, CandidateClass.STATUS_QUO)
+        self.assertEqual(evaluation.diagnostics["DivergenceOpportunityType"], "NO_DIVERGENCE_ROUTE")
+        self.assertIn("NO_DIVERGENCE_ROUTE", evaluation.reason_codes)
+
+    def test_stage_family_evaluator_can_dispatch_divergence_family(self) -> None:
+        evidence = make_divergence_evidence("BULLISH_DIVERGENCE")
+        evaluator = StageFamilyEvaluator(
+            stage_families=("DIVERGENCE",),
+            evidence_builder=StaticEvidenceBuilder(evidence),  # type: ignore[arg-type]
+        )
+
+        evaluation = evaluator.evaluate(evidence.record, PriceDataBundle(symbol="DDD", daily=make_price_frame([100] * 90)))
+
+        self.assertEqual(evaluation.candidate_state, "BULLISH_DIVERGENCE")
+        self.assertEqual(evaluation.diagnostics["SelectedStageFamilies"], "DIVERGENCE")
+        self.assertEqual(evaluation.diagnostics["TraversalCandidateFamilies"], "DIVERGENCE")
 
 
 def make_evidence(structure: dict[str, object]) -> EvidencePack:
@@ -192,6 +255,74 @@ def make_bear_evidence(crossover_state: str) -> EvidencePack:
         },
         risk_context={"LowLiquidity": False, "BelowEMA200": True},
     )
+
+
+def make_divergence_evidence(candidate: str) -> EvidencePack:
+    bullish = candidate in {"BULLISH_DIVERGENCE", "HIDDEN_BULLISH_DIVERGENCE"}
+    hidden = candidate in {"HIDDEN_BULLISH_DIVERGENCE", "HIDDEN_BEARISH_DIVERGENCE"}
+    return EvidencePack(
+        record=UniverseRecord(symbol="DDD", yahoo_symbol="DDD", sector="Technology", exchange="NASDAQ"),
+        as_of=pd.Timestamp("2026-02-11"),
+        market_context={"MarketRegime": "MIXED"},
+        sector_context={"SectorRegime": "MIXED"},
+        stock_baseline={
+            "LatestPrice": 104.0 if bullish else 96.0,
+            "DailyCloseLocationPct": 68.0 if bullish else 28.0,
+        },
+        momentum={
+            "RSI_1D": 52.0 if bullish else 62.0,
+            "MACD_1D_State": "BULLISH" if bullish else "BEARISH",
+            "MACD_1D_CrossoverState": "ABOVE_SIGNAL" if bullish else "BELOW_SIGNAL",
+            "MACD_1D_Histogram": 0.12 if bullish else -0.12,
+            "MACD_1D_PreviousHistogram": 0.04 if bullish else -0.04,
+            "MACD_1D_CrossoverDistance": 0.12 if bullish else -0.12,
+            "MACDHistogramImproving": bullish,
+        },
+        trend={
+            "EMA20": 100.0,
+            "EMA50": 98.0 if bullish else 102.0,
+            "EMA200": 92.0 if bullish else 106.0,
+            "ADX_1D": 22.0,
+            "PlusDI_1D": 28.0 if bullish else 16.0,
+            "MinusDI_1D": 16.0 if bullish else 30.0,
+        },
+        volume={"IntradayVolumeVs20Avg": 125.0},
+        structure={
+            "EMA20_Below": not bullish,
+            "EMA20_Reclaim": bullish,
+            "HigherLow_5D": bullish and hidden,
+            "LowerHigh_5D": (not bullish) and hidden,
+            "PriceLadder_Passed": bullish,
+            "DivergenceRouteCandidate": candidate,
+            "DivergencePriceSwing": _divergence_price_swing(candidate),
+            "DivergenceMomentumSwing": _divergence_momentum_swing(candidate),
+            "DivergenceBarsAgo": 3,
+            "DivergenceConfirmationState": "CONFIRMED" if candidate != "NONE" else "NONE",
+            "DivergencePreviousPriceSwingValue": 100.0,
+            "DivergenceLatestPriceSwingValue": 95.0 if bullish else 105.0,
+            "DivergencePreviousMomentumSwingValue": -0.8 if bullish else 0.8,
+            "DivergenceLatestMomentumSwingValue": -0.3 if bullish else 0.3,
+        },
+        risk_context={"LowLiquidity": False, "BelowEMA200": False},
+    )
+
+
+def _divergence_price_swing(candidate: str) -> str:
+    return {
+        "BULLISH_DIVERGENCE": "LOWER_LOW",
+        "BEARISH_DIVERGENCE": "HIGHER_HIGH",
+        "HIDDEN_BULLISH_DIVERGENCE": "HIGHER_LOW",
+        "HIDDEN_BEARISH_DIVERGENCE": "LOWER_HIGH",
+    }.get(candidate, "NONE")
+
+
+def _divergence_momentum_swing(candidate: str) -> str:
+    return {
+        "BULLISH_DIVERGENCE": "HIGHER_LOW",
+        "BEARISH_DIVERGENCE": "LOWER_HIGH",
+        "HIDDEN_BULLISH_DIVERGENCE": "LOWER_LOW",
+        "HIDDEN_BEARISH_DIVERGENCE": "HIGHER_HIGH",
+    }.get(candidate, "NONE")
 
 
 if __name__ == "__main__":

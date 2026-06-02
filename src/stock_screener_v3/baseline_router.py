@@ -38,6 +38,47 @@ class BaselineDecision:
         }
 
 
+@dataclass(frozen=True)
+class StockTraversalPlan:
+    baseline_decision: BaselineDecision
+    selected_stage_families: tuple[str, ...]
+    evaluable_stage_families: tuple[str, ...]
+    blocked_stage_families: tuple[str, ...]
+    reason: str
+
+    @property
+    def market_regime(self) -> Regime:
+        return self.baseline_decision.market_regime
+
+    @property
+    def sector_regime(self) -> Regime:
+        return self.baseline_decision.sector_regime
+
+    @property
+    def stock_regime(self) -> Regime:
+        return self.baseline_decision.stock_regime
+
+    @property
+    def allow_bullish(self) -> bool:
+        return self.baseline_decision.allow_bullish
+
+    @property
+    def allow_bearish(self) -> bool:
+        return self.baseline_decision.allow_bearish
+
+    def to_diagnostics(self) -> dict[str, object]:
+        diagnostics = self.baseline_decision.to_diagnostics()
+        diagnostics.update(
+            {
+                "SelectedStageFamilies": ",".join(self.selected_stage_families),
+                "TraversalCandidateFamilies": ",".join(self.evaluable_stage_families),
+                "TraversalBlockedFamilies": ",".join(self.blocked_stage_families),
+                "TraversalRouteReason": self.reason,
+            }
+        )
+        return diagnostics
+
+
 def build_baseline_decision(evidence: EvidencePack) -> BaselineDecision:
     market_regime = Regime(str(evidence.market_context.get("MarketRegime") or Regime.UNKNOWN))
     sector_regime = Regime(str(evidence.sector_context.get("SectorRegime") or Regime.UNKNOWN))
@@ -67,6 +108,32 @@ def build_baseline_decision(evidence: EvidencePack) -> BaselineDecision:
         allow_bullish=allow_bullish,
         allow_bearish=allow_bearish,
         blocked_stage_families=tuple(blocked),
+        reason=reason,
+    )
+
+
+def build_stock_traversal_plan(evidence: EvidencePack, selected_stage_families: tuple[str, ...]) -> StockTraversalPlan:
+    decision = build_baseline_decision(evidence)
+    selected = tuple(_normalize_stage_family(family) for family in selected_stage_families)
+    blocked = set(decision.blocked_stage_families)
+    evaluable: list[str] = []
+    plan_blocked: list[str] = []
+
+    for family in selected:
+        if family == "MOMENTUM_SETUP" and "MOMENTUM_SETUP" in blocked:
+            plan_blocked.append(family)
+            continue
+        evaluable.append(family)
+
+    reason = decision.reason
+    if plan_blocked:
+        reason = f"{decision.reason};TRAVERSAL_BLOCKED={','.join(plan_blocked)}"
+
+    return StockTraversalPlan(
+        baseline_decision=decision,
+        selected_stage_families=selected,
+        evaluable_stage_families=tuple(evaluable),
+        blocked_stage_families=tuple(plan_blocked),
         reason=reason,
     )
 
@@ -150,6 +217,43 @@ def classify_benchmark_regime(frame: pd.DataFrame | None) -> Regime:
     return Regime.MIXED
 
 
+def apply_traversal_plan(evaluation: StageEvaluation, plan: StockTraversalPlan) -> StageEvaluation:
+    direction = str(
+        evaluation.diagnostics.get("CrossoverDirection")
+        or evaluation.diagnostics.get("MomentumSetupDirection")
+        or "NONE"
+    )
+    if direction == "BULLISH" and not plan.allow_bullish:
+        diagnostics = dict(evaluation.diagnostics)
+        diagnostics.update(plan.to_diagnostics())
+        diagnostics["BaselineBlockedOriginalState"] = evaluation.candidate_state
+        diagnostics["CandidateStateRaw"] = "STATUS_QUO"
+        return StageEvaluation(
+            symbol=evaluation.symbol,
+            candidate_state="STATUS_QUO",
+            candidate_class=CandidateClass.STATUS_QUO,
+            review_priority=ReviewPriority.NONE,
+            confidence="LOW",
+            score=ScoreResult(total_score=0.0, labels=("BASELINE_BLOCKED_BULLISH_ENTRY",)),
+            reason_codes=("BASELINE_BLOCKED_BULLISH_ENTRY",),
+            risk_tags=evaluation.risk_tags,
+            diagnostics=diagnostics,
+        )
+    diagnostics = dict(evaluation.diagnostics)
+    diagnostics.update(plan.to_diagnostics())
+    return StageEvaluation(
+        symbol=evaluation.symbol,
+        candidate_state=evaluation.candidate_state,
+        candidate_class=evaluation.candidate_class,
+        review_priority=evaluation.review_priority,
+        confidence=evaluation.confidence,
+        score=evaluation.score,
+        reason_codes=evaluation.reason_codes,
+        risk_tags=evaluation.risk_tags,
+        diagnostics=diagnostics,
+    )
+
+
 def apply_baseline_decision(evaluation: StageEvaluation, decision: BaselineDecision) -> StageEvaluation:
     direction = str(
         evaluation.diagnostics.get("CrossoverDirection")
@@ -185,6 +289,13 @@ def apply_baseline_decision(evaluation: StageEvaluation, decision: BaselineDecis
         risk_tags=evaluation.risk_tags,
         diagnostics=diagnostics,
     )
+
+
+def _normalize_stage_family(stage_family: str) -> str:
+    normalized = stage_family.upper()
+    if normalized in {"MOMENTUM", "MOMENTUM_TRADING"}:
+        return "MOMENTUM_SETUP"
+    return normalized
 
 
 def _number(value: object) -> float | None:
