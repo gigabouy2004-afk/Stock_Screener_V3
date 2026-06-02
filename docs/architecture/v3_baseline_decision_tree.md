@@ -6,6 +6,14 @@ Purpose: define the top-down baseline filter that runs before stage-family evalu
 
 This is intended to prevent V2-style over-complex stage matrices. The engine should first understand the broad condition, then positively eliminate stage paths that do not make sense.
 
+Implementation status:
+
+```text
+V1 complete for engine traversal.
+```
+
+The current implementation supports configurable benchmark symbols, market/sector benchmark loading, stock-regime classification, positive elimination, and audit output. Future work should improve configuration ergonomics and mapping coverage, not change the baseline-first architecture.
+
 ## 1. Design Principle
 
 The engine must not start by asking every indicator every possible question.

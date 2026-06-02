@@ -8,7 +8,7 @@ GitHub: `https://github.com/gigabouy2004-afk/Stock_Screener_V3.git`
 
 Branch: `main`
 
-Latest confirmed pushed commit before current in-progress engine slice: `bd5d782 Add bear transition crossover route`
+Latest confirmed pushed commit before current in-progress engine slice: `f635e3d Add configurable regime benchmarks`
 
 ## Purpose Of This Document
 
@@ -33,7 +33,7 @@ Expected status at this handover:
 Expected tests at this handover:
 
 ```text
-42 tests passing
+43 tests passing
 ```
 
 ## Current Decision
@@ -195,7 +195,16 @@ The actual V3 production engine logic has started but is not complete yet:
 - Crossover v1 exists, but it is a first slice and needs historical calibration.
 - Crossover is direction-aware for bull/bear transition.
 - Momentum Setup v1 exists for bull pullback re-entry and bull continuation, but still needs calibration.
-- Baseline router v1 exists and benchmark loading is wired through the backtest engine. Sector mappings are currently US-sector focused and should be made user-configurable by file before broad NSE/theme use.
+- Market/sector/stock regime determination v1 is complete for the current engine layer:
+  - configurable benchmark mappings exist in `RegimeBenchmarkConfig`;
+  - benchmark loading is wired through the backtest engine;
+  - benchmark failures degrade to `UNKNOWN` instead of skipping the stock;
+  - market, sector, and stock regimes are emitted in the output CSV.
+- Remaining regime-engine expansion is configuration ergonomics and coverage, not core architecture:
+  - user-editable mapping file or config loader;
+  - broader NSE/BSE sector-index mapping;
+  - theme benchmark mapping conventions;
+  - calibrated regime thresholds after validation.
 - Failure categories are first-pass diagnostics and still need validation against broader historical runs.
 - No production Divergence evaluator.
 - No scoring calibration beyond data model contracts.
