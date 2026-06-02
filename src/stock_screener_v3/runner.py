@@ -9,6 +9,7 @@ from stock_screener_v3.backtest_engine import BacktestEngine, PriceProvider, Sta
 from stock_screener_v3.data_provider import YahooPriceProvider
 from stock_screener_v3.evaluators import StageFamilyEvaluator
 from stock_screener_v3.models import BacktestResult, BacktestRunConfig
+from stock_screener_v3.regime_config import RegimeBenchmarkConfig
 from stock_screener_v3.run_io import RunPaths, close_run_logger, configure_run_logger, write_run_artifacts
 from stock_screener_v3.universe import load_universe_records
 
@@ -36,6 +37,7 @@ def run_backtest(
     log_file: str | Path | None = None,
     price_provider: PriceProvider | None = None,
     evaluator: StageEvaluator | None = None,
+    regime_config: RegimeBenchmarkConfig | None = None,
 ) -> EngineRunResult:
     paths = RunPaths.for_backtest(
         workspace_root,
@@ -80,6 +82,7 @@ def run_backtest(
         engine = BacktestEngine(
             price_provider=price_provider or YahooPriceProvider(period="5y"),
             evaluator=evaluator or StageFamilyEvaluator(stage_families=stage_families),
+            regime_config=regime_config,
         )
         result = engine.run(records, config)
         write_run_artifacts(result, paths)

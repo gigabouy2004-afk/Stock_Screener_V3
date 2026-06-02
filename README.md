@@ -113,6 +113,7 @@ Sprint 1 has started with the foundation layer:
 - First Momentum Setup evaluator slice for bull pullback re-entry and bull continuation.
 - Stage-family dispatcher and CLI stage-family selection for Crossover, Momentum Setup, or both.
 - Baseline router with market/sector/stock regime diagnostics and positive elimination.
+- Configurable market/sector/theme benchmark mapping for regime determination.
 - Reusable run orchestrator and CLI entry point.
 - Initial Python web UI wrapper in `web_app_v3.py`.
 - Standard-library unit tests under `tests/`.

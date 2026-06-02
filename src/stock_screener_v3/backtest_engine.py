@@ -15,6 +15,7 @@ from stock_screener_v3.models import (
     StageEvaluation,
     UniverseRecord,
 )
+from stock_screener_v3.regime_config import RegimeBenchmarkConfig
 from stock_screener_v3.universe import deterministic_sample, filter_records
 
 
@@ -40,9 +41,16 @@ class InMemoryPriceProvider:
 
 
 class BacktestEngine:
-    def __init__(self, price_provider: PriceProvider, evaluator: StageEvaluator):
+    def __init__(
+        self,
+        price_provider: PriceProvider,
+        evaluator: StageEvaluator,
+        regime_config: RegimeBenchmarkConfig | None = None,
+    ):
         self.price_provider = price_provider
         self.evaluator = evaluator
+        self.regime_config = regime_config or RegimeBenchmarkConfig.default()
+        self._daily_cache: dict[str, pd.DataFrame] = {}
 
     def run(self, records: list[UniverseRecord], config: BacktestRunConfig) -> BacktestResult:
         selected_records = filter_records(
@@ -68,6 +76,7 @@ class BacktestEngine:
                 bundle = PriceDataBundle(
                     symbol=record.yahoo_symbol,
                     daily=historical.frame,
+                    benchmarks=self._benchmarks(record, cutoff),
                     as_of=historical.as_of,
                     provider=type(self.price_provider).__name__,
                 )
@@ -91,6 +100,30 @@ class BacktestEngine:
             detail_rows=tuple(detail_rows),
             skip_reasons=dict(skip_reasons),
         )
+
+    def _benchmarks(self, record: UniverseRecord, cutoff: pd.Timestamp) -> dict[str, pd.DataFrame]:
+        benchmarks: dict[str, pd.DataFrame] = {}
+        market_symbol = self.regime_config.market_symbol_for(record)
+        market_frame = self._benchmark_as_of(market_symbol, cutoff)
+        if market_frame is not None:
+            benchmarks["market"] = market_frame
+        sector_symbol = self.regime_config.sector_symbol_for(record)
+        if sector_symbol:
+            sector_frame = self._benchmark_as_of(sector_symbol, cutoff)
+            if sector_frame is not None:
+                benchmarks["sector"] = sector_frame
+        return benchmarks
+
+    def _benchmark_as_of(self, symbol: str, cutoff: pd.Timestamp) -> pd.DataFrame | None:
+        try:
+            return slice_as_of(self._daily(symbol), cutoff).frame
+        except Exception:
+            return None
+
+    def _daily(self, symbol: str) -> pd.DataFrame:
+        if symbol not in self._daily_cache:
+            self._daily_cache[symbol] = self.price_provider.daily(symbol)
+        return self._daily_cache[symbol]
 
     @staticmethod
     def _detail_row(

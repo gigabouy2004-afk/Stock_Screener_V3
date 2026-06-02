@@ -15,6 +15,7 @@ from stock_screener_v3.models import (
     StageEvaluation,
     UniverseRecord,
 )
+from stock_screener_v3.regime_config import RegimeBenchmarkConfig
 
 
 class SymbolListEvaluator:
@@ -54,6 +55,8 @@ class BacktestEngineTests(unittest.TestCase):
                 "AAA": pd.DataFrame({"Close": [100.0, 101.0, 103.0, 104.0, 106.0]}, index=index),
                 "BBB": pd.DataFrame({"Close": [50.0, 49.0, 48.0, 47.0, 46.0]}, index=index),
                 "CCC": pd.DataFrame({"Close": [20.0, 20.0, 20.0, 21.0, 22.0]}, index=index),
+                "MKT": pd.DataFrame({"Open": [90.0, 91.0, 92.0, 93.0, 94.0], "High": [91.0, 92.0, 93.0, 94.0, 95.0], "Low": [89.0, 90.0, 91.0, 92.0, 93.0], "Close": [90.0, 91.0, 92.0, 93.0, 94.0], "Volume": [1_000_000] * 5}, index=index),
+                "SECT": pd.DataFrame({"Open": [80.0, 81.0, 82.0, 83.0, 84.0], "High": [81.0, 82.0, 83.0, 84.0, 85.0], "Low": [79.0, 80.0, 81.0, 82.0, 83.0], "Close": [80.0, 81.0, 82.0, 83.0, 84.0], "Volume": [1_000_000] * 5}, index=index),
             }
         )
 
@@ -121,6 +124,43 @@ class BacktestEngineTests(unittest.TestCase):
         self.assertAlmostEqual(summary["d_plus_1_hit_rate"], 1 / 2)
         self.assertEqual(summary["failure_categories"], {"STRUCTURE_FAILURE": 1})
         self.assertEqual(summary["score_buckets"], {"70-79": 2})
+
+    def test_backtest_engine_loads_configured_benchmarks(self) -> None:
+        class BenchmarkEchoEvaluator:
+            def evaluate(self, record: UniverseRecord, prices: PriceDataBundle) -> StageEvaluation:
+                return StageEvaluation(
+                    symbol=record.yahoo_symbol,
+                    candidate_state="STATUS_QUO",
+                    candidate_class=CandidateClass.STATUS_QUO,
+                    review_priority=ReviewPriority.NONE,
+                    confidence="LOW",
+                    score=ScoreResult(total_score=0.0),
+                    diagnostics={
+                        "BenchmarkKeys": ",".join(sorted(prices.benchmarks.keys())),
+                        "MarketRows": len(prices.benchmarks["market"]),
+                        "SectorRows": len(prices.benchmarks["sector"]),
+                    },
+                )
+
+        engine = BacktestEngine(
+            self.provider,
+            BenchmarkEchoEvaluator(),
+            regime_config=RegimeBenchmarkConfig(
+                market_benchmarks_by_exchange={"NASDAQ": "MKT"},
+                sector_benchmarks={"TECHNOLOGY": "SECT"},
+            ),
+        )
+        config = BacktestRunConfig(
+            universe_file="memory",
+            d_date=date(2026, 2, 11),
+            stage_families=("MOCK",),
+        )
+
+        result = engine.run([self.records[0]], config)
+
+        self.assertEqual(result.detail_rows[0]["BenchmarkKeys"], "market,sector")
+        self.assertEqual(result.detail_rows[0]["MarketRows"], 2)
+        self.assertEqual(result.detail_rows[0]["SectorRows"], 2)
 
 
 if __name__ == "__main__":

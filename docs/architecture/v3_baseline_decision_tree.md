@@ -30,6 +30,7 @@ Broad index context:
 
 - US default: `SPY` or `QQQ`.
 - India default: `NIFTY 50`.
+- Custom geography/theme mappings are supported through `RegimeBenchmarkConfig`.
 
 Initial V3 regime states:
 
@@ -143,7 +144,49 @@ Minimum output diagnostics:
 - `BlockedStageFamilies`
 - `BaselineRouteReason`
 
-## 6. Guardrail
+## 6. Regime Benchmark Configuration
+
+Regime benchmark selection must be configurable rather than embedded inside evaluator rules.
+
+Current code-level config:
+
+```text
+RegimeBenchmarkConfig
+```
+
+Supported mappings:
+
+- `market_benchmarks_by_exchange`
+- `market_benchmarks_by_geography`
+- `sector_benchmarks`
+- `theme_benchmarks`
+- `default_market_benchmark`
+
+Initial defaults:
+
+| Context | Benchmark |
+|---|---|
+| NASDAQ | `QQQ` |
+| Q exchange code | `QQQ` |
+| NYSE / AMEX | `SPY` |
+| N / A exchange codes | `SPY` |
+| NSE | `^NSEI` |
+| BSE | `^BSESN` |
+| Technology | `XLK` |
+| Energy | `XLE` |
+| Industrials | `XLI` |
+| Financials | `XLF` |
+| Health Care | `XLV` |
+| Consumer Discretionary | `XLY` |
+| Consumer Staples | `XLP` |
+| Communication Services | `XLC` |
+| Materials | `XLB` |
+| Real Estate | `XLRE` |
+| Utilities | `XLU` |
+
+Benchmark loading is non-fatal. If a configured benchmark cannot be loaded, the corresponding regime remains `UNKNOWN` and the stock is still evaluated.
+
+## 7. Guardrail
 
 This tree is a routing layer, not a scoring layer.
 

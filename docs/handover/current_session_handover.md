@@ -33,7 +33,7 @@ Expected status at this handover:
 Expected tests at this handover:
 
 ```text
-38 tests passing
+42 tests passing
 ```
 
 ## Current Decision
@@ -97,6 +97,8 @@ Foundation code:
 - Dedicated Momentum Setup evaluator for bull-phase pullback re-entry and continuation candidates.
 - Stage-family dispatcher that can evaluate Crossover, Momentum Setup, or both from a shared evidence pack.
 - Baseline router that classifies market, sector, and stock regimes before stage-family selection.
+- Configurable regime benchmark mapping for exchanges, geographies, sectors, and themes.
+- Non-fatal benchmark loading into `PriceDataBundle.benchmarks` for market/sector regime classification.
 - Positive-elimination guardrail that blocks bullish entry/Momentum Setup when market, sector, and stock are all bearish, while preserving bear Crossover exit review.
 - CLI/run parameter support for comma-separated stage families.
 - Reusable run orchestrator.
@@ -115,6 +117,7 @@ Tests:
 - Report/output contract tests, including score-bucket and failure-category summaries.
 - Stage evaluator tests for Crossover transition, Momentum Setup re-entry/continuation, and family dispatch.
 - Baseline router tests for market/sector/stock positive elimination and bearish Crossover preservation.
+- Regime benchmark configuration tests.
 - Run I/O and log artifact tests.
 
 ## Artifact Purpose Definitions
@@ -192,7 +195,7 @@ The actual V3 production engine logic has started but is not complete yet:
 - Crossover v1 exists, but it is a first slice and needs historical calibration.
 - Crossover is direction-aware for bull/bear transition.
 - Momentum Setup v1 exists for bull pullback re-entry and bull continuation, but still needs calibration.
-- Baseline router v1 exists, but market/sector benchmark loading is not yet wired into the default Yahoo provider path.
+- Baseline router v1 exists and benchmark loading is wired through the backtest engine. Sector mappings are currently US-sector focused and should be made user-configurable by file before broad NSE/theme use.
 - Failure categories are first-pass diagnostics and still need validation against broader historical runs.
 - No production Divergence evaluator.
 - No scoring calibration beyond data model contracts.
@@ -207,7 +210,7 @@ Recommended next implementation order:
 
 1. Continue engine architecture around stage routing, evidence, scoring, and ranking before expanding UI or validation convenience tooling.
 2. Use `docs/architecture/v3_evidence_stage_matrix.md` as the governing map before adding or changing stage rules.
-3. Wire benchmark loading into the data provider/run path so `MarketRegime` and `SectorRegime` are populated outside tests.
+3. Add a user-editable benchmark mapping file or config loader for market, geography, sector, and theme regimes.
 4. Add Divergence evaluator after context and ranking contracts are stable.
 5. Review failure-category counts across the validation pack and refine labels only with evidence.
 
