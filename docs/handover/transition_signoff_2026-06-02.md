@@ -8,7 +8,7 @@ Remote: `https://github.com/gigabouy2004-afk/Stock_Screener_V3.git`
 
 Branch: `main`
 
-Code baseline verified before this signoff documentation: `6df0f7e Mark regime engine v1 complete`
+Code baseline verified before shutdown: `9687742 Add traversal and divergence v1 engine layer`
 
 Purpose: preserve enough technical and decision context to restart the V3 engine build after signoff without relying on chat history.
 
@@ -24,26 +24,10 @@ $env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
 python -m unittest discover -s tests -v
 ```
 
-Expected repository state for this WIP restart:
+Expected repository state after restart:
 
 ```text
 ## main...origin/main
- M docs/architecture/rebuild_way_forward_plan.md
- M docs/architecture/v3_baseline_decision_tree.md
- M docs/architecture/v3_evidence_stage_matrix.md
- M docs/architecture/v3_module_contracts.md
- M docs/handover/current_session_handover.md
- M docs/handover/transition_signoff_2026-06-02.md
- M src/stock_screener_v3/__init__.py
- M src/stock_screener_v3/baseline_router.py
- M src/stock_screener_v3/evaluators.py
- M src/stock_screener_v3/evidence.py
- M src/stock_screener_v3/output_contracts.py
- M tests/test_baseline_router.py
- M tests/test_evaluators.py
-?? docs/architecture/v3_divergence_contract.md
-?? validation/runs/v3_divergence_smoke_20260211_summary.md
-?? validation/runs/v3_traversal_plan_smoke_20260211_summary.md
 ```
 
 Expected tests:
@@ -348,18 +332,24 @@ bd693ac Split crossover route opportunity states
 4e4dcce Add first V3 crossover engine slice
 ```
 
-## 13. Current WIP Restart Snapshot
+## 13. Last Pushed Restart Snapshot
 
-This session has not been committed yet. Do not reset or discard the working tree after restart.
+This session checkpoint has been committed and pushed to GitHub.
 
-Implemented WIP since the last pushed baseline:
+Pushed checkpoint:
+
+```text
+9687742 Add traversal and divergence v1 engine layer
+```
+
+Implemented in this checkpoint:
 
 - Explicit `StockTraversalPlan` route object and traversal diagnostics.
 - Divergence contract document.
 - Divergence v1 evaluator and diagnostics for regular/hidden bullish/bearish divergence.
 - Output contract additions for traversal and Divergence diagnostics.
 - Focused tests for traversal and Divergence.
-- Parallel WIP architecture track for enriched NYSE/NASDAQ master-universe filter fields.
+- Parallel architecture track for enriched NYSE/NASDAQ master-universe filter fields.
 - Smoke summaries:
   - `validation/runs/v3_traversal_plan_smoke_20260211_summary.md`
   - `validation/runs/v3_divergence_smoke_20260211_summary.md`
