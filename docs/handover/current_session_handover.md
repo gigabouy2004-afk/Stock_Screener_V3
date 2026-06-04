@@ -119,13 +119,14 @@ Foundation code:
 - CLI/run parameter support for comma-separated stage families.
 - Reusable run orchestrator.
 - CLI entry point.
-- Initial Python web UI wrapper.
+- Python web console for single-date and multi-date V3 runs.
 - Backtest outcome classification for candidate follow-through.
 - Failure-category summary reporting for failed candidate follow-through.
 - Candidate score-bucket summary reporting.
 - Average and median forward-return summary reporting.
 - Score-bucket, sector, and review-priority outcome breakdowns for calibration.
 - Multi-date backtest pack runner and CLI command.
+- Web app support for single-date and multi-date runs using the shared V3 runner path.
 
 Tests:
 
@@ -249,6 +250,11 @@ Implemented in this checkpoint:
   - sample: `data\samples\us_master_sample.csv`
   - processed 6 symbol-date rows, skipped 0, found 3 candidates
   - aggregate summary confirmed per-date density and aggregate D+1/D+2/D+5 outcomes
+- Web app HTTP smoke, not committed as artifacts:
+  - URL: `http://127.0.0.1:8010`
+  - single-date web POST used `v3_web_http_smoke`
+  - multi-date web POST used `v3_web_pack_http_smoke`
+  - both returned rendered result summaries and artifact paths
 
 Last verification before restart:
 
@@ -279,7 +285,7 @@ The actual V3 production engine logic has started but is not complete yet:
 - Divergence v1 is now part of the default holistic stage-family set, but swing geometry and thresholds still need historical calibration.
 - No scoring calibration beyond data model contracts.
 - Enriched NYSE/NASDAQ master universe CSV is not complete yet. This parallel WIP should populate universe filter/cache fields such as `CompanyName`, `MarketCap`, P/E fields, dividend dates, earnings date, beta, shares/float, and volume/profile metadata so scans can run on narrower symbol sets instead of always using `ALL_CODES`.
-- V3 web UI exists only as an initial Python wrapper.
+- V3 web app is operational for local single-date and multi-date execution, but deeper UI ergonomics can remain on hold while engine calibration proceeds.
 - CLI exists for single-date backtest execution.
 
 ## Recommended Next Session Start

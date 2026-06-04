@@ -117,7 +117,7 @@ Sprint 1 has started with the foundation layer:
 - Configurable market/sector/theme benchmark mapping for regime determination.
 - Single-date backtest CLI that runs the same V3 evidence, traversal, ranking, and report path used by the production engine layer.
 - Reusable run orchestrator and CLI entry point.
-- Initial Python web UI wrapper in `web_app_v3.py`.
+- Python web console in `web_app_v3.py` for single-date and multi-date V3 runs.
 - Standard-library unit tests under `tests/`.
 
 Run tests with:
@@ -143,7 +143,7 @@ $env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
 python -m stock_screener_v3.cli backtest-pack --workspace-root D:\Tools\Stock_Screener_V3 --universe-file data\samples\us_master_sample.csv --d-dates 2026-02-11,2026-03-11 --forward-days 1,2,5
 ```
 
-Run the initial V3 web UI:
+Run the V3 web console:
 
 ```powershell
 python D:\Tools\Stock_Screener_V3\web_app_v3.py
