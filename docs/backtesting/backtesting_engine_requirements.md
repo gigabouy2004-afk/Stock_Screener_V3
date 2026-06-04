@@ -37,6 +37,8 @@ Implemented foundation pieces:
 - Formal ranking diagnostics for the winning stage-family row.
 - Candidate-density calculation.
 - Candidate-only forward hit-rate summary.
+- Average and median forward-return summary.
+- Hit-rate, average-return, and median-return breakdowns by score bucket, sector, and review priority.
 - Outcome-category classification for candidate follow-through.
 - Failure-category classification for failed candidate follow-through.
 - Candidate score-bucket summary reporting.
@@ -47,20 +49,20 @@ Implemented foundation pieces:
 - File-backed run logger for queued/started/completed/failed run evidence.
 - Reusable `run_backtest(...)` orchestrator.
 - CLI adapter through `python -m stock_screener_v3.cli backtest`.
+- Multi-date `run_backtest_pack(...)` orchestrator.
+- CLI adapter through `python -m stock_screener_v3.cli backtest-pack`.
 
 Remaining gaps:
 
-- Multi-date scorecards.
-- Average and median forward-return summaries.
-- Pass-rate summaries by sector and review priority.
 - Broader historical calibration packs for ranking, scoring, Divergence thresholds, and regime thresholds.
+- Persistence conventions for promoted multi-date validation baselines.
 
 ## Required Run Modes
 
 | Mode | Purpose | Status |
 |---|---|---|
 | Single-date replay | Debug one D date | Implemented |
-| Multi-date replay | Validate across regimes | Not yet implemented as one command |
+| Multi-date replay | Validate across regimes | Implemented through `backtest-pack` |
 | Random-lot replay | Avoid cherry-picking | Implemented through deterministic sample size/seed |
 | Full-universe ranked replay | Simulate real scanner behavior | Implemented for one D date |
 
@@ -93,6 +95,20 @@ The command writes three separate artifacts under `validation/runs/` unless expl
 
 The detail CSV preserves V2-compatible columns first, then appends V3 fields including traversal, ranking, regime, Divergence, outcome, and forward-return diagnostics.
 
+Run a multi-date V3 pack from PowerShell:
+
+```powershell
+$env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
+python -m stock_screener_v3.cli backtest-pack `
+  --workspace-root D:\Tools\Stock_Screener_V3 `
+  --universe-file data\samples\us_master_sample.csv `
+  --d-dates 2026-02-11,2026-03-11 `
+  --forward-days 1,2,5 `
+  --run-label v3_full_engine_pack
+```
+
+The pack command writes normal per-date CSV/summary/log artifacts and one aggregate multi-date markdown summary.
+
 ## Required Output Metrics
 
 - Universe size: implemented as symbols attempted.
@@ -104,11 +120,11 @@ The detail CSV preserves V2-compatible columns first, then appends V3 fields inc
 - D+1 hit rate: implemented for candidate rows.
 - D+2 hit rate: implemented for candidate rows.
 - D+5 hit rate: implemented for candidate rows.
-- Average forward return: not yet implemented.
-- Median forward return: not yet implemented.
-- Pass rate by sector: not yet implemented.
-- Pass rate by score bucket: implemented as candidate count by bucket; hit rate by bucket is not yet implemented.
-- Pass rate by review priority: not yet implemented.
+- Average forward return: implemented.
+- Median forward return: implemented.
+- Pass rate by sector: implemented in summary markdown.
+- Pass rate by score bucket: implemented in summary markdown.
+- Pass rate by review priority: implemented in summary markdown.
 - Failure reason-code distribution: implemented as first-pass failure category summary.
 
 ## Anti-Bias Rules
@@ -124,6 +140,7 @@ The detail CSV preserves V2-compatible columns first, then appends V3 fields inc
 
 As of 2026-06-04:
 
-- Unit suite: `56 tests` passing.
+- Unit suite: `58 tests` passing.
 - Live Yahoo-backed smoke command was run against `data\samples\us_master_sample.csv` for D date `2026-02-11` with default full V3 families.
+- Multi-date pack command exists and is covered by unit tests; live pack validation should be run before promoting a calibration baseline.
 - Live validation artifacts are intentionally not committed unless a summary is promoted as a named validation baseline.

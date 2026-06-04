@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from datetime import datetime
+from statistics import mean, median
 from typing import Protocol
 
 import pandas as pd
@@ -171,13 +172,19 @@ def summarize_result(result: BacktestResult) -> dict[str, object]:
     summary = result.summary_dict()
     for days in result.config.forward_days:
         key = f"DPlus{days}ReturnPct"
-        values = [row.get(key) for row in detail_rows if row.get(key) is not None]
-        positive = [value for value in values if float(value) > 0]
-        summary[f"d_plus_{days}_evaluated"] = len(values)
+        values = [_number(row.get(key)) for row in detail_rows if row.get(key) is not None]
+        numeric_values = [value for value in values if value is not None]
+        positive = [value for value in numeric_values if value > 0]
+        summary[f"d_plus_{days}_evaluated"] = len(numeric_values)
         summary[f"d_plus_{days}_positive"] = len(positive)
-        summary[f"d_plus_{days}_hit_rate"] = len(positive) / len(values) if values else 0.0
+        summary[f"d_plus_{days}_hit_rate"] = len(positive) / len(numeric_values) if numeric_values else 0.0
+        summary[f"d_plus_{days}_average_return_pct"] = round(mean(numeric_values), 4) if numeric_values else None
+        summary[f"d_plus_{days}_median_return_pct"] = round(median(numeric_values), 4) if numeric_values else None
     summary["failure_categories"] = dict(_counter_for_key(detail_rows, "FailureCategory"))
     summary["score_buckets"] = dict(_score_buckets(detail_rows))
+    summary["score_bucket_outcomes"] = _group_outcomes(detail_rows, "ScoreBucket", result.config.forward_days)
+    summary["sector_outcomes"] = _group_outcomes(detail_rows, "Sector", result.config.forward_days)
+    summary["review_priority_outcomes"] = _group_outcomes(detail_rows, "ReviewPriority", result.config.forward_days)
     return summary
 
 
@@ -235,6 +242,47 @@ def _score_buckets(rows: list[dict[str, object]]) -> Counter[str]:
         else:
             buckets["<50"] += 1
     return buckets
+
+
+def _group_outcomes(rows: list[dict[str, object]], group_key: str, forward_days: tuple[int, ...]) -> dict[str, dict[str, object]]:
+    grouped: dict[str, list[dict[str, object]]] = {}
+    for row in rows:
+        group = _group_value(row, group_key)
+        grouped.setdefault(group, []).append(row)
+    return {group: _outcome_metrics(group_rows, forward_days) for group, group_rows in sorted(grouped.items())}
+
+
+def _group_value(row: dict[str, object], group_key: str) -> str:
+    if group_key == "ScoreBucket":
+        score = _number(row.get("TotalScore"))
+        if score is None:
+            return "UNKNOWN"
+        if score >= 80:
+            return "80+"
+        if score >= 70:
+            return "70-79"
+        if score >= 60:
+            return "60-69"
+        if score >= 50:
+            return "50-59"
+        return "<50"
+    value = row.get(group_key)
+    return str(value) if value not in {None, ""} else "UNKNOWN"
+
+
+def _outcome_metrics(rows: list[dict[str, object]], forward_days: tuple[int, ...]) -> dict[str, object]:
+    metrics: dict[str, object] = {"candidates": len(rows)}
+    for days in forward_days:
+        key = f"DPlus{days}ReturnPct"
+        values = [_number(row.get(key)) for row in rows if row.get(key) is not None]
+        numeric_values = [value for value in values if value is not None]
+        positives = [value for value in numeric_values if value > 0]
+        metrics[f"d_plus_{days}_evaluated"] = len(numeric_values)
+        metrics[f"d_plus_{days}_positive"] = len(positives)
+        metrics[f"d_plus_{days}_hit_rate"] = len(positives) / len(numeric_values) if numeric_values else 0.0
+        metrics[f"d_plus_{days}_average_return_pct"] = round(mean(numeric_values), 4) if numeric_values else None
+        metrics[f"d_plus_{days}_median_return_pct"] = round(median(numeric_values), 4) if numeric_values else None
+    return metrics
 
 
 def _number(value: object, default: float | None = None) -> float | None:

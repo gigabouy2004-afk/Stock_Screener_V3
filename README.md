@@ -136,6 +136,13 @@ python -m stock_screener_v3.cli backtest --workspace-root D:\Tools\Stock_Screene
 
 The default stage-family set is `CROSSOVER,MOMENTUM_SETUP,DIVERGENCE`. Use `--stage-family` only when intentionally restricting the engine path.
 
+Run a multi-date V3 backtest pack:
+
+```powershell
+$env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
+python -m stock_screener_v3.cli backtest-pack --workspace-root D:\Tools\Stock_Screener_V3 --universe-file data\samples\us_master_sample.csv --d-dates 2026-02-11,2026-03-11 --forward-days 1,2,5
+```
+
 Run the initial V3 web UI:
 
 ```powershell

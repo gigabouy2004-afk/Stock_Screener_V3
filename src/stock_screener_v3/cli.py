@@ -4,7 +4,7 @@ import argparse
 from datetime import date
 from pathlib import Path
 
-from stock_screener_v3.runner import run_backtest
+from stock_screener_v3.runner import run_backtest, run_backtest_pack
 
 
 def parse_args() -> argparse.Namespace:
@@ -25,6 +25,18 @@ def parse_args() -> argparse.Namespace:
     backtest.add_argument("--details-output", default=None, help="Optional detail CSV path.")
     backtest.add_argument("--summary-output", default=None, help="Optional summary markdown path.")
     backtest.add_argument("--log-file", default=None, help="Optional execution summary log path.")
+    pack = subparsers.add_parser("backtest-pack", help="Run the V3 engine across multiple historical D dates.")
+    pack.add_argument("--workspace-root", default=str(Path.cwd()), help="Workspace root for input/output paths.")
+    pack.add_argument("--universe-file", required=True, help="CSV universe file inside the workspace.")
+    pack.add_argument("--d-dates", required=True, help="Comma-separated engine execution dates in YYYY-MM-DD format.")
+    pack.add_argument("--sector", default="", help="Comma-separated sector filters.")
+    pack.add_argument("--exchange", default="", help="Comma-separated exchange filters.")
+    pack.add_argument("--sample-size", type=int, default=None, help="Optional deterministic random sample size.")
+    pack.add_argument("--random-seed", type=int, default=None, help="Optional deterministic random seed.")
+    pack.add_argument("--forward-days", default="1,2,5", help="Comma-separated forward validation horizons.")
+    pack.add_argument("--stage-family", default="CROSSOVER,MOMENTUM_SETUP,DIVERGENCE", help="Comma-separated stage families.")
+    pack.add_argument("--run-label", default="v3_backtest_pack", help="Artifact filename prefix.")
+    pack.add_argument("--aggregate-summary-output", default=None, help="Optional multi-date summary markdown path.")
     return parser.parse_args()
 
 
@@ -51,6 +63,25 @@ def main() -> int:
         print(f"Output CSV: {result.paths.details_output}")
         print(f"Summary: {result.paths.summary_output}")
         print(f"Log: {result.paths.log_file}")
+        return 0
+    if args.command == "backtest-pack":
+        result = run_backtest_pack(
+            workspace_root=args.workspace_root,
+            universe_file=args.universe_file,
+            d_dates=tuple(date.fromisoformat(value) for value in _split_csv(args.d_dates)),
+            sectors=_split_csv(args.sector),
+            exchanges=_split_csv(args.exchange),
+            sample_size=args.sample_size,
+            random_seed=args.random_seed,
+            forward_days=tuple(int(value) for value in _split_csv(args.forward_days)),
+            stage_families=_split_csv(args.stage_family),
+            run_label=args.run_label,
+            aggregate_summary_output=args.aggregate_summary_output,
+        )
+        print(f"Runs: {len(result.runs)}")
+        print(f"Aggregate summary: {result.summary_output}")
+        for run in result.runs:
+            print(f"{run.result.config.d_date.isoformat()}: processed={run.result.symbols_processed} candidates={run.result.candidates_found}")
         return 0
     raise AssertionError(f"Unhandled command: {args.command}")
 

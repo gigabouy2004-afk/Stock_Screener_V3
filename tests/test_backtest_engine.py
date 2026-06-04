@@ -122,8 +122,14 @@ class BacktestEngineTests(unittest.TestCase):
         self.assertEqual(summary["d_plus_1_evaluated"], 2)
         self.assertEqual(summary["d_plus_1_positive"], 1)
         self.assertAlmostEqual(summary["d_plus_1_hit_rate"], 1 / 2)
+        self.assertEqual(summary["d_plus_1_average_return_pct"], -0.0303)
+        self.assertEqual(summary["d_plus_1_median_return_pct"], -0.0303)
         self.assertEqual(summary["failure_categories"], {"STRUCTURE_FAILURE": 1})
         self.assertEqual(summary["score_buckets"], {"70-79": 2})
+        self.assertEqual(summary["score_bucket_outcomes"]["70-79"]["d_plus_1_positive"], 1)
+        self.assertEqual(summary["sector_outcomes"]["Technology"]["d_plus_1_positive"], 1)
+        self.assertEqual(summary["sector_outcomes"]["Energy"]["d_plus_1_positive"], 0)
+        self.assertEqual(summary["review_priority_outcomes"]["B"]["candidates"], 2)
 
     def test_backtest_engine_loads_configured_benchmarks(self) -> None:
         class BenchmarkEchoEvaluator:

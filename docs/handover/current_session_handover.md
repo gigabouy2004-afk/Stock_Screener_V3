@@ -8,9 +8,9 @@ GitHub: `https://github.com/gigabouy2004-afk/Stock_Screener_V3.git`
 
 Branch: `main`
 
-Latest confirmed local and pushed code baseline: `f8daec9 Close V3 ranking and divergence default path`
+Latest confirmed local and pushed code baseline: current `main` after the backtesting expansion checkpoint.
 
-Local `main` and `origin/main` were verified in sync after this checkpoint.
+Local `main` and `origin/main` should be verified in sync at restart with `git status --short --branch`.
 
 ## Purpose Of This Document
 
@@ -39,7 +39,7 @@ Expected status at this handover:
 Expected tests at this handover:
 
 ```text
-56 tests passing
+58 tests passing
 ```
 
 ## Current Decision
@@ -123,6 +123,9 @@ Foundation code:
 - Backtest outcome classification for candidate follow-through.
 - Failure-category summary reporting for failed candidate follow-through.
 - Candidate score-bucket summary reporting.
+- Average and median forward-return summary reporting.
+- Score-bucket, sector, and review-priority outcome breakdowns for calibration.
+- Multi-date backtest pack runner and CLI command.
 
 Tests:
 
@@ -214,9 +217,7 @@ This session checkpoint has been committed and pushed to GitHub.
 
 Pushed checkpoint:
 
-```text
-f8daec9 Close V3 ranking and divergence default path
-```
+Backtesting expansion checkpoint after `f8daec9 Close V3 ranking and divergence default path`.
 
 Implemented in this checkpoint:
 
@@ -228,6 +229,8 @@ Implemented in this checkpoint:
 - Formal ranking contract and winning-row ranking diagnostics.
 - Default holistic traversal with `CROSSOVER,MOMENTUM_SETUP,DIVERGENCE`.
 - Backtesting documentation update for the full V3 execution path.
+- Multi-date backtest pack command and aggregate summary.
+- Average/median forward returns plus score-bucket, sector, and review-priority outcomes.
 - Parallel architecture track for enriched NYSE/NASDAQ master-universe filter fields.
 - Smoke summaries:
   - `validation/runs/v3_traversal_plan_smoke_20260211_summary.md`
@@ -239,12 +242,19 @@ Implemented in this checkpoint:
   - sample: `data\samples\us_master_sample.csv`
   - processed 3 symbols, skipped 0, found 2 candidates
   - CSV confirmed traversal, ranking, and Divergence diagnostic columns
+- Live multi-date pack smoke, not committed as an artifact:
+  - command label: `v3_pack_live_smoke`
+  - D dates: `2026-02-11,2026-03-11`
+  - stage families: `CROSSOVER,MOMENTUM_SETUP,DIVERGENCE`
+  - sample: `data\samples\us_master_sample.csv`
+  - processed 6 symbol-date rows, skipped 0, found 3 candidates
+  - aggregate summary confirmed per-date density and aggregate D+1/D+2/D+5 outcomes
 
 Last verification before restart:
 
 ```text
 python -m unittest discover -s tests -v
-56 tests passing
+58 tests passing
 ```
 
 ## What Is Not Yet Built
@@ -265,6 +275,7 @@ The actual V3 production engine logic has started but is not complete yet:
   - theme benchmark mapping conventions;
   - calibrated regime thresholds after validation.
 - Failure categories are first-pass diagnostics and still need validation against broader historical runs.
+- Multi-date backtest pack exists, but promoted calibration baselines are not yet built.
 - Divergence v1 is now part of the default holistic stage-family set, but swing geometry and thresholds still need historical calibration.
 - No scoring calibration beyond data model contracts.
 - Enriched NYSE/NASDAQ master universe CSV is not complete yet. This parallel WIP should populate universe filter/cache fields such as `CompanyName`, `MarketCap`, P/E fields, dividend dates, earnings date, beta, shares/float, and volume/profile metadata so scans can run on narrower symbol sets instead of always using `ALL_CODES`.
@@ -298,9 +309,9 @@ Completed in the 2026-06-04 closure pass:
 
 Recommended next implementation order:
 
-1. Run broader multi-date sample backtests with default `CROSSOVER,MOMENTUM_SETUP,DIVERGENCE`.
+1. Run broader live multi-date sample backtests with default `CROSSOVER,MOMENTUM_SETUP,DIVERGENCE`.
 2. Review ranking diagnostics for cases where Divergence competes with Crossover or Momentum Setup.
-3. Add score-bucket hit-rate and sector/review-priority summaries to the backtesting reports.
+3. Promote repeatable multi-date validation summaries as calibration baselines.
 4. Start calibration notes from repeated historical runs; do not tune from a single stock/event.
 
 Parallel WIP track:

@@ -10,7 +10,8 @@ from stock_screener_v3.data_provider import YahooPriceProvider
 from stock_screener_v3.evaluators import StageFamilyEvaluator
 from stock_screener_v3.models import BacktestResult, BacktestRunConfig
 from stock_screener_v3.regime_config import RegimeBenchmarkConfig
-from stock_screener_v3.run_io import RunPaths, close_run_logger, configure_run_logger, write_run_artifacts
+from stock_screener_v3.reports import render_multi_date_summary_markdown
+from stock_screener_v3.run_io import RUNS_DIR, RunPaths, close_run_logger, configure_run_logger, resolve_workspace_path, resolve_workspace_root, write_run_artifacts
 from stock_screener_v3.universe import load_universe_records
 
 
@@ -18,6 +19,12 @@ from stock_screener_v3.universe import load_universe_records
 class EngineRunResult:
     result: BacktestResult
     paths: RunPaths
+
+
+@dataclass(frozen=True)
+class EngineRunPackResult:
+    runs: tuple[EngineRunResult, ...]
+    summary_output: Path
 
 
 def run_backtest(
@@ -103,3 +110,52 @@ def run_backtest(
         raise
     finally:
         close_run_logger(logger)
+
+
+def run_backtest_pack(
+    *,
+    workspace_root: str | Path,
+    universe_file: str | Path,
+    d_dates: tuple[date, ...],
+    sectors: tuple[str, ...] = (),
+    exchanges: tuple[str, ...] = (),
+    sample_size: int | None = None,
+    random_seed: int | None = None,
+    forward_days: tuple[int, ...] = (1, 2, 5),
+    stage_families: tuple[str, ...] = ("CROSSOVER", "MOMENTUM_SETUP", "DIVERGENCE"),
+    run_label: str = "v3_backtest_pack",
+    aggregate_summary_output: str | Path | None = None,
+    price_provider: PriceProvider | None = None,
+    evaluator: StageEvaluator | None = None,
+    regime_config: RegimeBenchmarkConfig | None = None,
+) -> EngineRunPackResult:
+    if not d_dates:
+        raise ValueError("At least one D date is required for a backtest pack.")
+    root = resolve_workspace_root(workspace_root)
+    shared_provider = price_provider or YahooPriceProvider(period="5y")
+    runs: list[EngineRunResult] = []
+    for d_date in d_dates:
+        runs.append(
+            run_backtest(
+                workspace_root=root,
+                universe_file=universe_file,
+                d_date=d_date,
+                sectors=sectors,
+                exchanges=exchanges,
+                sample_size=sample_size,
+                random_seed=random_seed,
+                forward_days=forward_days,
+                stage_families=stage_families,
+                run_label=run_label,
+                price_provider=shared_provider,
+                evaluator=evaluator,
+                regime_config=regime_config,
+            )
+        )
+    summary_output = resolve_workspace_path(
+        root,
+        aggregate_summary_output or RUNS_DIR / f"{run_label}_multi_date_summary.md",
+    )
+    summary_output.parent.mkdir(parents=True, exist_ok=True)
+    summary_output.write_text(render_multi_date_summary_markdown(tuple(run.result for run in runs)), encoding="utf-8")
+    return EngineRunPackResult(runs=tuple(runs), summary_output=summary_output)
