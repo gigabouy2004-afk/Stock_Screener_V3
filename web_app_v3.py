@@ -18,6 +18,18 @@ from stock_screener_v3.runner import EngineRunPackResult, EngineRunResult, run_b
 HOST = "127.0.0.1"
 PORT = 8010
 DEFAULT_STAGE_FAMILIES = ("CROSSOVER", "MOMENTUM_SETUP", "DIVERGENCE")
+STAGE_CLASSIFICATIONS = (
+    ("PRE_BULL_CROSSOVER", "Pre-Bull Crossover", "Bull transition / new capital review.", "bull"),
+    ("PRE_BEAR_CROSSOVER", "Pre-Bear Crossover", "Bear transition / exit or preservation review.", "bear"),
+    ("BULLISH_DIVERGENCE", "Bullish Divergence", "Price/momentum disagreement for bullish reversal watch.", "bull"),
+    ("BEARISH_DIVERGENCE", "Bearish Divergence", "Price/momentum disagreement for bearish exhaustion watch.", "bear"),
+    ("HIDDEN_BULLISH_DIVERGENCE", "Hidden Bullish Divergence", "Bull trend continuation / pullback absorption.", "bull"),
+    ("HIDDEN_BEARISH_DIVERGENCE", "Hidden Bearish Divergence", "Bear trend continuation / failed recovery.", "bear"),
+    ("BULL_PULLBACK_REENTRY", "Bull Pullback Re-entry", "Momentum Setup re-entry candidate.", "bull"),
+    ("BULL_CONTINUATION_MOMENTUM", "Bull Continuation Momentum", "Momentum Setup continuation candidate.", "bull"),
+    ("STATUS_QUO", "Status Quo", "No selected stage route promoted.", "neutral"),
+)
+STAGE_LABELS = {state: label for state, label, _description, _tone in STAGE_CLASSIFICATIONS}
 
 
 @dataclass(frozen=True)
@@ -244,6 +256,33 @@ def render_page(
     }}
     .artifact strong {{ display: block; font-size: 12px; margin-bottom: 4px; }}
     .artifact span {{ display: block; font-size: 12px; color: #556171; overflow-wrap: anywhere; }}
+    .stage-grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 8px;
+    }}
+    .stage-card {{
+      border: 1px solid #d7dde6;
+      border-left: 4px solid #7a8797;
+      border-radius: 4px;
+      padding: 9px;
+      min-height: 76px;
+    }}
+    .stage-card.bull {{ border-left-color: #25824f; }}
+    .stage-card.bear {{ border-left-color: #b54545; }}
+    .stage-card.neutral {{ border-left-color: #6b7789; }}
+    .stage-card strong {{ display: block; font-size: 12px; margin-bottom: 4px; }}
+    .stage-card span {{ display: block; color: #556171; font-size: 11px; line-height: 1.35; }}
+    .stage-count {{ float: right; font-size: 18px; color: #18202c; }}
+    .chip {{
+      display: inline-block;
+      border: 1px solid #ccd4df;
+      border-radius: 999px;
+      padding: 2px 7px;
+      font-size: 11px;
+      background: #f8fafc;
+      color: #334054;
+    }}
     table {{ width: 100%; border-collapse: collapse; font-size: 12px; }}
     th, td {{ border-bottom: 1px solid #e2e6ed; padding: 8px 7px; text-align: left; vertical-align: top; }}
     th {{ background: #f8fafc; font-size: 11px; color: #445064; }}
@@ -277,7 +316,7 @@ def render_page(
       {render_form(values)}
     </aside>
     <section class="content">
-      {render_result(result, error)}
+      {render_result(result, error, values)}
     </section>
   </main>
 </body>
@@ -333,7 +372,20 @@ def render_form(values: dict[str, str]) -> str:
     <input id="forward_days" name="forward_days" value="{_field(values, "forward_days", "1,2,5")}">
     <label for="run_label">Run Label</label>
     <input id="run_label" name="run_label" value="{_field(values, "run_label", "v3_web_run")}">
-    <button type="submit">Run V3 Engine</button>
+    <label for="candidate_state_filter">Candidate State Filter</label>
+    <input id="candidate_state_filter" name="candidate_state_filter" value="{_field(values, "candidate_state_filter", "")}" placeholder="PRE_BULL_CROSSOVER,BULLISH_DIVERGENCE">
+    <div class="grid-2">
+      <div>
+        <label for="candidate_class_filter">Class Filter</label>
+        <input id="candidate_class_filter" name="candidate_class_filter" value="{_field(values, "candidate_class_filter", "SELECTED,WATCH")}" placeholder="SELECTED,WATCH,STATUS_QUO">
+      </div>
+      <div>
+        <label for="min_score">Min Score</label>
+        <input id="min_score" name="min_score" type="number" step="0.01" value="{_field(values, "min_score", "")}">
+      </div>
+    </div>
+    <label class="check"><input type="checkbox" name="show_status_quo" value="1" {_checked(values.get("show_status_quo", "") == "1")}>Show STATUS_QUO rows</label>
+    <button type="submit">Run Scan</button>
   </div>
 </form>"""
 
@@ -345,7 +397,7 @@ def render_stage_check(values: dict[str, str], family: str) -> str:
     return f'<label class="check"><input type="checkbox" name="stage_family" value="{family}" {checked}>{family}</label>'
 
 
-def render_result(result: WebRunResult | None, error: str) -> str:
+def render_result(result: WebRunResult | None, error: str, values: dict[str, str]) -> str:
     if error:
         return f'<div class="banner error">{html.escape(error)}</div>{render_empty_result()}'
     if result is None:
@@ -353,12 +405,16 @@ def render_result(result: WebRunResult | None, error: str) -> str:
     return f"""
       <div class="banner ok">{html.escape(result.headline)}</div>
       <div class="panel">
+        <h2>Stage Classifications</h2>
+        {render_stage_classifications(result.detail_rows)}
+      </div>
+      <div class="panel">
         <h2>Artifacts</h2>
         <div class="artifacts">{render_artifacts(result.artifact_rows)}</div>
       </div>
       <div class="panel">
         <h2>Candidates</h2>
-        {render_results_table(result.detail_rows)}
+        {render_results_table(_filter_rows(result.detail_rows, values))}
       </div>
       <div class="panel">
         <h2>Summary</h2>
@@ -368,7 +424,11 @@ def render_result(result: WebRunResult | None, error: str) -> str:
 
 
 def render_empty_result() -> str:
-    return """<div class="panel">
+    return f"""<div class="panel">
+      <h2>Stage Classifications</h2>
+      {render_stage_classifications(())}
+    </div>
+    <div class="panel">
       <h2>Run Result</h2>
       <p class="empty">No run submitted.</p>
     </div>"""
@@ -381,28 +441,53 @@ def render_artifacts(artifacts: tuple[tuple[str, Path], ...]) -> str:
     )
 
 
+def render_stage_classifications(rows: tuple[dict[str, str], ...]) -> str:
+    counts = _stage_counts(rows)
+    cards = []
+    for state, label, description, tone in STAGE_CLASSIFICATIONS:
+        cards.append(
+            f'<div class="stage-card {tone}"><span class="stage-count">{counts.get(state, 0)}</span>'
+            f"<strong>{html.escape(label)}</strong><span>{html.escape(state)}</span><span>{html.escape(description)}</span></div>"
+        )
+    return '<div class="stage-grid">' + "".join(cards) + "</div>"
+
+
 def render_results_table(rows: tuple[dict[str, str], ...]) -> str:
-    candidates = [row for row in rows if row.get("CandidateClass") in {"SELECTED", "WATCH"}]
-    visible_rows = candidates or rows
-    if not visible_rows:
+    if not rows:
         return '<p class="empty">No rows emitted.</p>'
     columns = (
         "Symbol",
+        "CompanyName",
+        "Exchange",
+        "Sector",
+        "Industry",
+        "LatestPrice",
         "CandidateState",
+        "CandidateStateRaw",
         "CandidateClass",
+        "StageClassification",
         "StageFamily",
         "ReviewPriority",
+        "Confidence",
+        "WeightedScore",
         "TotalScore",
+        "RSI_1D",
+        "ADX_1D",
+        "Bollinger_PctB",
+        "MACD_1D_CrossoverState",
+        "MACD_1D_Histogram",
+        "RankingWinnerFamily",
         "DPlus1ReturnPct",
         "OutcomeCategory",
         "FailureCategory",
+        "ReasonCodes",
     )
     body = []
-    for row in visible_rows[:30]:
+    for row in rows[:100]:
         body.append(
             "<tr>"
             + "".join(
-                f'<td class="{"num" if column in {"TotalScore", "DPlus1ReturnPct"} else ""}">{html.escape(row.get(column, ""))}</td>'
+                _table_cell(row, column)
                 for column in columns
             )
             + "</tr>"
@@ -416,6 +501,15 @@ def render_results_table(rows: tuple[dict[str, str], ...]) -> str:
     )
 
 
+def _table_cell(row: dict[str, str], column: str) -> str:
+    numeric_columns = {"LatestPrice", "WeightedScore", "TotalScore", "RSI_1D", "ADX_1D", "Bollinger_PctB", "MACD_1D_Histogram", "DPlus1ReturnPct"}
+    value = _display_value(row, column)
+    class_name = "num" if column in numeric_columns else ""
+    if column == "CandidateState":
+        return f'<td><span class="chip">{html.escape(value)}</span></td>'
+    return f'<td class="{class_name}">{html.escape(value)}</td>'
+
+
 def _read_detail_rows(path: Path) -> tuple[dict[str, str], ...]:
     with path.open("r", encoding="utf-8", newline="") as handle:
         return tuple(dict(row) for row in csv.DictReader(handle))
@@ -423,6 +517,43 @@ def _read_detail_rows(path: Path) -> tuple[dict[str, str], ...]:
 
 def _read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8") if path.exists() else ""
+
+
+def _filter_rows(rows: tuple[dict[str, str], ...], values: dict[str, str]) -> tuple[dict[str, str], ...]:
+    state_filter = set(_split_csv(values.get("candidate_state_filter", "")))
+    class_filter = set(_split_csv(values.get("candidate_class_filter", "SELECTED,WATCH")))
+    min_score = _float_or_none(values.get("min_score", ""))
+    show_status_quo = values.get("show_status_quo", "") == "1"
+    filtered = []
+    for row in rows:
+        if state_filter and row.get("CandidateState") not in state_filter:
+            continue
+        candidate_class = row.get("CandidateClass", "")
+        if class_filter and candidate_class not in class_filter:
+            if not (show_status_quo and candidate_class == "STATUS_QUO"):
+                continue
+        if not show_status_quo and candidate_class == "STATUS_QUO":
+            continue
+        if min_score is not None and (_float_or_none(row.get("TotalScore", "")) or 0.0) < min_score:
+            continue
+        filtered.append(row)
+    return tuple(filtered)
+
+
+def _stage_counts(rows: tuple[dict[str, str], ...]) -> dict[str, int]:
+    counts: dict[str, int] = {state: 0 for state, _label, _description, _tone in STAGE_CLASSIFICATIONS}
+    for row in rows:
+        state = row.get("CandidateState", "STATUS_QUO") or "STATUS_QUO"
+        counts[state] = counts.get(state, 0) + 1
+    return counts
+
+
+def _display_value(row: dict[str, str], column: str) -> str:
+    if column == "StageClassification":
+        return STAGE_LABELS.get(row.get("CandidateState", ""), row.get("CandidateState", ""))
+    if column == "ReasonCodes":
+        return row.get("ReasonCodes") or row.get("CrossoverReasonCodes") or row.get("MomentumSetupReasonCodes") or row.get("DivergenceReasonCodes") or ""
+    return row.get(column, "")
 
 
 def _stage_families(values: dict[str, str]) -> tuple[str, ...]:
@@ -446,12 +577,23 @@ def _int_or_none(value: str) -> int | None:
     return int(value) if value.strip() else None
 
 
+def _float_or_none(value: str) -> float | None:
+    try:
+        return float(value) if value.strip() else None
+    except ValueError:
+        return None
+
+
 def _field(values: dict[str, str], name: str, default: str) -> str:
     return html.escape(values.get(name, default))
 
 
 def _selected(value: str, expected: str) -> str:
     return "selected" if value == expected else ""
+
+
+def _checked(value: bool) -> str:
+    return "checked" if value else ""
 
 
 def main() -> None:

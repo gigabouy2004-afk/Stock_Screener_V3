@@ -119,7 +119,7 @@ Foundation code:
 - CLI/run parameter support for comma-separated stage families.
 - Reusable run orchestrator.
 - CLI entry point.
-- Python web console for single-date and multi-date V3 runs.
+- Python web console for single-date and multi-date V3 runs with visible stage classifications and V2-style diagnostics.
 - Backtest outcome classification for candidate follow-through.
 - Failure-category summary reporting for failed candidate follow-through.
 - Candidate score-bucket summary reporting.
@@ -127,6 +127,7 @@ Foundation code:
 - Score-bucket, sector, and review-priority outcome breakdowns for calibration.
 - Multi-date backtest pack runner and CLI command.
 - Web app support for single-date and multi-date runs using the shared V3 runner path.
+- Web UI stage classification cards for `PRE_BULL_CROSSOVER`, `PRE_BEAR_CROSSOVER`, Divergence states, Momentum Setup states, and `STATUS_QUO`.
 
 Tests:
 
@@ -255,6 +256,10 @@ Implemented in this checkpoint:
   - single-date web POST used `v3_web_http_smoke`
   - multi-date web POST used `v3_web_pack_http_smoke`
   - both returned rendered result summaries and artifact paths
+- Web UI stage-classification correction smoke, not committed as artifacts:
+  - command label: `v3_ui_stage_http_smoke`
+  - confirmed initial page shows stage taxonomy
+  - confirmed result table includes V2-visible diagnostic fields such as `CandidateStateRaw`, `MACD_1D_CrossoverState`, and `RSI_1D`
 
 Last verification before restart:
 
