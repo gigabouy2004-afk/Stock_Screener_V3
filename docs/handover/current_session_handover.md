@@ -8,9 +8,9 @@ GitHub: `https://github.com/gigabouy2004-afk/Stock_Screener_V3.git`
 
 Branch: `main`
 
-Latest confirmed local code baseline: `Close V3 ranking and divergence default path` commit on `main`
+Latest confirmed local and pushed code baseline: `f8daec9 Close V3 ranking and divergence default path`
 
-Latest confirmed pushed code baseline before this local checkpoint: `cf654f9 Update handover for pushed restart state`
+Local `main` and `origin/main` were verified in sync after this checkpoint.
 
 ## Purpose Of This Document
 
@@ -215,7 +215,7 @@ This session checkpoint has been committed and pushed to GitHub.
 Pushed checkpoint:
 
 ```text
-9687742 Add traversal and divergence v1 engine layer
+f8daec9 Close V3 ranking and divergence default path
 ```
 
 Implemented in this checkpoint:
@@ -225,6 +225,9 @@ Implemented in this checkpoint:
 - Divergence v1 evaluator and diagnostics for regular/hidden bullish/bearish divergence.
 - Output contract additions for traversal and Divergence diagnostics.
 - Focused tests for traversal and Divergence.
+- Formal ranking contract and winning-row ranking diagnostics.
+- Default holistic traversal with `CROSSOVER,MOMENTUM_SETUP,DIVERGENCE`.
+- Backtesting documentation update for the full V3 execution path.
 - Parallel architecture track for enriched NYSE/NASDAQ master-universe filter fields.
 - Smoke summaries:
   - `validation/runs/v3_traversal_plan_smoke_20260211_summary.md`
