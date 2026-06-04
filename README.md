@@ -117,7 +117,7 @@ Sprint 1 has started with the foundation layer:
 - Configurable market/sector/theme benchmark mapping for regime determination.
 - Single-date backtest CLI that runs the same V3 evidence, traversal, ranking, and report path used by the production engine layer.
 - Reusable run orchestrator and CLI entry point.
-- Python web console in `web_app_v3.py` for single-date and multi-date V3 runs with V2-style stage classifications and visible diagnostics.
+- Python scanner console in `web_app_v3.py` for user-selected V3 scans with V2-style stage classifications and visible diagnostics.
 - Standard-library unit tests under `tests/`.
 
 Run tests with:

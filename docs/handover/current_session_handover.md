@@ -119,14 +119,14 @@ Foundation code:
 - CLI/run parameter support for comma-separated stage families.
 - Reusable run orchestrator.
 - CLI entry point.
-- Python web console for single-date and multi-date V3 runs with visible stage classifications and V2-style diagnostics.
+- Python scanner console for user-selected V3 scans with visible stage classifications and V2-style diagnostics.
 - Backtest outcome classification for candidate follow-through.
 - Failure-category summary reporting for failed candidate follow-through.
 - Candidate score-bucket summary reporting.
 - Average and median forward-return summary reporting.
 - Score-bucket, sector, and review-priority outcome breakdowns for calibration.
 - Multi-date backtest pack runner and CLI command.
-- Web app support for single-date and multi-date runs using the shared V3 runner path.
+- Web app support for user-facing scan runs using the shared V3 runner path.
 - Web UI stage classification cards for `PRE_BULL_CROSSOVER`, `PRE_BEAR_CROSSOVER`, Divergence states, Momentum Setup states, and `STATUS_QUO`.
 
 Tests:
@@ -260,6 +260,10 @@ Implemented in this checkpoint:
   - command label: `v3_ui_stage_http_smoke`
   - confirmed initial page shows stage taxonomy
   - confirmed result table includes V2-visible diagnostic fields such as `CandidateStateRaw`, `MACD_1D_CrossoverState`, and `RSI_1D`
+- Web UI scanner-framing correction:
+  - removed visible backtest/multi-date pack controls from the operator UI
+  - retained D as the scan/as-of date used by the shared V3 execution path
+  - backtesting remains a CLI/validation harness, not the primary web UI model
 
 Last verification before restart:
 
@@ -290,7 +294,7 @@ The actual V3 production engine logic has started but is not complete yet:
 - Divergence v1 is now part of the default holistic stage-family set, but swing geometry and thresholds still need historical calibration.
 - No scoring calibration beyond data model contracts.
 - Enriched NYSE/NASDAQ master universe CSV is not complete yet. This parallel WIP should populate universe filter/cache fields such as `CompanyName`, `MarketCap`, P/E fields, dividend dates, earnings date, beta, shares/float, and volume/profile metadata so scans can run on narrower symbol sets instead of always using `ALL_CODES`.
-- V3 web app is operational for local single-date and multi-date execution, but deeper UI ergonomics can remain on hold while engine calibration proceeds.
+- V3 web app is operational for local scan execution, but deeper UI ergonomics can remain on hold while engine calibration proceeds.
 - CLI exists for single-date backtest execution.
 
 ## Recommended Next Session Start

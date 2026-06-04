@@ -12,7 +12,7 @@ from urllib.parse import parse_qs
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from stock_screener_v3.runner import EngineRunPackResult, EngineRunResult, run_backtest, run_backtest_pack
+from stock_screener_v3.runner import EngineRunResult, run_backtest
 
 
 HOST = "127.0.0.1"
@@ -34,7 +34,6 @@ STAGE_LABELS = {state: label for state, label, _description, _tone in STAGE_CLAS
 
 @dataclass(frozen=True)
 class WebRunResult:
-    mode: str
     headline: str
     detail_rows: tuple[dict[str, str], ...]
     artifact_rows: tuple[tuple[str, Path], ...]
@@ -70,28 +69,18 @@ class V3Handler(BaseHTTPRequestHandler):
 
 
 def execute_run(values: dict[str, str]) -> WebRunResult:
-    mode = values.get("mode", "single")
     stage_families = _stage_families(values)
-    common = {
-        "workspace_root": ROOT,
-        "universe_file": values.get("universe_file", "data/samples/us_master_sample.csv"),
-        "sectors": _split_csv(values.get("sector", "")),
-        "exchanges": _split_csv(values.get("exchange", "")),
-        "sample_size": _int_or_none(values.get("sample_size", "")),
-        "random_seed": _int_or_none(values.get("random_seed", "")),
-        "forward_days": tuple(int(value) for value in _split_csv(values.get("forward_days", "1,2,5"))),
-        "stage_families": stage_families,
-        "run_label": values.get("run_label", "v3_web_run") or "v3_web_run",
-    }
-    if mode == "pack":
-        pack = run_backtest_pack(
-            **common,
-            d_dates=tuple(date.fromisoformat(value) for value in _split_csv(values.get("d_dates", ""))),
-        )
-        return _pack_result(pack)
     run = run_backtest(
-        **common,
+        workspace_root=ROOT,
+        universe_file=values.get("universe_file", "data/samples/us_master_sample.csv"),
         d_date=date.fromisoformat(values.get("d_date", "")),
+        sectors=_split_csv(values.get("sector", "")),
+        exchanges=_split_csv(values.get("exchange", "")),
+        sample_size=_int_or_none(values.get("sample_size", "")),
+        random_seed=_int_or_none(values.get("random_seed", "")),
+        forward_days=(1, 2, 5),
+        stage_families=stage_families,
+        run_label=values.get("run_label", "v3_scan") or "v3_scan",
     )
     return _single_result(run)
 
@@ -99,51 +88,19 @@ def execute_run(values: dict[str, str]) -> WebRunResult:
 def _single_result(run: EngineRunResult) -> WebRunResult:
     detail_rows = _read_detail_rows(run.paths.details_output)
     headline = (
-        f"{run.result.config.d_date.isoformat()} | processed {run.result.symbols_processed}/"
+        f"Scan date {run.result.config.d_date.isoformat()} | processed {run.result.symbols_processed}/"
         f"{run.result.symbols_attempted} | skipped {run.result.symbols_skipped} | "
         f"candidates {run.result.candidates_found}"
     )
     return WebRunResult(
-        mode="single",
         headline=headline,
         detail_rows=detail_rows,
         artifact_rows=(
-            ("Detail CSV", run.paths.details_output),
-            ("Summary", run.paths.summary_output),
-            ("Log", run.paths.log_file),
+            ("Output CSV", run.paths.details_output),
+            ("Summary Report", run.paths.summary_output),
+            ("Run Log", run.paths.log_file),
         ),
-        summary_text=_read_text(run.paths.summary_output),
-    )
-
-
-def _pack_result(pack: EngineRunPackResult) -> WebRunResult:
-    detail_rows: list[dict[str, str]] = []
-    processed = 0
-    attempted = 0
-    skipped = 0
-    candidates = 0
-    artifacts: list[tuple[str, Path]] = [("Aggregate Summary", pack.summary_output)]
-    for run in pack.runs:
-        processed += run.result.symbols_processed
-        attempted += run.result.symbols_attempted
-        skipped += run.result.symbols_skipped
-        candidates += run.result.candidates_found
-        detail_rows.extend(_read_detail_rows(run.paths.details_output))
-        label = run.result.config.d_date.isoformat()
-        artifacts.extend(
-            (
-                (f"{label} Detail CSV", run.paths.details_output),
-                (f"{label} Summary", run.paths.summary_output),
-                (f"{label} Log", run.paths.log_file),
-            )
-        )
-    headline = f"{len(pack.runs)} dates | processed {processed}/{attempted} | skipped {skipped} | candidates {candidates}"
-    return WebRunResult(
-        mode="pack",
-        headline=headline,
-        detail_rows=tuple(detail_rows),
-        artifact_rows=tuple(artifacts),
-        summary_text=_read_text(pack.summary_output),
+        summary_text=_scan_summary_text(run.paths.summary_output),
     )
 
 
@@ -309,7 +266,7 @@ def render_page(
 <body>
   <header>
     <h1>Stock Screener V3</h1>
-    <div class="status">Full engine: Crossover, Momentum Setup, Divergence</div>
+    <div class="status">Scanner engine: Crossover, Momentum Setup, Divergence</div>
   </header>
   <main>
     <aside>
@@ -324,27 +281,13 @@ def render_page(
 
 
 def render_form(values: dict[str, str]) -> str:
-    mode = values.get("mode", "single")
     return f"""<form method="post">
   <div class="panel">
-    <h2>Run</h2>
-    <label for="mode">Mode</label>
-    <select id="mode" name="mode">
-      <option value="single" {_selected(mode, "single")}>Single date</option>
-      <option value="pack" {_selected(mode, "pack")}>Multi-date pack</option>
-    </select>
+    <h2>Scan</h2>
     <label for="universe_file">Universe CSV</label>
     <input id="universe_file" name="universe_file" value="{_field(values, "universe_file", "data/samples/us_master_sample.csv")}">
-    <div class="grid-2">
-      <div>
-        <label for="d_date">D Date</label>
-        <input id="d_date" name="d_date" type="date" value="{_field(values, "d_date", "2026-02-11")}">
-      </div>
-      <div>
-        <label for="d_dates">Pack Dates</label>
-        <input id="d_dates" name="d_dates" value="{_field(values, "d_dates", "2026-02-11,2026-03-11")}">
-      </div>
-    </div>
+    <label for="d_date">Scan Date</label>
+    <input id="d_date" name="d_date" type="date" value="{_field(values, "d_date", "2026-02-11")}">
     <label>Stage Families</label>
     <div class="checks">
       {render_stage_check(values, "CROSSOVER")}
@@ -368,10 +311,8 @@ def render_form(values: dict[str, str]) -> str:
         <input id="random_seed" name="random_seed" type="number" value="{_field(values, "random_seed", "")}">
       </div>
     </div>
-    <label for="forward_days">Forward Days</label>
-    <input id="forward_days" name="forward_days" value="{_field(values, "forward_days", "1,2,5")}">
     <label for="run_label">Run Label</label>
-    <input id="run_label" name="run_label" value="{_field(values, "run_label", "v3_web_run")}">
+    <input id="run_label" name="run_label" value="{_field(values, "run_label", "v3_scan")}">
     <label for="candidate_state_filter">Candidate State Filter</label>
     <input id="candidate_state_filter" name="candidate_state_filter" value="{_field(values, "candidate_state_filter", "")}" placeholder="PRE_BULL_CROSSOVER,BULLISH_DIVERGENCE">
     <div class="grid-2">
@@ -429,7 +370,7 @@ def render_empty_result() -> str:
       {render_stage_classifications(())}
     </div>
     <div class="panel">
-      <h2>Run Result</h2>
+      <h2>Scan Result</h2>
       <p class="empty">No run submitted.</p>
     </div>"""
 
@@ -517,6 +458,10 @@ def _read_detail_rows(path: Path) -> tuple[dict[str, str], ...]:
 
 def _read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8") if path.exists() else ""
+
+
+def _scan_summary_text(path: Path) -> str:
+    return _read_text(path).replace("V3 Backtest Summary", "V3 Scan Summary").replace("- D date:", "- Scan date:")
 
 
 def _filter_rows(rows: tuple[dict[str, str], ...], values: dict[str, str]) -> tuple[dict[str, str], ...]:
