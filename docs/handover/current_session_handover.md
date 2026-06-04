@@ -1,6 +1,6 @@
 # Stock Screener V3 Handover
 
-Last updated: 2026-06-02
+Last updated: 2026-06-04
 
 Repo: `D:\Tools\Stock_Screener_V3`
 
@@ -8,7 +8,9 @@ GitHub: `https://github.com/gigabouy2004-afk/Stock_Screener_V3.git`
 
 Branch: `main`
 
-Latest confirmed pushed code baseline: `9687742 Add traversal and divergence v1 engine layer`
+Latest confirmed local code baseline: `Close V3 ranking and divergence default path` commit on `main`
+
+Latest confirmed pushed code baseline before this local checkpoint: `cf654f9 Update handover for pushed restart state`
 
 ## Purpose Of This Document
 
@@ -37,7 +39,7 @@ Expected status at this handover:
 Expected tests at this handover:
 
 ```text
-52 tests passing
+56 tests passing
 ```
 
 ## Current Decision
@@ -102,7 +104,7 @@ Foundation code:
 - Direction-aware Crossover scoring for bull transition entry signals and bear transition exit/preservation signals.
 - Dedicated Momentum Setup evaluator for bull-phase pullback re-entry and continuation candidates.
 - Dedicated Divergence evaluator for regular and hidden bullish/bearish divergence candidates.
-- Stage-family dispatcher that can evaluate Crossover, Momentum Setup, or both from a shared evidence pack.
+- Stage-family dispatcher that can evaluate Crossover, Momentum Setup, Divergence, or selected subsets from a shared evidence pack.
 - Baseline router that classifies market, sector, and stock regimes before stage-family selection.
 - Configurable regime benchmark mapping for exchanges, geographies, sectors, and themes.
 - Non-fatal benchmark loading into `PriceDataBundle.benchmarks` for market/sector regime classification.
@@ -110,6 +112,10 @@ Foundation code:
 - Explicit `StockTraversalPlan` route object between `BaselineDecision` and stage-family evaluators.
 - Traversal diagnostics for selected families, evaluable families, blocked families, and traversal route reason.
 - Divergence diagnostics for route candidate, price/momentum swing, confirmation state, direction, type, opportunity, quality components, and reason codes.
+- Formal V3 ranking contract for choosing the reported `StageEvaluation` after multi-family traversal.
+- Ranking diagnostics for winning rows: contract version, rule, winner family, evaluated families, candidate states/classes, priorities, and scores.
+- Divergence included in the default holistic stage-family set after ranking diagnostics were made explicit.
+- Divergence direction now participates in baseline bullish-route blocking, matching Crossover and Momentum Setup traversal behavior.
 - CLI/run parameter support for comma-separated stage families.
 - Reusable run orchestrator.
 - CLI entry point.
@@ -171,6 +177,7 @@ Key docs:
 - `docs/architecture/v3_module_contracts.md`
 - `docs/architecture/v3_evidence_stage_matrix.md`
 - `docs/architecture/v3_divergence_contract.md`
+- `docs/architecture/v3_ranking_contract.md`
 - `docs/architecture/v3_baseline_decision_tree.md`
 - `docs/architecture/rebuild_way_forward_plan.md`
 - `docs/architecture/v2_operational_parity_contract.md`
@@ -222,12 +229,19 @@ Implemented in this checkpoint:
 - Smoke summaries:
   - `validation/runs/v3_traversal_plan_smoke_20260211_summary.md`
   - `validation/runs/v3_divergence_smoke_20260211_summary.md`
+- Live full-engine smoke, not committed as an artifact:
+  - command label: `v3_full_engine_live_smoke`
+  - D date: `2026-02-11`
+  - stage families: `CROSSOVER,MOMENTUM_SETUP,DIVERGENCE`
+  - sample: `data\samples\us_master_sample.csv`
+  - processed 3 symbols, skipped 0, found 2 candidates
+  - CSV confirmed traversal, ranking, and Divergence diagnostic columns
 
 Last verification before restart:
 
 ```text
 python -m unittest discover -s tests -v
-52 tests passing
+56 tests passing
 ```
 
 ## What Is Not Yet Built
@@ -248,7 +262,7 @@ The actual V3 production engine logic has started but is not complete yet:
   - theme benchmark mapping conventions;
   - calibrated regime thresholds after validation.
 - Failure categories are first-pass diagnostics and still need validation against broader historical runs.
-- Divergence v1 exists for explicitly selected `DIVERGENCE` runs, but swing geometry and thresholds still need historical calibration.
+- Divergence v1 is now part of the default holistic stage-family set, but swing geometry and thresholds still need historical calibration.
 - No scoring calibration beyond data model contracts.
 - Enriched NYSE/NASDAQ master universe CSV is not complete yet. This parallel WIP should populate universe filter/cache fields such as `CompanyName`, `MarketCap`, P/E fields, dividend dates, earnings date, beta, shares/float, and volume/profile metadata so scans can run on narrower symbol sets instead of always using `ALL_CODES`.
 - V3 web UI exists only as an initial Python wrapper.
@@ -256,7 +270,7 @@ The actual V3 production engine logic has started but is not complete yet:
 
 ## Recommended Next Session Start
 
-Start with traversal validation and ranking contract design, not UI expansion and not new indicator tuning.
+Start with ranking validation/backtest review and calibration planning, not UI expansion and not new indicator tuning.
 
 Current traversal layer status:
 
@@ -267,15 +281,24 @@ Current traversal layer status:
   - all-bearish context blocks `MOMENTUM_SETUP`;
   - bearish `CROSSOVER` remains available for exit/capital-preservation review;
   - user-selected family restrictions and aliases are preserved;
-  - traversal diagnostics are emitted for selected, blocked, and `STATUS_QUO` outputs.
+- traversal diagnostics are emitted for selected, blocked, and `STATUS_QUO` outputs.
+- ranking diagnostics are emitted on the winning reported row.
+- default holistic traversal now evaluates `CROSSOVER`, `MOMENTUM_SETUP`, and `DIVERGENCE`.
 - Smoke run `v3_traversal_plan_smoke` on 2026-02-11 processed 3 sample symbols, found 2 candidates, skipped 0 symbols, and emitted traversal diagnostics on selected and `STATUS_QUO` rows.
 - Smoke run `v3_divergence_smoke` on 2026-02-11 used `--stage-family DIVERGENCE`, processed 3 sample symbols, found 0 candidates, skipped 0 symbols, and emitted Divergence diagnostics on `STATUS_QUO` rows.
 
+Completed in the 2026-06-04 closure pass:
+
+1. Defined the formal ranking contract beyond current best-`StageEvaluation` selection.
+2. Added tests around ranking order, tie-break behavior, default Divergence dispatch, and bullish Divergence baseline blocking.
+3. Included `DIVERGENCE` in the default holistic stage-family set after ranking diagnostics were explicit.
+
 Recommended next implementation order:
 
-1. Define the formal ranking contract beyond current best-`StageEvaluation` selection.
-2. Add tests around ranking once that contract is settled.
-3. Decide whether to include `DIVERGENCE` in the default holistic stage-family set after ranking diagnostics are explicit.
+1. Run broader multi-date sample backtests with default `CROSSOVER,MOMENTUM_SETUP,DIVERGENCE`.
+2. Review ranking diagnostics for cases where Divergence competes with Crossover or Momentum Setup.
+3. Add score-bucket hit-rate and sector/review-priority summaries to the backtesting reports.
+4. Start calibration notes from repeated historical runs; do not tune from a single stock/event.
 
 Parallel WIP track:
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from stock_screener_v3.baseline_router import StockTraversalPlan, apply_traversal_plan, build_stock_traversal_plan
 from stock_screener_v3.evidence import EvidenceBuilder, evidence_to_diagnostics
@@ -45,6 +45,28 @@ class DivergenceRoute:
 
 
 @dataclass(frozen=True)
+class StageRankingDecision:
+    winner: StageEvaluation
+    evaluated_families: tuple[str, ...]
+    candidate_states: tuple[str, ...]
+    candidate_classes: tuple[str, ...]
+    review_priorities: tuple[str, ...]
+    total_scores: tuple[float, ...]
+
+    def to_diagnostics(self) -> dict[str, object]:
+        return {
+            "RankingContractVersion": "v1",
+            "RankingRule": "candidate_class>review_priority>total_score>route_score>selected_family_order",
+            "RankingWinnerFamily": str(self.winner.diagnostics.get("StageFamily") or ""),
+            "RankingEvaluatedFamilies": ",".join(self.evaluated_families),
+            "RankingCandidateStates": "|".join(self.candidate_states),
+            "RankingCandidateClasses": "|".join(self.candidate_classes),
+            "RankingReviewPriorities": "|".join(self.review_priorities),
+            "RankingTotalScores": "|".join(f"{score:.2f}" for score in self.total_scores),
+        }
+
+
+@dataclass(frozen=True)
 class CrossoverEvaluator:
     evidence_builder: EvidenceBuilder = EvidenceBuilder()
 
@@ -73,7 +95,7 @@ class DivergenceEvaluator:
 
 @dataclass(frozen=True)
 class StageFamilyEvaluator:
-    stage_families: tuple[str, ...] = ("CROSSOVER", "MOMENTUM_SETUP")
+    stage_families: tuple[str, ...] = ("CROSSOVER", "MOMENTUM_SETUP", "DIVERGENCE")
     evidence_builder: EvidenceBuilder = EvidenceBuilder()
 
     def evaluate(self, record: UniverseRecord, prices: PriceDataBundle) -> StageEvaluation:
@@ -84,16 +106,16 @@ class StageFamilyEvaluator:
             if family not in traversal_plan.evaluable_stage_families:
                 evaluations.append(_traversal_blocked_evaluation(evidence, traversal_plan, family))
             elif family == "CROSSOVER":
-                evaluations.append(apply_traversal_plan(evaluate_crossover(evidence), traversal_plan))
+                evaluations.append(apply_traversal_plan(_with_stage_family(evaluate_crossover(evidence), family), traversal_plan))
             elif family == "MOMENTUM_SETUP":
-                evaluations.append(apply_traversal_plan(evaluate_momentum_setup(evidence), traversal_plan))
+                evaluations.append(apply_traversal_plan(_with_stage_family(evaluate_momentum_setup(evidence), family), traversal_plan))
             elif family == "DIVERGENCE":
-                evaluations.append(apply_traversal_plan(evaluate_divergence(evidence), traversal_plan))
+                evaluations.append(apply_traversal_plan(_with_stage_family(evaluate_divergence(evidence), family), traversal_plan))
             else:
                 raise ValueError(f"Unsupported stage family: {family}.")
         if not evaluations:
             raise ValueError("At least one stage family is required.")
-        return max(evaluations, key=_evaluation_rank)
+        return rank_stage_evaluations(evaluations).winner
 
 
 def evaluate_crossover(evidence: EvidencePack) -> StageEvaluation:
@@ -898,19 +920,68 @@ def _above(value: float | None, reference: float | None) -> bool:
     return bool(value is not None and reference is not None and value >= reference)
 
 
-def _evaluation_rank(evaluation: StageEvaluation) -> tuple[int, float]:
+def rank_stage_evaluations(evaluations: list[StageEvaluation]) -> StageRankingDecision:
+    if not evaluations:
+        raise ValueError("At least one stage evaluation is required.")
+    ranked = sorted(enumerate(evaluations), key=lambda item: _evaluation_rank(item[1], item[0]), reverse=True)
+    winner = ranked[0][1]
+    decision = StageRankingDecision(
+        winner=winner,
+        evaluated_families=tuple(str(evaluation.diagnostics.get("StageFamily") or "") for evaluation in evaluations),
+        candidate_states=tuple(
+            f"{evaluation.diagnostics.get('StageFamily') or ''}:{evaluation.candidate_state}" for evaluation in evaluations
+        ),
+        candidate_classes=tuple(
+            f"{evaluation.diagnostics.get('StageFamily') or ''}:{evaluation.candidate_class.value}" for evaluation in evaluations
+        ),
+        review_priorities=tuple(
+            f"{evaluation.diagnostics.get('StageFamily') or ''}:{evaluation.review_priority.value}" for evaluation in evaluations
+        ),
+        total_scores=tuple(evaluation.score.total_score for evaluation in evaluations),
+    )
+    diagnostics = dict(winner.diagnostics)
+    diagnostics.update(decision.to_diagnostics())
+    return replace(decision, winner=replace(winner, diagnostics=diagnostics))
+
+
+def _evaluation_rank(evaluation: StageEvaluation, order_index: int) -> tuple[int, int, float, float, int]:
     class_rank = {
         CandidateClass.SELECTED: 4,
         CandidateClass.WATCH: 3,
         CandidateClass.REJECTED: 2,
         CandidateClass.STATUS_QUO: 1,
     }
-    return (class_rank[evaluation.candidate_class], evaluation.score.total_score)
+    return (
+        class_rank[evaluation.candidate_class],
+        _priority_rank(evaluation.review_priority),
+        evaluation.score.total_score,
+        evaluation.score.route_score,
+        -order_index,
+    )
+
+
+def _priority_rank(priority: ReviewPriority) -> int:
+    return {
+        ReviewPriority.A: 60,
+        ReviewPriority.B: 50,
+        ReviewPriority.NEEDS_MANUAL_REVIEW: 40,
+        ReviewPriority.EVENT_RISK: 35,
+        ReviewPriority.LOW_LIQUIDITY: 35,
+        ReviewPriority.C: 30,
+        ReviewPriority.NONE: 0,
+    }[priority]
+
+
+def _with_stage_family(evaluation: StageEvaluation, stage_family: str) -> StageEvaluation:
+    diagnostics = dict(evaluation.diagnostics)
+    diagnostics["StageFamily"] = stage_family
+    return replace(evaluation, diagnostics=diagnostics)
 
 
 def _traversal_blocked_evaluation(evidence: EvidencePack, traversal_plan: StockTraversalPlan, stage_family: str) -> StageEvaluation:
     diagnostics = evidence_to_diagnostics(evidence)
     diagnostics.update(traversal_plan.to_diagnostics())
+    diagnostics["StageFamily"] = stage_family
     diagnostics["BlockedStageFamily"] = stage_family
     diagnostics["CandidateStateRaw"] = "STATUS_QUO"
     return StageEvaluation(

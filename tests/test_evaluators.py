@@ -4,8 +4,15 @@ import unittest
 
 import pandas as pd
 
-from stock_screener_v3.evaluators import CrossoverEvaluator, StageFamilyEvaluator, evaluate_crossover, evaluate_divergence, evaluate_momentum_setup
-from stock_screener_v3.models import CandidateClass, EvidencePack, PriceDataBundle, UniverseRecord
+from stock_screener_v3.evaluators import (
+    CrossoverEvaluator,
+    StageFamilyEvaluator,
+    evaluate_crossover,
+    evaluate_divergence,
+    evaluate_momentum_setup,
+    rank_stage_evaluations,
+)
+from stock_screener_v3.models import CandidateClass, EvidencePack, PriceDataBundle, ReviewPriority, ScoreResult, StageEvaluation, UniverseRecord
 
 
 def make_price_frame(values: list[float]) -> pd.DataFrame:
@@ -164,6 +171,64 @@ class CrossoverEvaluatorTests(unittest.TestCase):
         self.assertEqual(evaluation.diagnostics["SelectedStageFamilies"], "DIVERGENCE")
         self.assertEqual(evaluation.diagnostics["TraversalCandidateFamilies"], "DIVERGENCE")
 
+    def test_stage_family_default_includes_divergence_with_ranking_diagnostics(self) -> None:
+        evidence = make_divergence_evidence("BULLISH_DIVERGENCE")
+        evidence.momentum["MACDHistogramImproving"] = False
+        evidence.structure["EMA20_Reclaim"] = False
+        evidence.structure["HigherLow_5D"] = False
+        evidence.structure["PriceLadder_Passed"] = False
+        evaluator = StageFamilyEvaluator(evidence_builder=StaticEvidenceBuilder(evidence))  # type: ignore[arg-type]
+
+        evaluation = evaluator.evaluate(evidence.record, PriceDataBundle(symbol="DDD", daily=make_price_frame([100] * 90)))
+
+        self.assertEqual(evaluation.candidate_state, "BULLISH_DIVERGENCE")
+        self.assertEqual(evaluation.diagnostics["RankingContractVersion"], "v1")
+        self.assertEqual(evaluation.diagnostics["RankingWinnerFamily"], "DIVERGENCE")
+        self.assertEqual(evaluation.diagnostics["RankingEvaluatedFamilies"], "CROSSOVER,MOMENTUM_SETUP,DIVERGENCE")
+
+    def test_ranking_contract_prefers_candidate_class_before_raw_score(self) -> None:
+        rejected = make_manual_evaluation(
+            family="CROSSOVER",
+            state="PRE_BULL_CROSSOVER",
+            candidate_class=CandidateClass.REJECTED,
+            priority=ReviewPriority.C,
+            total_score=95.0,
+        )
+        watch = make_manual_evaluation(
+            family="DIVERGENCE",
+            state="BULLISH_DIVERGENCE",
+            candidate_class=CandidateClass.WATCH,
+            priority=ReviewPriority.B,
+            total_score=60.0,
+        )
+
+        decision = rank_stage_evaluations([rejected, watch])
+
+        self.assertEqual(decision.winner.candidate_state, "BULLISH_DIVERGENCE")
+        self.assertEqual(decision.winner.diagnostics["RankingWinnerFamily"], "DIVERGENCE")
+        self.assertEqual(decision.winner.diagnostics["RankingCandidateClasses"], "CROSSOVER:REJECTED|DIVERGENCE:WATCH")
+
+    def test_ranking_contract_uses_selected_family_order_as_final_tiebreaker(self) -> None:
+        crossover = make_manual_evaluation(
+            family="CROSSOVER",
+            state="PRE_BULL_CROSSOVER",
+            candidate_class=CandidateClass.WATCH,
+            priority=ReviewPriority.B,
+            total_score=70.0,
+        )
+        divergence = make_manual_evaluation(
+            family="DIVERGENCE",
+            state="BULLISH_DIVERGENCE",
+            candidate_class=CandidateClass.WATCH,
+            priority=ReviewPriority.B,
+            total_score=70.0,
+        )
+
+        decision = rank_stage_evaluations([crossover, divergence])
+
+        self.assertEqual(decision.winner.candidate_state, "PRE_BULL_CROSSOVER")
+        self.assertEqual(decision.winner.diagnostics["RankingWinnerFamily"], "CROSSOVER")
+
 
 def make_evidence(structure: dict[str, object]) -> EvidencePack:
     return EvidencePack(
@@ -304,6 +369,25 @@ def make_divergence_evidence(candidate: str) -> EvidencePack:
             "DivergenceLatestMomentumSwingValue": -0.3 if bullish else 0.3,
         },
         risk_context={"LowLiquidity": False, "BelowEMA200": False},
+    )
+
+
+def make_manual_evaluation(
+    *,
+    family: str,
+    state: str,
+    candidate_class: CandidateClass,
+    priority: ReviewPriority,
+    total_score: float,
+) -> StageEvaluation:
+    return StageEvaluation(
+        symbol="ZZZ",
+        candidate_state=state,
+        candidate_class=candidate_class,
+        review_priority=priority,
+        confidence="MEDIUM",
+        score=ScoreResult(total_score=total_score, route_score=30.0),
+        diagnostics={"StageFamily": family},
     )
 
 

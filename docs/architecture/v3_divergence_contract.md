@@ -177,7 +177,7 @@ Hard guardrail:
 
 ## 8. Ranking Implication
 
-Divergence can be selected explicitly through `StageFamilyEvaluator`, but should not become part of the default holistic dispatch until ranking diagnostics are explicit.
+Divergence can be selected explicitly through `StageFamilyEvaluator` and now participates in the default holistic dispatch because ranking diagnostics are explicit.
 
 The ranking layer must be able to explain why one of these won:
 
@@ -190,7 +190,7 @@ The ranking layer must be able to explain why one of these won:
 - `HIDDEN_BULLISH_DIVERGENCE`
 - `HIDDEN_BEARISH_DIVERGENCE`
 
-This is why the ranking contract remains the next implementation layer before adding Divergence to the default holistic stage-family set.
+The V1 ranking contract now makes this choice auditable, so Divergence can participate in the default holistic stage-family set while calibration remains a separate validation track.
 
 ## 9. Diagnostics Contract
 

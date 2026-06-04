@@ -218,11 +218,7 @@ def classify_benchmark_regime(frame: pd.DataFrame | None) -> Regime:
 
 
 def apply_traversal_plan(evaluation: StageEvaluation, plan: StockTraversalPlan) -> StageEvaluation:
-    direction = str(
-        evaluation.diagnostics.get("CrossoverDirection")
-        or evaluation.diagnostics.get("MomentumSetupDirection")
-        or "NONE"
-    )
+    direction = _evaluation_direction(evaluation)
     if direction == "BULLISH" and not plan.allow_bullish:
         diagnostics = dict(evaluation.diagnostics)
         diagnostics.update(plan.to_diagnostics())
@@ -255,11 +251,7 @@ def apply_traversal_plan(evaluation: StageEvaluation, plan: StockTraversalPlan) 
 
 
 def apply_baseline_decision(evaluation: StageEvaluation, decision: BaselineDecision) -> StageEvaluation:
-    direction = str(
-        evaluation.diagnostics.get("CrossoverDirection")
-        or evaluation.diagnostics.get("MomentumSetupDirection")
-        or "NONE"
-    )
+    direction = _evaluation_direction(evaluation)
     if direction == "BULLISH" and not decision.allow_bullish:
         diagnostics = dict(evaluation.diagnostics)
         diagnostics.update(decision.to_diagnostics())
@@ -296,6 +288,15 @@ def _normalize_stage_family(stage_family: str) -> str:
     if normalized in {"MOMENTUM", "MOMENTUM_TRADING"}:
         return "MOMENTUM_SETUP"
     return normalized
+
+
+def _evaluation_direction(evaluation: StageEvaluation) -> str:
+    return str(
+        evaluation.diagnostics.get("CrossoverDirection")
+        or evaluation.diagnostics.get("MomentumSetupDirection")
+        or evaluation.diagnostics.get("DivergenceDirection")
+        or "NONE"
+    )
 
 
 def _number(value: object) -> float | None:

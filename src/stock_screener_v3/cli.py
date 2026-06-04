@@ -20,7 +20,7 @@ def parse_args() -> argparse.Namespace:
     backtest.add_argument("--sample-size", type=int, default=None, help="Optional deterministic random sample size.")
     backtest.add_argument("--random-seed", type=int, default=None, help="Optional deterministic random seed.")
     backtest.add_argument("--forward-days", default="1,2,5", help="Comma-separated forward validation horizons.")
-    backtest.add_argument("--stage-family", default="CROSSOVER,MOMENTUM_SETUP", help="Comma-separated stage families.")
+    backtest.add_argument("--stage-family", default="CROSSOVER,MOMENTUM_SETUP,DIVERGENCE", help="Comma-separated stage families.")
     backtest.add_argument("--run-label", default="v3_backtest", help="Artifact filename prefix.")
     backtest.add_argument("--details-output", default=None, help="Optional detail CSV path.")
     backtest.add_argument("--summary-output", default=None, help="Optional summary markdown path.")

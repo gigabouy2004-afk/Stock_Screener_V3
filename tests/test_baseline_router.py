@@ -79,6 +79,28 @@ class BaselineRouterTests(unittest.TestCase):
         self.assertEqual(evaluation.diagnostics["SelectedStageFamilies"], "CROSSOVER")
         self.assertEqual(evaluation.diagnostics["TraversalCandidateFamilies"], "CROSSOVER")
 
+    def test_stage_family_evaluator_blocks_bullish_divergence_in_all_bearish_context(self) -> None:
+        evidence = make_bearish_evidence(crossover_state="BELOW_SIGNAL")
+        evidence.structure.update(
+            {
+                "DivergenceRouteCandidate": "BULLISH_DIVERGENCE",
+                "DivergencePriceSwing": "LOWER_LOW",
+                "DivergenceMomentumSwing": "HIGHER_LOW",
+                "DivergenceBarsAgo": 3,
+                "DivergenceConfirmationState": "CONFIRMED",
+            }
+        )
+        evaluator = StageFamilyEvaluator(
+            stage_families=("DIVERGENCE",),
+            evidence_builder=StaticEvidenceBuilder(evidence),  # type: ignore[arg-type]
+        )
+
+        evaluation = evaluator.evaluate(evidence.record, PriceDataBundle(symbol="BBB", daily=price_frame([1] * 90)))
+
+        self.assertEqual(evaluation.candidate_class, CandidateClass.STATUS_QUO)
+        self.assertEqual(evaluation.diagnostics["BaselineBlockedOriginalState"], "BULLISH_DIVERGENCE")
+        self.assertIn("BASELINE_BLOCKED_BULLISH_ENTRY", evaluation.reason_codes)
+
     def test_stage_family_evaluator_emits_traversal_diagnostics_for_status_quo(self) -> None:
         evidence = make_status_quo_evidence()
         evaluator = StageFamilyEvaluator(

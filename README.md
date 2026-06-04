@@ -111,9 +111,11 @@ Sprint 1 has started with the foundation layer:
 - First production Crossover evaluator slice with deterministic daily evidence calculations.
 - Direction-aware Crossover routes for bull transition entry and bear transition exit/preservation.
 - First Momentum Setup evaluator slice for bull pullback re-entry and bull continuation.
-- Stage-family dispatcher and CLI stage-family selection for Crossover, Momentum Setup, or both.
+- Stage-family dispatcher and CLI stage-family selection for Crossover, Momentum Setup, Divergence, or any restricted subset.
+- Formal ranking diagnostics for choosing the reported stage-family result after holistic traversal.
 - Baseline router with market/sector/stock regime diagnostics and positive elimination.
 - Configurable market/sector/theme benchmark mapping for regime determination.
+- Single-date backtest CLI that runs the same V3 evidence, traversal, ranking, and report path used by the production engine layer.
 - Reusable run orchestrator and CLI entry point.
 - Initial Python web UI wrapper in `web_app_v3.py`.
 - Standard-library unit tests under `tests/`.
@@ -131,6 +133,8 @@ Run a V3 backtest from PowerShell:
 $env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
 python -m stock_screener_v3.cli backtest --workspace-root D:\Tools\Stock_Screener_V3 --universe-file data\samples\us_master_sample.csv --d-date 2026-02-11 --forward-days 1,2,5
 ```
+
+The default stage-family set is `CROSSOVER,MOMENTUM_SETUP,DIVERGENCE`. Use `--stage-family` only when intentionally restricting the engine path.
 
 Run the initial V3 web UI:
 

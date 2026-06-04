@@ -312,11 +312,12 @@ Implemented:
 - Explicit `StockTraversalPlan` between baseline routing and evaluator dispatch.
 - CSV diagnostics for Crossover and Momentum Setup route outputs.
 - CSV diagnostics for Divergence route outputs.
+- Formal V1 ranking layer with diagnostics for the winning reported stage-family row.
+- Default holistic family set: `CROSSOVER`, `MOMENTUM_SETUP`, and `DIVERGENCE`.
 
 Not implemented:
 
 - Market/sector relative-strength evidence.
 - Lower-timeframe 4H/1H bridge and trigger evidence.
 - Stock-specific historical momentum baseline.
-- Formal ranking layer beyond best `StageEvaluation` selection.
 - Historical calibration for Divergence thresholds and swing geometry.

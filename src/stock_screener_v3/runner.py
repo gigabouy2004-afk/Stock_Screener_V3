@@ -30,7 +30,7 @@ def run_backtest(
     sample_size: int | None = None,
     random_seed: int | None = None,
     forward_days: tuple[int, ...] = (1, 2, 5),
-    stage_families: tuple[str, ...] = ("CROSSOVER", "MOMENTUM_SETUP"),
+    stage_families: tuple[str, ...] = ("CROSSOVER", "MOMENTUM_SETUP", "DIVERGENCE"),
     run_label: str = "v3_backtest",
     details_output: str | Path | None = None,
     summary_output: str | Path | None = None,

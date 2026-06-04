@@ -1,6 +1,6 @@
 # Backtesting Engine Requirements
 
-Date: 2026-06-01
+Date: 2026-06-04
 
 The backtesting engine is a first-class deliverable for this rebuild.
 
@@ -31,47 +31,85 @@ Implemented foundation pieces:
 - In-memory price provider for tests.
 - Yahoo price provider wrapper.
 - Historical as-of slicing.
+- Benchmark as-of loading for market and sector regime context.
+- Same production evidence builder and stage-family evaluator used by CLI runs.
+- Default holistic V3 execution across `CROSSOVER`, `MOMENTUM_SETUP`, and `DIVERGENCE`.
+- Formal ranking diagnostics for the winning stage-family row.
 - Candidate-density calculation.
 - Candidate-only forward hit-rate summary.
+- Outcome-category classification for candidate follow-through.
+- Failure-category classification for failed candidate follow-through.
+- Candidate score-bucket summary reporting.
 - Detail CSV writer.
 - Summary markdown writer.
 - Run artifact path manager with dated default CSV, summary, and log filenames.
 - Workspace-safe input and output path validation.
 - File-backed run logger for queued/started/completed/failed run evidence.
+- Reusable `run_backtest(...)` orchestrator.
+- CLI adapter through `python -m stock_screener_v3.cli backtest`.
 
-Not yet implemented:
+Remaining gaps:
 
-- Production stage evaluators.
-- CLI or web adapter that invokes the run I/O helpers end to end.
 - Multi-date scorecards.
-- Failure-category classification.
+- Average and median forward-return summaries.
+- Pass-rate summaries by sector and review priority.
+- Broader historical calibration packs for ranking, scoring, Divergence thresholds, and regime thresholds.
 
 ## Required Run Modes
 
-| Mode | Purpose |
-|---|---|
-| Single-date replay | Debug one D date |
-| Multi-date replay | Validate across regimes |
-| Random-lot replay | Avoid cherry-picking |
-| Full-universe ranked replay | Simulate real scanner behavior |
+| Mode | Purpose | Status |
+|---|---|---|
+| Single-date replay | Debug one D date | Implemented |
+| Multi-date replay | Validate across regimes | Not yet implemented as one command |
+| Random-lot replay | Avoid cherry-picking | Implemented through deterministic sample size/seed |
+| Full-universe ranked replay | Simulate real scanner behavior | Implemented for one D date |
+
+## Current CLI Contract
+
+Run the full V3 engine from PowerShell:
+
+```powershell
+$env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
+python -m stock_screener_v3.cli backtest `
+  --workspace-root D:\Tools\Stock_Screener_V3 `
+  --universe-file data\samples\us_master_sample.csv `
+  --d-date 2026-02-11 `
+  --forward-days 1,2,5 `
+  --stage-family CROSSOVER,MOMENTUM_SETUP,DIVERGENCE `
+  --run-label v3_full_engine_smoke
+```
+
+`--stage-family` is optional. The default is now:
+
+```text
+CROSSOVER,MOMENTUM_SETUP,DIVERGENCE
+```
+
+The command writes three separate artifacts under `validation/runs/` unless explicit output paths are supplied:
+
+- detail CSV: forensic per-symbol calculation and diagnostics record.
+- summary markdown: human-readable run summary.
+- log file: execution status and run parameters.
+
+The detail CSV preserves V2-compatible columns first, then appends V3 fields including traversal, ranking, regime, Divergence, outcome, and forward-return diagnostics.
 
 ## Required Output Metrics
 
-- Universe size.
-- Symbols processed.
-- Symbols skipped.
-- Skip reasons.
-- Candidates found.
-- Candidate density.
-- D+1 hit rate.
-- D+2 hit rate.
-- D+5 hit rate.
-- Average forward return.
-- Median forward return.
-- Pass rate by sector.
-- Pass rate by score bucket.
-- Pass rate by review priority.
-- Failure reason-code distribution.
+- Universe size: implemented as symbols attempted.
+- Symbols processed: implemented.
+- Symbols skipped: implemented.
+- Skip reasons: implemented.
+- Candidates found: implemented.
+- Candidate density: implemented.
+- D+1 hit rate: implemented for candidate rows.
+- D+2 hit rate: implemented for candidate rows.
+- D+5 hit rate: implemented for candidate rows.
+- Average forward return: not yet implemented.
+- Median forward return: not yet implemented.
+- Pass rate by sector: not yet implemented.
+- Pass rate by score bucket: implemented as candidate count by bucket; hit rate by bucket is not yet implemented.
+- Pass rate by review priority: not yet implemented.
+- Failure reason-code distribution: implemented as first-pass failure category summary.
 
 ## Anti-Bias Rules
 
@@ -81,3 +119,11 @@ Not yet implemented:
 - Do not hide skipped symbols.
 - Do not compare first-N-candidate tests against ranked full-universe tests as equivalent.
 - Do not tune rules from a single ticker.
+
+## Latest Verification
+
+As of 2026-06-04:
+
+- Unit suite: `56 tests` passing.
+- Live Yahoo-backed smoke command was run against `data\samples\us_master_sample.csv` for D date `2026-02-11` with default full V3 families.
+- Live validation artifacts are intentionally not committed unless a summary is promoted as a named validation baseline.
