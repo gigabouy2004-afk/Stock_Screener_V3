@@ -183,8 +183,11 @@ def summarize_result(result: BacktestResult) -> dict[str, object]:
     summary["failure_categories"] = dict(_counter_for_key(detail_rows, "FailureCategory"))
     summary["score_buckets"] = dict(_score_buckets(detail_rows))
     summary["score_bucket_outcomes"] = _group_outcomes(detail_rows, "ScoreBucket", result.config.forward_days)
+    summary["stage_family_outcomes"] = _group_outcomes(detail_rows, "StageFamily", result.config.forward_days)
     summary["sector_outcomes"] = _group_outcomes(detail_rows, "Sector", result.config.forward_days)
     summary["review_priority_outcomes"] = _group_outcomes(detail_rows, "ReviewPriority", result.config.forward_days)
+    summary["risk_tag_outcomes"] = _risk_tag_outcomes(detail_rows, result.config.forward_days)
+    summary["ranking_collision_buckets"] = dict(_ranking_collision_buckets(list(result.detail_rows)))
     return summary
 
 
@@ -244,12 +247,37 @@ def _score_buckets(rows: list[dict[str, object]]) -> Counter[str]:
     return buckets
 
 
+def _ranking_collision_buckets(rows: list[dict[str, object]]) -> Counter[str]:
+    buckets: Counter[str] = Counter()
+    for row in rows:
+        states = str(row.get("RankingCandidateStates") or "")
+        active_families = []
+        for part in states.split("|"):
+            family, separator, state = part.partition(":")
+            if separator and family and state and state != "STATUS_QUO":
+                active_families.append(family)
+        bucket = "+".join(sorted(active_families)) if active_families else "NONE"
+        buckets[bucket] += 1
+    return buckets
+
+
 def _group_outcomes(rows: list[dict[str, object]], group_key: str, forward_days: tuple[int, ...]) -> dict[str, dict[str, object]]:
     grouped: dict[str, list[dict[str, object]]] = {}
     for row in rows:
         group = _group_value(row, group_key)
         grouped.setdefault(group, []).append(row)
     return {group: _outcome_metrics(group_rows, forward_days) for group, group_rows in sorted(grouped.items())}
+
+
+def _risk_tag_outcomes(rows: list[dict[str, object]], forward_days: tuple[int, ...]) -> dict[str, dict[str, object]]:
+    grouped: dict[str, list[dict[str, object]]] = {}
+    for row in rows:
+        tags = [tag.strip() for tag in str(row.get("RiskTags") or "").split(",") if tag.strip()]
+        if not tags:
+            tags = ["NO_RISK_TAG"]
+        for tag in tags:
+            grouped.setdefault(tag, []).append(row)
+    return {tag: _outcome_metrics(tag_rows, forward_days) for tag, tag_rows in sorted(grouped.items())}
 
 
 def _group_value(row: dict[str, object], group_key: str) -> str:

@@ -360,3 +360,126 @@ Last verification before restart:
 python -m unittest discover -s tests -v
 52 tests passing
 ```
+
+## 14. Post-Signoff Update: 2026-06-05
+
+The original next-step items from this signoff were completed after the 2026-06-02 transition:
+
+- formal ranking contract added;
+- ranking diagnostics emitted;
+- `DIVERGENCE` included in the default holistic stage-family set;
+- tests expanded to 58 passing;
+- web console reframed as a scanner UI using the shared V3 runner path.
+
+Latest pushed baseline at this update:
+
+```text
+adb9d38 Reframe web console as scanner UI
+```
+
+Full Technology-universe validation was run against:
+
+- `data/samples/00-NYSE_NASDAQ_Common_Stocks_Sector-Technology.csv`
+- 525 NYSE/NASDAQ Technology symbols per date
+- D dates: `2026-02-11,2026-03-11,2026-04-11`
+- stage families: `CROSSOVER,MOMENTUM_SETUP,DIVERGENCE`
+- forward horizons: D+1, D+2, D+5, D+10, D+20
+
+Generated validation artifacts:
+
+- `validation/runs/v3_tech_full_pack_20260605_20260211_summary.md`
+- `validation/runs/v3_tech_full_pack_20260605_20260311_summary.md`
+- `validation/runs/v3_tech_full_pack_20260605_20260411_summary.md`
+- `validation/runs/v3_tech_full_pack_20260605_aggregate_summary.md`
+- `validation/runs/v3_tech_full_pack_20260605_calibration_review.md`
+- `validation/runs/v3_tech_weak_watch_priority_review_20260605.md`
+- `validation/runs/v3_nontech_master_watch_probe_20260605_20260211_summary.md`
+- `validation/runs/v3_nontech_master_watch_probe_20260605_20260311_summary.md`
+- `validation/runs/v3_nontech_master_watch_probe_20260605_multi_date_summary.md`
+- `validation/runs/v3_nontech_master_watch_probe_20260605_review.md`
+- `validation/runs/v3_usa_folder_nontech_watch_probe_20260605_20260211_summary.md`
+- `validation/runs/v3_usa_folder_nontech_watch_probe_20260605_20260311_summary.md`
+- `validation/runs/v3_usa_folder_nontech_watch_probe_20260605_multi_date_summary.md`
+- `validation/runs/v3_usa_folder_nontech_watch_probe_20260605_review.md`
+
+The `backtest-pack` command produced all per-date artifacts but hit the shell timeout before writing its built-in aggregate summary. The aggregate summary above was written from the completed detail CSVs.
+
+Per-date results:
+
+| D date | Symbols processed | Symbols skipped | Candidates | Candidate density |
+|---|---:|---:|---:|---:|
+| 2026-02-11 | 512 | 13 | 354 | 0.6914 |
+| 2026-03-11 | 514 | 11 | 354 | 0.6887 |
+| 2026-04-11 | 514 | 11 | 450 | 0.8755 |
+
+Aggregate candidate outcomes across 1,158 candidates:
+
+| Horizon | Evaluated | Positive | Hit Rate | Average Return | Median Return |
+|---|---:|---:|---:|---:|---:|
+| D+1 | 1158 | 531 | 45.85% | 0.19% | -0.27% |
+| D+2 | 1158 | 595 | 51.38% | 0.98% | 0.16% |
+| D+5 | 1158 | 662 | 57.17% | 3.39% | 1.31% |
+| D+10 | 1158 | 668 | 57.69% | 5.15% | 2.39% |
+| D+20 | 1158 | 619 | 53.45% | 8.86% | 1.56% |
+
+Diagnostic confirmation:
+
+- all processed rows include traversal diagnostics;
+- all processed rows include ranking diagnostics;
+- all processed rows include Divergence diagnostic fields;
+- `DIVERGENCE` competed materially with `CROSSOVER` and `MOMENTUM_SETUP`;
+- `MOMENTUM_SETUP` blocking remained active when stock baseline was bearish while bearish `CROSSOVER` stayed available for exit/capital-preservation review.
+
+Reporting improvement after calibration review:
+
+- single-date summaries now include `Stage Family Outcomes`;
+- single-date summaries now include `Risk Tag Outcomes`;
+- single-date and multi-date summaries now include `Ranking Collision Buckets`;
+- smoke run `v3_collision_report_smoke` confirmed the new sections are rendered.
+- smoke run `v3_risk_tag_report_smoke` confirmed risk-tag outcomes are rendered.
+
+Weak-date WATCH/priority review:
+
+- `WATCH` alone is not a reliable weakness separator yet.
+- February `WATCH` D+20: 97 candidates, 40.21% hit rate, 1.36% average return.
+- March `WATCH` D+20: 197 candidates, 23.86% hit rate, -3.34% average return.
+- March `WATCH + BELOW_EMA200` D+20: 102 candidates, 10.78% hit rate, -8.89% average return.
+- March bullish Divergence below EMA200 and Momentum Setup pullback below EMA200 were the weakest watchlist segments.
+
+Master-library non-Technology probe:
+
+- source master: `D:\Tools\StockCodeMaster\Script\NYSE_NASDAQ_Master_Library.csv`;
+- derived universe: `data/samples/us_non_technology_master_sample_20260605.csv`;
+- derived universe size: 5,535 non-Technology common-stock rows;
+- run label: `v3_nontech_master_watch_probe_20260605`;
+- sample size: 200, random seed: 20260605;
+- February processed 186 symbols and found 150 candidates;
+- March processed 186 symbols and found 126 candidates;
+- February `WATCH + BELOW_EMA200` D+20: 20 candidates, 25.00% hit rate, -8.29% average return;
+- March `WATCH + BELOW_EMA200` D+20: 17 candidates, 41.18% hit rate, -9.12% average return;
+- March `MOMENTUM_SETUP / BULL_PULLBACK_REENTRY + BELOW_EMA200` D+20: 6 candidates, 33.33% hit rate, -16.79% average return.
+
+USA-folder sector probe:
+
+- source folder: `D:\Tools\StockCodeMaster\USA`;
+- derived universe: `data/samples/us_usa_folder_nontech_sector_universe_20260605.csv`;
+- derived universe size: 996 unique non-Technology symbols from Basic Materials, Energy, Industrial, Misc, Telecom, and Utilities files;
+- run label: `v3_usa_folder_nontech_watch_probe_20260605`;
+- sample size: 200, random seed: 20260605;
+- February processed 191 symbols and found 163 candidates;
+- March processed 193 symbols and found 152 candidates;
+- February `WATCH + BELOW_EMA200` D+20: 11 candidates, 27.27% hit rate, -0.12% average return;
+- March `WATCH + BELOW_EMA200` D+20: 19 candidates, 57.89% hit rate, 5.88% average return;
+- this does not confirm generic March `WATCH + BELOW_EMA200` weakness for USA-folder sectors.
+
+External code-list source rule:
+
+- Use `D:\Tools\StockCodeMaster\USA` for sector-folder validation and sector-specific code lists.
+- Use `D:\Tools\StockCodeMaster\Script\NYSE_NASDAQ_Master_Library.csv` when a broad all-sector NYSE/NASDAQ common-stock universe is required.
+
+Next restart direction after this update:
+
+1. Run sector-by-sector validation packs from `D:\Tools\StockCodeMaster\USA` where full-schema sector files exist.
+2. Compare USA-folder sector results against broad master-library results before changing review priority rules.
+3. Preserve bearish `CROSSOVER` review for exit/capital-preservation.
+4. Do not tune from the 2026-06-05 Technology-only baseline alone.

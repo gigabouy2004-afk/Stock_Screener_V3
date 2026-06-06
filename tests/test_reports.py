@@ -23,8 +23,11 @@ class ReportTests(unittest.TestCase):
                 {
                     "Symbol": "AAA",
                     "CandidateClass": "SELECTED",
+                    "StageFamily": "CROSSOVER",
                     "TotalScore": 72.0,
+                    "RiskTags": "BELOW_EMA200",
                     "DPlus1ReturnPct": 2.0,
+                    "RankingCandidateStates": "CROSSOVER:PRE_BULL_CROSSOVER|MOMENTUM_SETUP:STATUS_QUO|DIVERGENCE:BULLISH_DIVERGENCE",
                 },
                 {"Symbol": "BBB", "CandidateClass": "STATUS_QUO", "DPlus1ReturnPct": -1.0},
             ),
@@ -38,8 +41,14 @@ class ReportTests(unittest.TestCase):
         self.assertIn("## Score Buckets", markdown)
         self.assertIn("| 70-79 | 1 |", markdown)
         self.assertIn("## Score Bucket Outcomes D+1", markdown)
+        self.assertIn("## Stage Family Outcomes D+1", markdown)
+        self.assertIn("| CROSSOVER | 1 | 1 | 1 | 100.00% | 2.00% | 2.00% |", markdown)
         self.assertIn("## Sector Outcomes D+1", markdown)
         self.assertIn("## Review Priority Outcomes D+1", markdown)
+        self.assertIn("## Risk Tag Outcomes D+1", markdown)
+        self.assertIn("| BELOW_EMA200 | 1 | 1 | 1 | 100.00% | 2.00% | 2.00% |", markdown)
+        self.assertIn("## Ranking Collision Buckets", markdown)
+        self.assertIn("| CROSSOVER+DIVERGENCE | 1 |", markdown)
 
     def test_render_summary_markdown_includes_failure_categories(self) -> None:
         result = BacktestResult(
@@ -73,7 +82,14 @@ class ReportTests(unittest.TestCase):
             symbols_processed=1,
             symbols_skipped=0,
             candidates_found=1,
-            detail_rows=({"Symbol": "AAA", "CandidateClass": "SELECTED", "DPlus1ReturnPct": 2.0},),
+            detail_rows=(
+                {
+                    "Symbol": "AAA",
+                    "CandidateClass": "SELECTED",
+                    "DPlus1ReturnPct": 2.0,
+                    "RankingCandidateStates": "CROSSOVER:PRE_BULL_CROSSOVER|MOMENTUM_SETUP:STATUS_QUO",
+                },
+            ),
         )
         second = BacktestResult(
             config=BacktestRunConfig(universe_file="memory", d_date=date(2026, 3, 11), stage_families=("MOCK",), forward_days=(1,)),
@@ -82,7 +98,14 @@ class ReportTests(unittest.TestCase):
             symbols_processed=1,
             symbols_skipped=0,
             candidates_found=1,
-            detail_rows=({"Symbol": "BBB", "CandidateClass": "WATCH", "DPlus1ReturnPct": -1.0},),
+            detail_rows=(
+                {
+                    "Symbol": "BBB",
+                    "CandidateClass": "WATCH",
+                    "DPlus1ReturnPct": -1.0,
+                    "RankingCandidateStates": "CROSSOVER:STATUS_QUO|MOMENTUM_SETUP:BULL_PULLBACK_REENTRY",
+                },
+            ),
         )
 
         markdown = render_multi_date_summary_markdown((first, second))
@@ -90,6 +113,9 @@ class ReportTests(unittest.TestCase):
         self.assertIn("# V3 Multi-Date Backtest Summary", markdown)
         self.assertIn("| 2026-02-11 | 1 | 0 | 1 | 1.0000 |", markdown)
         self.assertIn("| D+1 | 2 | 1 | 50.00% | 0.50% | 0.50% |", markdown)
+        self.assertIn("## Ranking Collision Buckets", markdown)
+        self.assertIn("| CROSSOVER | 1 |", markdown)
+        self.assertIn("| MOMENTUM_SETUP | 1 |", markdown)
 
     def test_write_reports_creates_files(self) -> None:
         result = BacktestResult(

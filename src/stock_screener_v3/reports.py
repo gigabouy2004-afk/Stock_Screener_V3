@@ -62,8 +62,11 @@ def render_summary_markdown(result: BacktestResult) -> str:
         result.config.forward_days,
         group_order=("80+", "70-79", "60-69", "50-59", "<50"),
     )
+    _append_group_outcomes(lines, "Stage Family Outcomes", summary.get("stage_family_outcomes", {}), result.config.forward_days)
     _append_group_outcomes(lines, "Sector Outcomes", summary.get("sector_outcomes", {}), result.config.forward_days)
     _append_group_outcomes(lines, "Review Priority Outcomes", summary.get("review_priority_outcomes", {}), result.config.forward_days)
+    _append_group_outcomes(lines, "Risk Tag Outcomes", summary.get("risk_tag_outcomes", {}), result.config.forward_days)
+    _append_ranking_collision_buckets(lines, summary.get("ranking_collision_buckets", {}))
     failure_categories = summary.get("failure_categories", {})
     if failure_categories:
         lines.extend(["", "## Failure Categories", ""])
@@ -138,6 +141,7 @@ def render_multi_date_summary_markdown(results: tuple[BacktestResult, ...]) -> s
             f"| D+{days} | {len(numeric_values)} | {len(positives)} | {hit_rate:.2%} | "
             f"{_format_pct_value(average_return)} | {_format_pct_value(median_return)} |"
         )
+    _append_ranking_collision_buckets(lines, _ranking_collision_buckets([row for result in results for row in result.detail_rows]))
     return "\n".join(lines) + "\n"
 
 
@@ -187,6 +191,15 @@ def _append_group_outcomes(
             lines.extend(rows)
 
 
+def _append_ranking_collision_buckets(lines: list[str], buckets: object) -> None:
+    if not isinstance(buckets, dict) or not buckets:
+        return
+    lines.extend(["", "## Ranking Collision Buckets", "", "| Active Families Before Ranking | Rows |", "|---|---:|"])
+    for bucket, count in sorted(buckets.items(), key=lambda item: (-int(item[1]), str(item[0]))):
+        if int(count):
+            lines.append(f"| {bucket} | {count} |")
+
+
 def _ordered_groups(outcomes: dict[object, object], group_order: tuple[str, ...]) -> list[str]:
     keys = [str(key) for key in outcomes.keys()]
     ordered = [group for group in group_order if group in keys]
@@ -222,3 +235,16 @@ def _median(values: list[float]) -> float | None:
     if len(ordered) % 2:
         return round(ordered[midpoint], 4)
     return round((ordered[midpoint - 1] + ordered[midpoint]) / 2, 4)
+
+
+def _ranking_collision_buckets(rows: list[dict[str, Any]]) -> dict[str, int]:
+    buckets: dict[str, int] = {}
+    for row in rows:
+        active_families = []
+        for part in str(row.get("RankingCandidateStates") or "").split("|"):
+            family, separator, state = part.partition(":")
+            if separator and family and state and state != "STATUS_QUO":
+                active_families.append(family)
+        bucket = "+".join(sorted(active_families)) if active_families else "NONE"
+        buckets[bucket] = buckets.get(bucket, 0) + 1
+    return buckets
