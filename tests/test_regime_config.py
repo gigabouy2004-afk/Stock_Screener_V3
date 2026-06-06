@@ -14,6 +14,12 @@ class RegimeConfigTests(unittest.TestCase):
         self.assertEqual(config.market_symbol_for(record), "QQQ")
         self.assertEqual(config.sector_symbol_for(record), "XLK")
 
+    def test_default_config_maps_basic_materials_alias(self) -> None:
+        config = RegimeBenchmarkConfig.default()
+        record = UniverseRecord(symbol="LIN", yahoo_symbol="LIN", exchange="NASDAQ", sector="Basic Materials")
+
+        self.assertEqual(config.sector_symbol_for(record), "XLB")
+
     def test_default_config_maps_us_exchange_codes(self) -> None:
         config = RegimeBenchmarkConfig.default()
 

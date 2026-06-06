@@ -39,6 +39,7 @@ class RegimeBenchmarkConfig:
                 "HEALTH CARE": "XLV",
                 "HEALTHCARE": "XLV",
                 "INDUSTRIALS": "XLI",
+                "BASIC MATERIALS": "XLB",
                 "MATERIALS": "XLB",
                 "REAL ESTATE": "XLRE",
                 "TECHNOLOGY": "XLK",

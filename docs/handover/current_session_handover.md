@@ -437,11 +437,29 @@ Calibration read:
 - Cross-sector review confirmed that date regime dominates several sectors and that family behavior is sector-specific.
 - No scoring or threshold changes were made from this validation pass.
 
+Follow-up symbol-level review:
+
+- `validation/runs/v3_symbol_level_failure_review_20260607.md`
+- Basic Materials Crossover D+20 remained weak:
+  - 94 candidates, 21.28% hit rate, -7.79% average return, -8.20% median return;
+  - weakness was concentrated in February and March;
+  - `PRE_BEAR_CROSSOVER` was worse than `PRE_BULL_CROSSOVER`, which reinforces that bearish Crossover should be interpreted as exit/capital-preservation visibility, not bullish-entry quality.
+- The Basic Materials sector file uses `Basic Materials`, but the default regime config only mapped `MATERIALS` to `XLB`.
+- Added `BASIC MATERIALS -> XLB` to `RegimeBenchmarkConfig.default()` and added a regression test.
+- Reran Basic Materials with run label `v3_sector_basic_materials_regime_alias_check_20260607`:
+  - processed 361 rows across three dates;
+  - found 285 candidates;
+  - sector regimes changed from all `UNKNOWN` to 241 `BULLISH` and 120 `MIXED`;
+  - candidate counts and outcomes were unchanged, confirming the Crossover weakness was not only a missing-sector-context artifact.
+- Misc Divergence D+20 remained weak:
+  - 52 candidates, 34.62% hit rate, -1.24% average return, -4.05% median return;
+  - hidden and bullish variants were weaker, but more dates are needed before changing Divergence thresholds.
+
 Verification after restart:
 
 ```text
 python -m unittest discover -s tests -v
-58 tests passing
+59 tests passing
 ```
 
 ## What Is Not Yet Built
@@ -496,9 +514,9 @@ Completed in the 2026-06-04 closure pass:
 
 Recommended next implementation order:
 
-1. Investigate Basic Materials Crossover weakness and Misc Divergence weakness with symbol-level examples.
+1. Compare Basic Materials `PRE_BEAR_CROSSOVER` against forward drawdown avoidance, not only positive-return hit rate.
 2. Compare market, sector, and stock regime labels by date for sectors with sharp date reversals.
-3. Add a generated cross-sector calibration report command once the manual review format stabilizes.
+3. Add generated cross-sector and symbol-level calibration report commands once the manual review formats stabilize.
 4. Preserve bearish `CROSSOVER` review for exit/capital-preservation.
 
 Parallel WIP track:
