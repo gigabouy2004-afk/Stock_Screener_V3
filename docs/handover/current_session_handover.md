@@ -491,11 +491,41 @@ Path-metric reporting update:
   - average best high 7.21%;
   - median best high 2.17%.
 
+Cross-sector Bear Crossover drawdown review:
+
+- Completed in requested order: Technology, Industrial, Energy, Telecom, Utilities.
+- Review artifact: `validation/runs/v3_cross_sector_bear_crossover_drawdown_review_20260607.md`.
+- Run labels:
+  - `v3_bear_crossover_path_technology_20260607`;
+  - `v3_bear_crossover_path_industrial_20260607`;
+  - `v3_bear_crossover_path_energy_20260607`;
+  - `v3_bear_crossover_path_telecom_20260607`;
+  - `v3_bear_crossover_path_telecom_alias_check_20260607`;
+  - `v3_bear_crossover_path_utilities_20260607`.
+- The Telecom sector file uses `Telecom`; added `TELECOM -> XLC` and `TELECOMMUNICATIONS -> XLC` aliases to `RegimeBenchmarkConfig.default()` and added a regression test.
+- Aggregate `PRE_BEAR_CROSSOVER` D+20 worst-low medians:
+  - Technology: -7.00%;
+  - Industrial: -8.89%;
+  - Energy: -8.63%;
+  - Telecom: -6.29%;
+  - Utilities: -5.26%.
+- Aggregate `PRE_BEAR_CROSSOVER` D+20 worst-low <= -10% rates:
+  - Technology: 39.72%;
+  - Industrial: 44.83%;
+  - Energy: 39.13%;
+  - Telecom: 30.00%;
+  - Utilities: 16.98%.
+- Calibration read:
+  - Technology and Industrial have the strongest broad evidence after Basic Materials;
+  - Energy and Telecom are moderate;
+  - Utilities is materially milder;
+  - no review-priority threshold change was promoted from this pass.
+
 Verification after restart:
 
 ```text
 python -m unittest discover -s tests -v
-60 tests passing
+61 tests passing
 ```
 
 ## What Is Not Yet Built
@@ -550,8 +580,11 @@ Completed in the 2026-06-04 closure pass:
 
 Recommended next implementation order:
 
-1. Compare `PRE_BEAR_CROSSOVER` drawdown behavior across Energy, Industrial, Technology, Utilities, and Telecom before changing review priority.
-2. In the live scanner UI, visually separate `PRE_BEAR_CROSSOVER` as exit/capital-preservation review from bullish-entry candidates.
+1. In the live scanner UI, visually separate `PRE_BEAR_CROSSOVER` as exit/capital-preservation review from bullish-entry candidates.
+2. Consider a future sector-aware Bear Crossover urgency layer after more dates:
+   - stronger for Basic Materials, Technology, and Industrial;
+   - moderate for Energy and Telecom;
+   - lighter for Utilities.
 3. Add generated cross-sector and symbol-level calibration report commands once the manual review formats stabilize.
 4. Consider adding path-metric outcome reporting to risk-tag and review-priority groups if calibration review needs it.
 

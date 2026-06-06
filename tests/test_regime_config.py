@@ -20,6 +20,12 @@ class RegimeConfigTests(unittest.TestCase):
 
         self.assertEqual(config.sector_symbol_for(record), "XLB")
 
+    def test_default_config_maps_telecom_alias(self) -> None:
+        config = RegimeBenchmarkConfig.default()
+        record = UniverseRecord(symbol="TMUS", yahoo_symbol="TMUS", exchange="NASDAQ", sector="Telecom")
+
+        self.assertEqual(config.sector_symbol_for(record), "XLC")
+
     def test_default_config_maps_us_exchange_codes(self) -> None:
         config = RegimeBenchmarkConfig.default()
 

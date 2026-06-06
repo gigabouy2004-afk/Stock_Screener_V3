@@ -32,6 +32,8 @@ class RegimeBenchmarkConfig:
             },
             sector_benchmarks={
                 "COMMUNICATION SERVICES": "XLC",
+                "TELECOM": "XLC",
+                "TELECOMMUNICATIONS": "XLC",
                 "CONSUMER DISCRETIONARY": "XLY",
                 "CONSUMER STAPLES": "XLP",
                 "ENERGY": "XLE",
