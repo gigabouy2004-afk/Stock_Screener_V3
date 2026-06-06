@@ -186,6 +186,8 @@ def summarize_result(result: BacktestResult) -> dict[str, object]:
     summary["score_buckets"] = dict(_score_buckets(detail_rows))
     summary["score_bucket_outcomes"] = _group_outcomes(detail_rows, "ScoreBucket", result.config.forward_days)
     summary["stage_family_outcomes"] = _group_outcomes(detail_rows, "StageFamily", result.config.forward_days)
+    summary["stage_family_path_outcomes"] = _group_path_outcomes(detail_rows, "StageFamily", result.config.forward_days)
+    summary["candidate_state_path_outcomes"] = _group_path_outcomes(detail_rows, "CandidateStateRaw", result.config.forward_days)
     summary["sector_outcomes"] = _group_outcomes(detail_rows, "Sector", result.config.forward_days)
     summary["review_priority_outcomes"] = _group_outcomes(detail_rows, "ReviewPriority", result.config.forward_days)
     summary["risk_tag_outcomes"] = _risk_tag_outcomes(detail_rows, result.config.forward_days)
@@ -282,6 +284,14 @@ def _risk_tag_outcomes(rows: list[dict[str, object]], forward_days: tuple[int, .
     return {tag: _outcome_metrics(tag_rows, forward_days) for tag, tag_rows in sorted(grouped.items())}
 
 
+def _group_path_outcomes(rows: list[dict[str, object]], group_key: str, forward_days: tuple[int, ...]) -> dict[str, dict[str, object]]:
+    grouped: dict[str, list[dict[str, object]]] = {}
+    for row in rows:
+        group = _group_value(row, group_key)
+        grouped.setdefault(group, []).append(row)
+    return {group: _path_metrics(group_rows, forward_days) for group, group_rows in sorted(grouped.items())}
+
+
 def _group_value(row: dict[str, object], group_key: str) -> str:
     if group_key == "ScoreBucket":
         score = _number(row.get("TotalScore"))
@@ -312,6 +322,23 @@ def _outcome_metrics(rows: list[dict[str, object]], forward_days: tuple[int, ...
         metrics[f"d_plus_{days}_hit_rate"] = len(positives) / len(numeric_values) if numeric_values else 0.0
         metrics[f"d_plus_{days}_average_return_pct"] = round(mean(numeric_values), 4) if numeric_values else None
         metrics[f"d_plus_{days}_median_return_pct"] = round(median(numeric_values), 4) if numeric_values else None
+    return metrics
+
+
+def _path_metrics(rows: list[dict[str, object]], forward_days: tuple[int, ...]) -> dict[str, object]:
+    metrics: dict[str, object] = {"candidates": len(rows)}
+    for days in forward_days:
+        worst_key = f"DPlus{days}WorstLowReturnPct"
+        best_key = f"DPlus{days}BestHighReturnPct"
+        worst_values = [_number(row.get(worst_key)) for row in rows if row.get(worst_key) is not None]
+        best_values = [_number(row.get(best_key)) for row in rows if row.get(best_key) is not None]
+        numeric_worst_values = [value for value in worst_values if value is not None]
+        numeric_best_values = [value for value in best_values if value is not None]
+        metrics[f"d_plus_{days}_path_evaluated"] = min(len(numeric_worst_values), len(numeric_best_values))
+        metrics[f"d_plus_{days}_average_worst_low_return_pct"] = round(mean(numeric_worst_values), 4) if numeric_worst_values else None
+        metrics[f"d_plus_{days}_median_worst_low_return_pct"] = round(median(numeric_worst_values), 4) if numeric_worst_values else None
+        metrics[f"d_plus_{days}_average_best_high_return_pct"] = round(mean(numeric_best_values), 4) if numeric_best_values else None
+        metrics[f"d_plus_{days}_median_best_high_return_pct"] = round(median(numeric_best_values), 4) if numeric_best_values else None
     return metrics
 
 

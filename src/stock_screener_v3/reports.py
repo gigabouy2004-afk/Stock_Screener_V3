@@ -63,6 +63,8 @@ def render_summary_markdown(result: BacktestResult) -> str:
         group_order=("80+", "70-79", "60-69", "50-59", "<50"),
     )
     _append_group_outcomes(lines, "Stage Family Outcomes", summary.get("stage_family_outcomes", {}), result.config.forward_days)
+    _append_group_path_outcomes(lines, "Stage Family Path Outcomes", summary.get("stage_family_path_outcomes", {}), result.config.forward_days)
+    _append_group_path_outcomes(lines, "Candidate State Path Outcomes", summary.get("candidate_state_path_outcomes", {}), result.config.forward_days)
     _append_group_outcomes(lines, "Sector Outcomes", summary.get("sector_outcomes", {}), result.config.forward_days)
     _append_group_outcomes(lines, "Review Priority Outcomes", summary.get("review_priority_outcomes", {}), result.config.forward_days)
     _append_group_outcomes(lines, "Risk Tag Outcomes", summary.get("risk_tag_outcomes", {}), result.config.forward_days)
@@ -141,6 +143,9 @@ def render_multi_date_summary_markdown(results: tuple[BacktestResult, ...]) -> s
             f"| D+{days} | {len(numeric_values)} | {len(positives)} | {hit_rate:.2%} | "
             f"{_format_pct_value(average_return)} | {_format_pct_value(median_return)} |"
         )
+    _append_aggregate_path_outcomes(lines, candidate_rows, forward_days)
+    _append_group_path_outcomes(lines, "Stage Family Path Outcomes", _group_path_outcomes(candidate_rows, "StageFamily", forward_days), forward_days)
+    _append_group_path_outcomes(lines, "Candidate State Path Outcomes", _group_path_outcomes(candidate_rows, "CandidateStateRaw", forward_days), forward_days)
     _append_ranking_collision_buckets(lines, _ranking_collision_buckets([row for result in results for row in result.detail_rows]))
     return "\n".join(lines) + "\n"
 
@@ -191,6 +196,71 @@ def _append_group_outcomes(
             lines.extend(rows)
 
 
+def _append_group_path_outcomes(
+    lines: list[str],
+    title: str,
+    outcomes: object,
+    forward_days: tuple[int, ...],
+) -> None:
+    if not isinstance(outcomes, dict) or not outcomes:
+        return
+    for days in forward_days:
+        rows: list[str] = []
+        for group in _ordered_groups(outcomes, ()):
+            metrics = outcomes.get(group)
+            if not isinstance(metrics, dict):
+                continue
+            evaluated = int(metrics.get(f"d_plus_{days}_path_evaluated", 0))
+            if evaluated == 0:
+                continue
+            candidates = int(metrics.get("candidates", 0))
+            average_worst = _format_pct_value(metrics.get(f"d_plus_{days}_average_worst_low_return_pct"))
+            median_worst = _format_pct_value(metrics.get(f"d_plus_{days}_median_worst_low_return_pct"))
+            average_best = _format_pct_value(metrics.get(f"d_plus_{days}_average_best_high_return_pct"))
+            median_best = _format_pct_value(metrics.get(f"d_plus_{days}_median_best_high_return_pct"))
+            rows.append(
+                f"| {group} | {candidates} | {evaluated} | {average_worst} | {median_worst} | {average_best} | {median_best} |"
+            )
+        if rows:
+            lines.extend(
+                [
+                    "",
+                    f"## {title} D+{days}",
+                    "",
+                    "| Group | Candidates | Evaluated | Avg Worst Low | Median Worst Low | Avg Best High | Median Best High |",
+                    "|---|---:|---:|---:|---:|---:|---:|",
+                ]
+            )
+            lines.extend(rows)
+
+
+def _append_aggregate_path_outcomes(lines: list[str], rows: list[dict[str, Any]], forward_days: tuple[int, ...]) -> None:
+    path_metrics = _path_metrics(rows, forward_days)
+    table_rows: list[str] = []
+    for days in forward_days:
+        evaluated = int(path_metrics.get(f"d_plus_{days}_path_evaluated", 0))
+        if evaluated == 0:
+            continue
+        table_rows.append(
+            f"| D+{days} | {evaluated} | "
+            f"{_format_pct_value(path_metrics.get(f'd_plus_{days}_average_worst_low_return_pct'))} | "
+            f"{_format_pct_value(path_metrics.get(f'd_plus_{days}_median_worst_low_return_pct'))} | "
+            f"{_format_pct_value(path_metrics.get(f'd_plus_{days}_average_best_high_return_pct'))} | "
+            f"{_format_pct_value(path_metrics.get(f'd_plus_{days}_median_best_high_return_pct'))} |"
+        )
+    if table_rows:
+        lines.extend(
+            [
+                "",
+                "## Aggregate Forward Path Outcomes",
+                "",
+                "| Horizon | Evaluated | Avg Worst Low | Median Worst Low | Avg Best High | Median Best High |",
+                "|---|---:|---:|---:|---:|---:|",
+            ]
+        )
+        lines.extend(table_rows)
+
+
 def _append_ranking_collision_buckets(lines: list[str], buckets: object) -> None:
     if not isinstance(buckets, dict) or not buckets:
         return
@@ -235,6 +305,36 @@ def _median(values: list[float]) -> float | None:
     if len(ordered) % 2:
         return round(ordered[midpoint], 4)
     return round((ordered[midpoint - 1] + ordered[midpoint]) / 2, 4)
+
+
+def _group_path_outcomes(rows: list[dict[str, Any]], group_key: str, forward_days: tuple[int, ...]) -> dict[str, dict[str, object]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        value = row.get(group_key)
+        group = str(value) if value not in {None, ""} else "UNKNOWN"
+        grouped.setdefault(group, []).append(row)
+    return {group: _path_metrics(group_rows, forward_days) for group, group_rows in sorted(grouped.items())}
+
+
+def _path_metrics(rows: list[dict[str, Any]], forward_days: tuple[int, ...]) -> dict[str, object]:
+    metrics: dict[str, object] = {"candidates": len(rows)}
+    for days in forward_days:
+        worst_values = [
+            value
+            for value in (_number(row.get(f"DPlus{days}WorstLowReturnPct")) for row in rows if row.get(f"DPlus{days}WorstLowReturnPct") is not None)
+            if value is not None
+        ]
+        best_values = [
+            value
+            for value in (_number(row.get(f"DPlus{days}BestHighReturnPct")) for row in rows if row.get(f"DPlus{days}BestHighReturnPct") is not None)
+            if value is not None
+        ]
+        metrics[f"d_plus_{days}_path_evaluated"] = min(len(worst_values), len(best_values))
+        metrics[f"d_plus_{days}_average_worst_low_return_pct"] = _mean(worst_values)
+        metrics[f"d_plus_{days}_median_worst_low_return_pct"] = _median(worst_values)
+        metrics[f"d_plus_{days}_average_best_high_return_pct"] = _mean(best_values)
+        metrics[f"d_plus_{days}_median_best_high_return_pct"] = _median(best_values)
+    return metrics
 
 
 def _ranking_collision_buckets(rows: list[dict[str, Any]]) -> dict[str, int]:

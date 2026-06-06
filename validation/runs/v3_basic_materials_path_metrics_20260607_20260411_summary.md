@@ -114,6 +114,106 @@
 | DIVERGENCE | 33 | 33 | 22 | 66.67% | 8.98% | 5.06% |
 | MOMENTUM_SETUP | 67 | 67 | 34 | 50.75% | 3.60% | 0.19% |
 
+## Stage Family Path Outcomes D+1
+
+| Group | Candidates | Evaluated | Avg Worst Low | Median Worst Low | Avg Best High | Median Best High |
+|---|---:|---:|---:|---:|---:|---:|
+| CROSSOVER | 12 | 12 | -2.95% | -3.03% | 4.28% | 3.96% |
+| DIVERGENCE | 33 | 33 | -2.34% | -2.00% | 3.56% | 3.28% |
+| MOMENTUM_SETUP | 67 | 67 | -2.19% | -2.14% | 2.76% | 1.55% |
+
+## Stage Family Path Outcomes D+2
+
+| Group | Candidates | Evaluated | Avg Worst Low | Median Worst Low | Avg Best High | Median Best High |
+|---|---:|---:|---:|---:|---:|---:|
+| CROSSOVER | 12 | 12 | -2.95% | -3.03% | 6.88% | 6.06% |
+| DIVERGENCE | 33 | 33 | -2.65% | -2.10% | 6.34% | 6.33% |
+| MOMENTUM_SETUP | 67 | 67 | -2.28% | -2.14% | 5.42% | 4.00% |
+
+## Stage Family Path Outcomes D+5
+
+| Group | Candidates | Evaluated | Avg Worst Low | Median Worst Low | Avg Best High | Median Best High |
+|---|---:|---:|---:|---:|---:|---:|
+| CROSSOVER | 12 | 12 | -3.80% | -3.14% | 13.94% | 13.84% |
+| DIVERGENCE | 33 | 33 | -2.91% | -2.28% | 13.85% | 11.08% |
+| MOMENTUM_SETUP | 67 | 67 | -3.05% | -2.60% | 10.11% | 6.47% |
+
+## Stage Family Path Outcomes D+10
+
+| Group | Candidates | Evaluated | Avg Worst Low | Median Worst Low | Avg Best High | Median Best High |
+|---|---:|---:|---:|---:|---:|---:|
+| CROSSOVER | 12 | 12 | -4.54% | -3.57% | 14.77% | 13.84% |
+| DIVERGENCE | 33 | 33 | -3.65% | -2.73% | 16.31% | 11.08% |
+| MOMENTUM_SETUP | 67 | 67 | -6.03% | -4.55% | 11.08% | 6.92% |
+
+## Stage Family Path Outcomes D+20
+
+| Group | Candidates | Evaluated | Avg Worst Low | Median Worst Low | Avg Best High | Median Best High |
+|---|---:|---:|---:|---:|---:|---:|
+| CROSSOVER | 12 | 12 | -10.24% | -8.33% | 17.86% | 16.05% |
+| DIVERGENCE | 33 | 33 | -6.19% | -6.31% | 20.12% | 16.86% |
+| MOMENTUM_SETUP | 67 | 67 | -10.68% | -11.37% | 13.83% | 8.30% |
+
+## Candidate State Path Outcomes D+1
+
+| Group | Candidates | Evaluated | Avg Worst Low | Median Worst Low | Avg Best High | Median Best High |
+|---|---:|---:|---:|---:|---:|---:|
+| BEARISH_DIVERGENCE | 1 | 1 | -1.48% | -1.48% | 2.15% | 2.15% |
+| BULLISH_DIVERGENCE | 8 | 8 | -2.75% | -2.86% | 3.85% | 2.44% |
+| BULL_PULLBACK_REENTRY | 67 | 67 | -2.19% | -2.14% | 2.76% | 1.55% |
+| HIDDEN_BEARISH_DIVERGENCE | 22 | 22 | -2.40% | -2.05% | 3.54% | 3.53% |
+| HIDDEN_BULLISH_DIVERGENCE | 2 | 2 | -0.46% | -0.46% | 3.35% | 3.35% |
+| PRE_BEAR_CROSSOVER | 8 | 8 | -3.01% | -3.17% | 5.21% | 5.87% |
+| PRE_BULL_CROSSOVER | 4 | 4 | -2.82% | -2.75% | 2.40% | 2.05% |
+
+## Candidate State Path Outcomes D+2
+
+| Group | Candidates | Evaluated | Avg Worst Low | Median Worst Low | Avg Best High | Median Best High |
+|---|---:|---:|---:|---:|---:|---:|
+| BEARISH_DIVERGENCE | 1 | 1 | -1.48% | -1.48% | 2.80% | 2.80% |
+| BULLISH_DIVERGENCE | 8 | 8 | -2.83% | -2.86% | 6.55% | 5.19% |
+| BULL_PULLBACK_REENTRY | 67 | 67 | -2.28% | -2.14% | 5.42% | 4.00% |
+| HIDDEN_BEARISH_DIVERGENCE | 22 | 22 | -2.65% | -2.05% | 6.63% | 6.63% |
+| HIDDEN_BULLISH_DIVERGENCE | 2 | 2 | -2.60% | -2.60% | 4.12% | 4.12% |
+| PRE_BEAR_CROSSOVER | 8 | 8 | -3.01% | -3.17% | 7.58% | 6.30% |
+| PRE_BULL_CROSSOVER | 4 | 4 | -2.82% | -2.75% | 5.50% | 5.40% |
+
+## Candidate State Path Outcomes D+5
+
+| Group | Candidates | Evaluated | Avg Worst Low | Median Worst Low | Avg Best High | Median Best High |
+|---|---:|---:|---:|---:|---:|---:|
+| BEARISH_DIVERGENCE | 1 | 1 | -1.48% | -1.48% | 4.46% | 4.46% |
+| BULLISH_DIVERGENCE | 8 | 8 | -2.85% | -2.94% | 18.50% | 19.72% |
+| BULL_PULLBACK_REENTRY | 67 | 67 | -3.05% | -2.60% | 10.11% | 6.47% |
+| HIDDEN_BEARISH_DIVERGENCE | 22 | 22 | -2.83% | -2.14% | 13.32% | 11.39% |
+| HIDDEN_BULLISH_DIVERGENCE | 2 | 2 | -4.85% | -4.85% | 5.76% | 5.76% |
+| PRE_BEAR_CROSSOVER | 8 | 8 | -4.29% | -3.61% | 13.37% | 13.22% |
+| PRE_BULL_CROSSOVER | 4 | 4 | -2.82% | -2.75% | 15.08% | 14.04% |
+
+## Candidate State Path Outcomes D+10
+
+| Group | Candidates | Evaluated | Avg Worst Low | Median Worst Low | Avg Best High | Median Best High |
+|---|---:|---:|---:|---:|---:|---:|
+| BEARISH_DIVERGENCE | 1 | 1 | -1.99% | -1.99% | 4.46% | 4.46% |
+| BULLISH_DIVERGENCE | 8 | 8 | -4.84% | -4.59% | 24.22% | 19.72% |
+| BULL_PULLBACK_REENTRY | 67 | 67 | -6.03% | -4.55% | 11.08% | 6.92% |
+| HIDDEN_BEARISH_DIVERGENCE | 22 | 22 | -3.19% | -2.35% | 14.93% | 12.15% |
+| HIDDEN_BULLISH_DIVERGENCE | 2 | 2 | -4.85% | -4.85% | 5.76% | 5.76% |
+| PRE_BEAR_CROSSOVER | 8 | 8 | -4.62% | -3.61% | 14.21% | 13.61% |
+| PRE_BULL_CROSSOVER | 4 | 4 | -4.38% | -3.43% | 15.87% | 14.04% |
+
+## Candidate State Path Outcomes D+20
+
+| Group | Candidates | Evaluated | Avg Worst Low | Median Worst Low | Avg Best High | Median Best High |
+|---|---:|---:|---:|---:|---:|---:|
+| BEARISH_DIVERGENCE | 1 | 1 | -8.68% | -8.68% | 4.46% | 4.46% |
+| BULLISH_DIVERGENCE | 8 | 8 | -7.69% | -7.44% | 29.39% | 19.72% |
+| BULL_PULLBACK_REENTRY | 67 | 67 | -10.68% | -11.37% | 13.83% | 8.30% |
+| HIDDEN_BEARISH_DIVERGENCE | 22 | 22 | -5.65% | -5.03% | 17.73% | 16.00% |
+| HIDDEN_BULLISH_DIVERGENCE | 2 | 2 | -4.85% | -4.85% | 17.18% | 17.18% |
+| PRE_BEAR_CROSSOVER | 8 | 8 | -10.53% | -8.33% | 18.42% | 16.05% |
+| PRE_BULL_CROSSOVER | 4 | 4 | -9.67% | -6.86% | 16.74% | 15.79% |
+
 ## Sector Outcomes D+1
 
 | Group | Candidates | Evaluated | Positive | Hit Rate | Average Return | Median Return |
@@ -240,10 +340,3 @@
 ## Failure Categories
 
 - PARTICIPATION_FAILURE: 3
-
-## Skip Reasons
-
-- No rows available on or before cutoff 2026-04-11 23:59:59.: 3
-- Insufficient daily history for GMTL: 15 bars.: 1
-- Insufficient daily history for NUCL: 32 bars.: 1
-- Insufficient daily history for TMCR: 3 bars.: 1

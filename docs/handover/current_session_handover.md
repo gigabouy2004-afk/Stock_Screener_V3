@@ -474,6 +474,23 @@ Bear Crossover drawdown review:
   - D+20 worst-low median -27.22%.
 - Interpretation: `PRE_BEAR_CROSSOVER` should remain visible as exit/capital-preservation review, not be scored as bullish-entry quality.
 
+Path-metric reporting update:
+
+- Single-date summaries now include:
+  - `Stage Family Path Outcomes D+N`;
+  - `Candidate State Path Outcomes D+N`.
+- Multi-date summaries now include:
+  - `Aggregate Forward Path Outcomes`;
+  - `Stage Family Path Outcomes D+N`;
+  - `Candidate State Path Outcomes D+N`.
+- Regenerated `v3_basic_materials_path_metrics_20260607` markdown summaries to include the new path sections.
+- The regenerated multi-date summary now exposes the Basic Materials `PRE_BEAR_CROSSOVER` D+20 path result directly:
+  - 50 candidates;
+  - average worst low -23.00%;
+  - median worst low -25.36%;
+  - average best high 7.21%;
+  - median best high 2.17%.
+
 Verification after restart:
 
 ```text
@@ -533,10 +550,10 @@ Completed in the 2026-06-04 closure pass:
 
 Recommended next implementation order:
 
-1. Add summary reporting for forward worst-low and best-high metrics by stage family and candidate state.
-2. Compare `PRE_BEAR_CROSSOVER` drawdown behavior across Energy, Industrial, Technology, Utilities, and Telecom before changing review priority.
-3. In the live scanner UI, visually separate `PRE_BEAR_CROSSOVER` as exit/capital-preservation review from bullish-entry candidates.
-4. Add generated cross-sector and symbol-level calibration report commands once the manual review formats stabilize.
+1. Compare `PRE_BEAR_CROSSOVER` drawdown behavior across Energy, Industrial, Technology, Utilities, and Telecom before changing review priority.
+2. In the live scanner UI, visually separate `PRE_BEAR_CROSSOVER` as exit/capital-preservation review from bullish-entry candidates.
+3. Add generated cross-sector and symbol-level calibration report commands once the manual review formats stabilize.
+4. Consider adding path-metric outcome reporting to risk-tag and review-priority groups if calibration review needs it.
 
 Parallel WIP track:
 

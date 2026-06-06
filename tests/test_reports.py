@@ -27,6 +27,9 @@ class ReportTests(unittest.TestCase):
                     "TotalScore": 72.0,
                     "RiskTags": "BELOW_EMA200",
                     "DPlus1ReturnPct": 2.0,
+                    "DPlus1WorstLowReturnPct": -3.0,
+                    "DPlus1BestHighReturnPct": 4.0,
+                    "CandidateStateRaw": "PRE_BULL_CROSSOVER",
                     "RankingCandidateStates": "CROSSOVER:PRE_BULL_CROSSOVER|MOMENTUM_SETUP:STATUS_QUO|DIVERGENCE:BULLISH_DIVERGENCE",
                 },
                 {"Symbol": "BBB", "CandidateClass": "STATUS_QUO", "DPlus1ReturnPct": -1.0},
@@ -43,6 +46,10 @@ class ReportTests(unittest.TestCase):
         self.assertIn("## Score Bucket Outcomes D+1", markdown)
         self.assertIn("## Stage Family Outcomes D+1", markdown)
         self.assertIn("| CROSSOVER | 1 | 1 | 1 | 100.00% | 2.00% | 2.00% |", markdown)
+        self.assertIn("## Stage Family Path Outcomes D+1", markdown)
+        self.assertIn("| CROSSOVER | 1 | 1 | -3.00% | -3.00% | 4.00% | 4.00% |", markdown)
+        self.assertIn("## Candidate State Path Outcomes D+1", markdown)
+        self.assertIn("| PRE_BULL_CROSSOVER | 1 | 1 | -3.00% | -3.00% | 4.00% | 4.00% |", markdown)
         self.assertIn("## Sector Outcomes D+1", markdown)
         self.assertIn("## Review Priority Outcomes D+1", markdown)
         self.assertIn("## Risk Tag Outcomes D+1", markdown)
@@ -86,7 +93,11 @@ class ReportTests(unittest.TestCase):
                 {
                     "Symbol": "AAA",
                     "CandidateClass": "SELECTED",
+                    "StageFamily": "CROSSOVER",
+                    "CandidateStateRaw": "PRE_BEAR_CROSSOVER",
                     "DPlus1ReturnPct": 2.0,
+                    "DPlus1WorstLowReturnPct": -4.0,
+                    "DPlus1BestHighReturnPct": 5.0,
                     "RankingCandidateStates": "CROSSOVER:PRE_BULL_CROSSOVER|MOMENTUM_SETUP:STATUS_QUO",
                 },
             ),
@@ -102,7 +113,11 @@ class ReportTests(unittest.TestCase):
                 {
                     "Symbol": "BBB",
                     "CandidateClass": "WATCH",
+                    "StageFamily": "MOMENTUM_SETUP",
+                    "CandidateStateRaw": "BULL_PULLBACK_REENTRY",
                     "DPlus1ReturnPct": -1.0,
+                    "DPlus1WorstLowReturnPct": -6.0,
+                    "DPlus1BestHighReturnPct": 1.0,
                     "RankingCandidateStates": "CROSSOVER:STATUS_QUO|MOMENTUM_SETUP:BULL_PULLBACK_REENTRY",
                 },
             ),
@@ -113,6 +128,13 @@ class ReportTests(unittest.TestCase):
         self.assertIn("# V3 Multi-Date Backtest Summary", markdown)
         self.assertIn("| 2026-02-11 | 1 | 0 | 1 | 1.0000 |", markdown)
         self.assertIn("| D+1 | 2 | 1 | 50.00% | 0.50% | 0.50% |", markdown)
+        self.assertIn("## Aggregate Forward Path Outcomes", markdown)
+        self.assertIn("| D+1 | 2 | -5.00% | -5.00% | 3.00% | 3.00% |", markdown)
+        self.assertIn("## Stage Family Path Outcomes D+1", markdown)
+        self.assertIn("| CROSSOVER | 1 | 1 | -4.00% | -4.00% | 5.00% | 5.00% |", markdown)
+        self.assertIn("| MOMENTUM_SETUP | 1 | 1 | -6.00% | -6.00% | 1.00% | 1.00% |", markdown)
+        self.assertIn("## Candidate State Path Outcomes D+1", markdown)
+        self.assertIn("| PRE_BEAR_CROSSOVER | 1 | 1 | -4.00% | -4.00% | 5.00% | 5.00% |", markdown)
         self.assertIn("## Ranking Collision Buckets", markdown)
         self.assertIn("| CROSSOVER | 1 |", markdown)
         self.assertIn("| MOMENTUM_SETUP | 1 |", markdown)
