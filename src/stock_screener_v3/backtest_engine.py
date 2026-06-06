@@ -7,7 +7,7 @@ from typing import Protocol
 
 import pandas as pd
 
-from stock_screener_v3.backtesting import forward_return, slice_as_of
+from stock_screener_v3.backtesting import forward_best_high_return, forward_return, forward_worst_low_return, slice_as_of
 from stock_screener_v3.models import (
     BacktestResult,
     BacktestRunConfig,
@@ -158,6 +158,8 @@ class BacktestEngine:
         row.update(evaluation.diagnostics)
         for days in forward_days:
             row[f"DPlus{days}ReturnPct"] = forward_return(full_daily, cutoff, days)
+            row[f"DPlus{days}WorstLowReturnPct"] = forward_worst_low_return(full_daily, cutoff, days)
+            row[f"DPlus{days}BestHighReturnPct"] = forward_best_high_return(full_daily, cutoff, days)
         row["OutcomeCategory"] = outcome_category(row, forward_days)
         row["FailureCategory"] = failure_category(row, forward_days)
         return row

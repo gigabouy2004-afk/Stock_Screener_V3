@@ -52,9 +52,9 @@ class BacktestEngineTests(unittest.TestCase):
         index = pd.to_datetime(["2026-02-10", "2026-02-11", "2026-02-12", "2026-02-13", "2026-02-18"])
         self.provider = InMemoryPriceProvider(
             {
-                "AAA": pd.DataFrame({"Close": [100.0, 101.0, 103.0, 104.0, 106.0]}, index=index),
-                "BBB": pd.DataFrame({"Close": [50.0, 49.0, 48.0, 47.0, 46.0]}, index=index),
-                "CCC": pd.DataFrame({"Close": [20.0, 20.0, 20.0, 21.0, 22.0]}, index=index),
+                "AAA": pd.DataFrame({"High": [101.0, 102.0, 104.0, 105.0, 107.0], "Low": [99.0, 100.0, 102.0, 103.0, 105.0], "Close": [100.0, 101.0, 103.0, 104.0, 106.0]}, index=index),
+                "BBB": pd.DataFrame({"High": [51.0, 50.0, 49.0, 48.0, 47.0], "Low": [49.0, 48.0, 47.0, 46.0, 45.0], "Close": [50.0, 49.0, 48.0, 47.0, 46.0]}, index=index),
+                "CCC": pd.DataFrame({"High": [21.0, 21.0, 21.0, 22.0, 23.0], "Low": [19.0, 19.0, 19.0, 20.0, 21.0], "Close": [20.0, 20.0, 20.0, 21.0, 22.0]}, index=index),
                 "MKT": pd.DataFrame({"Open": [90.0, 91.0, 92.0, 93.0, 94.0], "High": [91.0, 92.0, 93.0, 94.0, 95.0], "Low": [89.0, 90.0, 91.0, 92.0, 93.0], "Close": [90.0, 91.0, 92.0, 93.0, 94.0], "Volume": [1_000_000] * 5}, index=index),
                 "SECT": pd.DataFrame({"Open": [80.0, 81.0, 82.0, 83.0, 84.0], "High": [81.0, 82.0, 83.0, 84.0, 85.0], "Low": [79.0, 80.0, 81.0, 82.0, 83.0], "Close": [80.0, 81.0, 82.0, 83.0, 84.0], "Volume": [1_000_000] * 5}, index=index),
             }
@@ -83,7 +83,11 @@ class BacktestEngineTests(unittest.TestCase):
         self.assertEqual(aaa["OutcomeCategory"], "POSITIVE_FOLLOW_THROUGH")
         self.assertEqual(aaa["FailureCategory"], "")
         self.assertEqual(aaa["DPlus1ReturnPct"], 1.9802)
+        self.assertEqual(aaa["DPlus1WorstLowReturnPct"], 0.9901)
+        self.assertEqual(aaa["DPlus1BestHighReturnPct"], 2.9703)
         self.assertEqual(aaa["DPlus2ReturnPct"], 2.9703)
+        self.assertEqual(aaa["DPlus2WorstLowReturnPct"], 0.9901)
+        self.assertEqual(aaa["DPlus2BestHighReturnPct"], 3.9604)
 
     def test_backtest_engine_applies_sector_filter_before_evaluation(self) -> None:
         engine = BacktestEngine(

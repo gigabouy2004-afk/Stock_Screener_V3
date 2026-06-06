@@ -455,11 +455,30 @@ Follow-up symbol-level review:
   - 52 candidates, 34.62% hit rate, -1.24% average return, -4.05% median return;
   - hidden and bullish variants were weaker, but more dates are needed before changing Divergence thresholds.
 
+Bear Crossover drawdown review:
+
+- `validation/runs/v3_basic_materials_bear_crossover_drawdown_review_20260607.md`
+- Added path-aware forward validation detail columns:
+  - `DPlus{N}WorstLowReturnPct`;
+  - `DPlus{N}BestHighReturnPct`.
+- These columns are additive and do not change existing endpoint-return summaries.
+- Reran Basic Materials with run label `v3_basic_materials_path_metrics_20260607`.
+- Basic Materials `PRE_BEAR_CROSSOVER` D+20 path result:
+  - 50 candidates;
+  - endpoint average -10.14%, endpoint median -10.86%;
+  - worst-low average -23.00%, worst-low median -25.36%;
+  - 86.00% had a D+20 worst-low drawdown of at least 10%.
+- March 2026 `PRE_BEAR_CROSSOVER` was the clearest exit-review window:
+  - 32 candidates;
+  - D+20 worst-low average -26.00%;
+  - D+20 worst-low median -27.22%.
+- Interpretation: `PRE_BEAR_CROSSOVER` should remain visible as exit/capital-preservation review, not be scored as bullish-entry quality.
+
 Verification after restart:
 
 ```text
 python -m unittest discover -s tests -v
-59 tests passing
+60 tests passing
 ```
 
 ## What Is Not Yet Built
@@ -514,10 +533,10 @@ Completed in the 2026-06-04 closure pass:
 
 Recommended next implementation order:
 
-1. Compare Basic Materials `PRE_BEAR_CROSSOVER` against forward drawdown avoidance, not only positive-return hit rate.
-2. Compare market, sector, and stock regime labels by date for sectors with sharp date reversals.
-3. Add generated cross-sector and symbol-level calibration report commands once the manual review formats stabilize.
-4. Preserve bearish `CROSSOVER` review for exit/capital-preservation.
+1. Add summary reporting for forward worst-low and best-high metrics by stage family and candidate state.
+2. Compare `PRE_BEAR_CROSSOVER` drawdown behavior across Energy, Industrial, Technology, Utilities, and Telecom before changing review priority.
+3. In the live scanner UI, visually separate `PRE_BEAR_CROSSOVER` as exit/capital-preservation review from bullish-entry candidates.
+4. Add generated cross-sector and symbol-level calibration report commands once the manual review formats stabilize.
 
 Parallel WIP track:
 

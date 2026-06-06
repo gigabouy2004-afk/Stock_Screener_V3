@@ -254,8 +254,14 @@ V3_BACKTEST_EXTRA_COLUMNS = [
     "OutcomeCategory",
     "FailureCategory",
     "DPlus1ReturnPct",
+    "DPlus1WorstLowReturnPct",
+    "DPlus1BestHighReturnPct",
     "DPlus2ReturnPct",
+    "DPlus2WorstLowReturnPct",
+    "DPlus2BestHighReturnPct",
     "DPlus5ReturnPct",
+    "DPlus5WorstLowReturnPct",
+    "DPlus5BestHighReturnPct",
 ]
 
 DEFAULT_DETAIL_CSV_COLUMNS = V2_COMPAT_EXPORT_COLUMNS + V3_BACKTEST_EXTRA_COLUMNS
