@@ -39,7 +39,7 @@ Expected status at this handover:
 Expected tests at this handover:
 
 ```text
-58 tests passing
+63 tests passing
 ```
 
 ## Current Decision
@@ -131,6 +131,7 @@ Foundation code:
 - Multi-date backtest pack runner and CLI command.
 - Web app support for user-facing scan runs using the shared V3 runner path.
 - Web UI stage classification cards for `PRE_BULL_CROSSOVER`, `PRE_BEAR_CROSSOVER`, Divergence states, Momentum Setup states, and `STATUS_QUO`.
+- Web UI review-intent split that separates `PRE_BEAR_CROSSOVER` as exit/capital-preservation review from bullish entry/re-entry candidates.
 
 Tests:
 
@@ -528,6 +529,24 @@ python -m unittest discover -s tests -v
 61 tests passing
 ```
 
+Live scanner UI intent split:
+
+- Updated `web_app_v3.py` so submitted scan results include a `Review Split` panel.
+- Added `ReviewIntent` to the candidate table.
+- `PRE_BEAR_CROSSOVER` now renders as `Exit / preservation` with distinct row and chip styling.
+- Bullish Crossover, bullish Divergence, and Momentum Setup candidates render as `Bullish entry / re-entry`.
+- Bearish Divergence states render as `Bearish risk review`.
+- Added renderer regression tests in `tests/test_web_app_v3.py`.
+- Local HTTP smoke confirmed the scanner page still serves at `http://127.0.0.1:8010`.
+
+Verification after UI intent split:
+
+```text
+$env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
+python -m unittest discover -s tests -v
+63 tests passing
+```
+
 ## What Is Not Yet Built
 
 The actual V3 production engine logic has started but is not complete yet:
@@ -580,13 +599,12 @@ Completed in the 2026-06-04 closure pass:
 
 Recommended next implementation order:
 
-1. In the live scanner UI, visually separate `PRE_BEAR_CROSSOVER` as exit/capital-preservation review from bullish-entry candidates.
-2. Consider a future sector-aware Bear Crossover urgency layer after more dates:
+1. Consider a future sector-aware Bear Crossover urgency layer after more dates:
    - stronger for Basic Materials, Technology, and Industrial;
    - moderate for Energy and Telecom;
    - lighter for Utilities.
-3. Add generated cross-sector and symbol-level calibration report commands once the manual review formats stabilize.
-4. Consider adding path-metric outcome reporting to risk-tag and review-priority groups if calibration review needs it.
+2. Add generated cross-sector and symbol-level calibration report commands once the manual review formats stabilize.
+3. Consider adding path-metric outcome reporting to risk-tag and review-priority groups if calibration review needs it.
 
 Parallel WIP track:
 

@@ -30,6 +30,23 @@ STAGE_CLASSIFICATIONS = (
     ("STATUS_QUO", "Status Quo", "No selected stage route promoted.", "neutral"),
 )
 STAGE_LABELS = {state: label for state, label, _description, _tone in STAGE_CLASSIFICATIONS}
+REVIEW_INTENTS = {
+    "PRE_BULL_CROSSOVER": ("Bullish entry / re-entry", "entry"),
+    "PRE_BEAR_CROSSOVER": ("Exit / preservation", "exit"),
+    "BULLISH_DIVERGENCE": ("Bullish entry / re-entry", "entry"),
+    "HIDDEN_BULLISH_DIVERGENCE": ("Bullish entry / re-entry", "entry"),
+    "BULL_PULLBACK_REENTRY": ("Bullish entry / re-entry", "entry"),
+    "BULL_CONTINUATION_MOMENTUM": ("Bullish entry / re-entry", "entry"),
+    "BEARISH_DIVERGENCE": ("Bearish risk review", "bear"),
+    "HIDDEN_BEARISH_DIVERGENCE": ("Bearish risk review", "bear"),
+    "STATUS_QUO": ("Status / no route", "neutral"),
+}
+REVIEW_SPLIT_ORDER = (
+    ("entry", "Bullish entry / re-entry"),
+    ("exit", "Exit / preservation"),
+    ("bear", "Bearish risk review"),
+    ("neutral", "Status / no route"),
+)
 
 
 @dataclass(frozen=True)
@@ -231,6 +248,25 @@ def render_page(
     .stage-card strong {{ display: block; font-size: 12px; margin-bottom: 4px; }}
     .stage-card span {{ display: block; color: #556171; font-size: 11px; line-height: 1.35; }}
     .stage-count {{ float: right; font-size: 18px; color: #18202c; }}
+    .intent-grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px;
+    }}
+    .intent-card {{
+      border: 1px solid #d7dde6;
+      border-left: 4px solid #7a8797;
+      border-radius: 4px;
+      padding: 9px;
+      min-height: 58px;
+      background: #ffffff;
+    }}
+    .intent-card.entry {{ border-left-color: #25824f; }}
+    .intent-card.exit {{ border-left-color: #b54545; background: #fff8f4; }}
+    .intent-card.bear {{ border-left-color: #8b4a2f; background: #fffaf4; }}
+    .intent-card.neutral {{ border-left-color: #6b7789; }}
+    .intent-card strong {{ display: block; font-size: 12px; margin-bottom: 4px; }}
+    .intent-count {{ float: right; font-size: 18px; color: #18202c; }}
     .chip {{
       display: inline-block;
       border: 1px solid #ccd4df;
@@ -240,10 +276,16 @@ def render_page(
       background: #f8fafc;
       color: #334054;
     }}
+    .chip.entry {{ border-color: #a8d8b8; background: #effaf2; color: #174b2c; }}
+    .chip.exit {{ border-color: #e0aaa0; background: #fff0ec; color: #7d2020; }}
+    .chip.bear {{ border-color: #dfbea6; background: #fff5ea; color: #6c321b; }}
+    .chip.neutral {{ border-color: #ccd4df; background: #f8fafc; color: #334054; }}
     table {{ width: 100%; border-collapse: collapse; font-size: 12px; }}
     th, td {{ border-bottom: 1px solid #e2e6ed; padding: 8px 7px; text-align: left; vertical-align: top; }}
     th {{ background: #f8fafc; font-size: 11px; color: #445064; }}
     td.num, th.num {{ text-align: right; }}
+    tr.row-exit td {{ background: #fffaf7; }}
+    tr.row-bear td {{ background: #fffdf8; }}
     .summary {{
       max-height: 430px;
       overflow: auto;
@@ -343,6 +385,7 @@ def render_result(result: WebRunResult | None, error: str, values: dict[str, str
         return f'<div class="banner error">{html.escape(error)}</div>{render_empty_result()}'
     if result is None:
         return render_empty_result()
+    filtered_rows = _filter_rows(result.detail_rows, values)
     return f"""
       <div class="banner ok">{html.escape(result.headline)}</div>
       <div class="panel">
@@ -350,12 +393,16 @@ def render_result(result: WebRunResult | None, error: str, values: dict[str, str
         {render_stage_classifications(result.detail_rows)}
       </div>
       <div class="panel">
+        <h2>Review Split</h2>
+        {render_review_split(filtered_rows)}
+      </div>
+      <div class="panel">
         <h2>Artifacts</h2>
         <div class="artifacts">{render_artifacts(result.artifact_rows)}</div>
       </div>
       <div class="panel">
         <h2>Candidates</h2>
-        {render_results_table(_filter_rows(result.detail_rows, values))}
+        {render_results_table(filtered_rows)}
       </div>
       <div class="panel">
         <h2>Summary</h2>
@@ -393,6 +440,19 @@ def render_stage_classifications(rows: tuple[dict[str, str], ...]) -> str:
     return '<div class="stage-grid">' + "".join(cards) + "</div>"
 
 
+def render_review_split(rows: tuple[dict[str, str], ...]) -> str:
+    counts = {tone: 0 for tone, _label in REVIEW_SPLIT_ORDER}
+    for row in rows:
+        _label, tone = _review_intent(row)
+        counts[tone] = counts.get(tone, 0) + 1
+    cards = [
+        f'<div class="intent-card {tone}"><span class="intent-count">{counts.get(tone, 0)}</span>'
+        f"<strong>{html.escape(label)}</strong></div>"
+        for tone, label in REVIEW_SPLIT_ORDER
+    ]
+    return '<div class="intent-grid">' + "".join(cards) + "</div>"
+
+
 def render_results_table(rows: tuple[dict[str, str], ...]) -> str:
     if not rows:
         return '<p class="empty">No rows emitted.</p>'
@@ -407,6 +467,7 @@ def render_results_table(rows: tuple[dict[str, str], ...]) -> str:
         "CandidateStateRaw",
         "CandidateClass",
         "StageClassification",
+        "ReviewIntent",
         "StageFamily",
         "ReviewPriority",
         "Confidence",
@@ -425,8 +486,9 @@ def render_results_table(rows: tuple[dict[str, str], ...]) -> str:
     )
     body = []
     for row in rows[:100]:
+        _label, tone = _review_intent(row)
         body.append(
-            "<tr>"
+            f'<tr class="row-{tone}">'
             + "".join(
                 _table_cell(row, column)
                 for column in columns
@@ -447,7 +509,11 @@ def _table_cell(row: dict[str, str], column: str) -> str:
     value = _display_value(row, column)
     class_name = "num" if column in numeric_columns else ""
     if column == "CandidateState":
-        return f'<td><span class="chip">{html.escape(value)}</span></td>'
+        _label, tone = _review_intent(row)
+        return f'<td><span class="chip {tone}">{html.escape(value)}</span></td>'
+    if column == "ReviewIntent":
+        _label, tone = _review_intent(row)
+        return f'<td><span class="chip {tone}">{html.escape(value)}</span></td>'
     return f'<td class="{class_name}">{html.escape(value)}</td>'
 
 
@@ -496,9 +562,17 @@ def _stage_counts(rows: tuple[dict[str, str], ...]) -> dict[str, int]:
 def _display_value(row: dict[str, str], column: str) -> str:
     if column == "StageClassification":
         return STAGE_LABELS.get(row.get("CandidateState", ""), row.get("CandidateState", ""))
+    if column == "ReviewIntent":
+        label, _tone = _review_intent(row)
+        return label
     if column == "ReasonCodes":
         return row.get("ReasonCodes") or row.get("CrossoverReasonCodes") or row.get("MomentumSetupReasonCodes") or row.get("DivergenceReasonCodes") or ""
     return row.get(column, "")
+
+
+def _review_intent(row: dict[str, str]) -> tuple[str, str]:
+    state = row.get("CandidateState") or row.get("CandidateStateRaw") or "STATUS_QUO"
+    return REVIEW_INTENTS.get(state, ("Manual review", "neutral"))
 
 
 def _stage_families(values: dict[str, str]) -> tuple[str, ...]:
