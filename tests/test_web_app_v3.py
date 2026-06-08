@@ -40,6 +40,36 @@ class WebAppV3RenderTests(unittest.TestCase):
         self.assertIn('<div class="intent-card exit"><span class="intent-count">1</span>', html)
         self.assertIn('<div class="intent-card bear"><span class="intent-count">1</span>', html)
 
+    def test_results_table_groups_by_family_and_sorts_by_weighted_score(self) -> None:
+        html = web_app_v3.render_results_table(
+            (
+                {"Symbol": "LOW", "StageFamily": "CROSSOVER", "CandidateState": "PRE_BULL_CROSSOVER", "WeightedScore": "60"},
+                {"Symbol": "MID", "StageFamily": "MOMENTUM_SETUP", "CandidateState": "BULL_PULLBACK_REENTRY", "WeightedScore": "70"},
+                {"Symbol": "HIGH", "StageFamily": "CROSSOVER", "CandidateState": "PRE_BEAR_CROSSOVER", "WeightedScore": "90"},
+            )
+        )
+
+        self.assertIn("CROSSOVER | 2 rows | sorted by WeightedScore descending", html)
+        self.assertIn("MOMENTUM_SETUP | 1 rows | sorted by WeightedScore descending", html)
+        self.assertLess(html.index("HIGH"), html.index("LOW"))
+        self.assertLess(html.index("LOW"), html.index("MOMENTUM_SETUP | 1 rows"))
+
+    def test_results_table_does_not_truncate_after_one_hundred_rows(self) -> None:
+        rows = tuple(
+            {
+                "Symbol": f"SYM{index:03d}",
+                "StageFamily": "CROSSOVER",
+                "CandidateState": "PRE_BULL_CROSSOVER",
+                "WeightedScore": str(index),
+            }
+            for index in range(101)
+        )
+
+        html = web_app_v3.render_results_table(rows)
+
+        self.assertIn("SYM000", html)
+        self.assertIn("SYM100", html)
+
 
 if __name__ == "__main__":
     unittest.main()

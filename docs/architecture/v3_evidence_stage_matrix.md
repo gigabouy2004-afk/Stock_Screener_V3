@@ -120,7 +120,8 @@ New capital entry review when momentum is transitioning from seller/neutral pres
 
 Hard route evidence:
 
-- Daily MACD bull cross, or near bull transition with improving histogram.
+- Daily MACD bull cross below the zero line, or near bull transition below the zero line with improving histogram.
+- Above-zero bullish signal crosses are continuation or pullback-re-entry evidence and must not be promoted as `PRE_BULL_CROSSOVER`.
 - Direction must be bullish.
 
 Quality/context evidence:
@@ -137,6 +138,10 @@ Output:
 - `CandidateState = PRE_BULL_CROSSOVER`.
 - `CrossoverDirection = BULLISH`.
 - `CrossoverOpportunityType = BULLISH_TRANSITION_CROSSOVER` or `BULLISH_NEAR_TRANSITION`.
+
+Invalid Crossover route:
+
+- `BULL_CROSS_ABOVE_ZERO_LINE_CONTINUATION` means the MACD line/signal are already above zero. That is not a seller-to-buyer Crossover transition; it belongs in `MOMENTUM_SETUP` review if the Momentum Setup route qualifies.
 
 ### `PRE_BEAR_CROSSOVER`
 

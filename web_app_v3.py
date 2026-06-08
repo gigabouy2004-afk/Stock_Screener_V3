@@ -3,9 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 import csv
+from email import policy
+from email.parser import BytesParser
 import html
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+import re
 import sys
 from urllib.parse import parse_qs
 
@@ -18,6 +21,28 @@ from stock_screener_v3.runner import EngineRunResult, run_backtest
 HOST = "127.0.0.1"
 PORT = 8010
 DEFAULT_STAGE_FAMILIES = ("CROSSOVER", "MOMENTUM_SETUP", "DIVERGENCE")
+DEFAULT_UNIVERSE_FILE = "data/samples/us_master_sample.csv"
+UPLOADS_DIR = ROOT / "validation" / "uploads"
+SECTOR_OPTIONS = (
+    ("", "All sectors"),
+    ("Technology", "Technology"),
+    ("Technology-Semiconductor", "Technology - Semiconductor"),
+    ("Energy", "Energy"),
+    ("Basic Materials", "Basic Materials"),
+    ("Industrial", "Industrial"),
+    ("Utilities", "Utilities"),
+    ("Telecom", "Telecom"),
+    ("Misc", "Misc"),
+)
+EXCHANGE_OPTIONS = (
+    ("", "All exchanges"),
+    ("NASDAQ,Q", "NASDAQ"),
+    ("NYSE,N", "NYSE"),
+    ("AMEX,A", "AMEX"),
+    ("NSE", "NSE"),
+    ("BSE", "BSE"),
+)
+CANDIDATE_CLASS_OPTIONS = ("SELECTED", "WATCH", "REJECTED", "STATUS_QUO")
 STAGE_CLASSIFICATIONS = (
     ("PRE_BULL_CROSSOVER", "Pre-Bull Crossover", "Bull transition / new capital review.", "bull"),
     ("PRE_BEAR_CROSSOVER", "Pre-Bear Crossover", "Bear transition / exit or preservation review.", "bear"),
@@ -62,11 +87,7 @@ class V3Handler(BaseHTTPRequestHandler):
         self._send_html(render_page())
 
     def do_POST(self) -> None:
-        length = int(self.headers.get("Content-Length", "0"))
-        parsed_values = parse_qs(self.rfile.read(length).decode("utf-8"))
-        values = {key: value[-1] for key, value in parsed_values.items()}
-        if "stage_family" in parsed_values:
-            values["stage_family"] = ",".join(parsed_values["stage_family"])
+        values = parse_form_values(self)
         try:
             result = execute_run(values)
             self._send_html(render_page(result=result, form_values=values))
@@ -89,7 +110,7 @@ def execute_run(values: dict[str, str]) -> WebRunResult:
     stage_families = _stage_families(values)
     run = run_backtest(
         workspace_root=ROOT,
-        universe_file=values.get("universe_file", "data/samples/us_master_sample.csv"),
+        universe_file=values.get("universe_file", DEFAULT_UNIVERSE_FILE),
         d_date=date.fromisoformat(values.get("d_date", "")),
         sectors=_split_csv(values.get("sector", "")),
         exchanges=_split_csv(values.get("exchange", "")),
@@ -196,6 +217,12 @@ def render_page(
       font-weight: 700;
     }}
     .check input {{ width: auto; }}
+    .hint {{
+      margin-top: 4px;
+      color: #657185;
+      font-size: 11px;
+      line-height: 1.35;
+    }}
     button {{
       width: 100%;
       margin-top: 14px;
@@ -286,6 +313,14 @@ def render_page(
     td.num, th.num {{ text-align: right; }}
     tr.row-exit td {{ background: #fffaf7; }}
     tr.row-bear td {{ background: #fffdf8; }}
+    tr.group-row th {{
+      background: #eaf0f7;
+      color: #273142;
+      font-size: 12px;
+      letter-spacing: 0;
+      border-top: 1px solid #cbd5e1;
+      border-bottom: 1px solid #cbd5e1;
+    }}
     .summary {{
       max-height: 430px;
       overflow: auto;
@@ -323,13 +358,15 @@ def render_page(
 
 
 def render_form(values: dict[str, str]) -> str:
-    return f"""<form method="post">
+    return f"""<form method="post" enctype="multipart/form-data">
   <div class="panel">
     <h2>Scan</h2>
     <label for="universe_file">Universe CSV</label>
-    <input id="universe_file" name="universe_file" value="{_field(values, "universe_file", "data/samples/us_master_sample.csv")}">
+    {render_universe_select(values)}
+    <input id="universe_upload" name="universe_upload" type="file" accept=".csv,text/csv">
+    <div class="hint">Use a preset CSV or upload one. Uploaded files are saved under validation/uploads.</div>
     <label for="d_date">Scan Date</label>
-    <input id="d_date" name="d_date" type="date" value="{_field(values, "d_date", "2026-02-11")}">
+    <input id="d_date" name="d_date" type="date" value="{_field(values, "d_date", date.today().isoformat())}">
     <label>Stage Families</label>
     <div class="checks">
       {render_stage_check(values, "CROSSOVER")}
@@ -340,27 +377,31 @@ def render_form(values: dict[str, str]) -> str:
   <div class="panel">
     <h2>Filters</h2>
     <label for="sector">Sector</label>
-    <input id="sector" name="sector" value="{_field(values, "sector", "")}" placeholder="Technology,Energy">
+    {render_select("sector", values.get("sector", ""), SECTOR_OPTIONS)}
     <label for="exchange">Exchange</label>
-    <input id="exchange" name="exchange" value="{_field(values, "exchange", "")}" placeholder="NYSE,NASDAQ">
+    {render_select("exchange", values.get("exchange", ""), EXCHANGE_OPTIONS)}
     <div class="grid-2">
       <div>
         <label for="sample_size">Sample Size</label>
         <input id="sample_size" name="sample_size" type="number" min="1" value="{_field(values, "sample_size", "")}">
+        <div class="hint">Leave blank to scan the full universe.</div>
       </div>
       <div>
         <label for="random_seed">Random Seed</label>
         <input id="random_seed" name="random_seed" type="number" value="{_field(values, "random_seed", "")}">
+        <div class="hint">Keeps sampled runs repeatable.</div>
       </div>
     </div>
     <label for="run_label">Run Label</label>
     <input id="run_label" name="run_label" value="{_field(values, "run_label", "v3_scan")}">
+    <div class="hint">Used in output file names under validation/runs.</div>
     <label for="candidate_state_filter">Candidate State Filter</label>
-    <input id="candidate_state_filter" name="candidate_state_filter" value="{_field(values, "candidate_state_filter", "")}" placeholder="PRE_BULL_CROSSOVER,BULLISH_DIVERGENCE">
+    {render_candidate_state_select(values)}
     <div class="grid-2">
       <div>
         <label for="candidate_class_filter">Class Filter</label>
-        <input id="candidate_class_filter" name="candidate_class_filter" value="{_field(values, "candidate_class_filter", "SELECTED,WATCH")}" placeholder="SELECTED,WATCH,STATUS_QUO">
+        {render_multi_select("candidate_class_filter", values.get("candidate_class_filter", "SELECTED,WATCH"), CANDIDATE_CLASS_OPTIONS)}
+        <div class="hint">SELECTED and WATCH are the actionable review rows.</div>
       </div>
       <div>
         <label for="min_score">Min Score</label>
@@ -371,6 +412,39 @@ def render_form(values: dict[str, str]) -> str:
     <button type="submit">Run Scan</button>
   </div>
 </form>"""
+
+
+def render_universe_select(values: dict[str, str]) -> str:
+    selected = values.get("universe_file", DEFAULT_UNIVERSE_FILE)
+    options = []
+    for path in _sample_universe_files():
+        value = path.as_posix()
+        options.append(f'<option value="{html.escape(value)}" {_selected(selected, value)}>{html.escape(value)}</option>')
+    if selected and selected not in {path.as_posix() for path in _sample_universe_files()}:
+        options.insert(0, f'<option value="{html.escape(selected)}" selected>{html.escape(selected)}</option>')
+    return f'<select id="universe_file" name="universe_file">{"".join(options)}</select>'
+
+
+def render_select(name: str, selected: str, options: tuple[tuple[str, str], ...]) -> str:
+    rendered = []
+    for value, label in options:
+        rendered.append(f'<option value="{html.escape(value)}" {_selected(selected, value)}>{html.escape(label)}</option>')
+    return f'<select id="{name}" name="{name}">{"".join(rendered)}</select>'
+
+
+def render_candidate_state_select(values: dict[str, str]) -> str:
+    options = tuple(state for state, _label, _description, _tone in STAGE_CLASSIFICATIONS)
+    return render_multi_select("candidate_state_filter", values.get("candidate_state_filter", ""), options)
+
+
+def render_multi_select(name: str, selected_values: str, options: tuple[str, ...]) -> str:
+    selected = set(_split_csv(selected_values))
+    rendered = []
+    for value in options:
+        rendered.append(
+            f'<option value="{html.escape(value)}" {"selected" if value in selected else ""}>{html.escape(value)}</option>'
+        )
+    return f'<select id="{name}" name="{name}" multiple size="{min(len(options), 5)}">{"".join(rendered)}</select>'
 
 
 def render_stage_check(values: dict[str, str], family: str) -> str:
@@ -485,7 +559,17 @@ def render_results_table(rows: tuple[dict[str, str], ...]) -> str:
         "ReasonCodes",
     )
     body = []
-    for row in rows[:100]:
+    current_family = None
+    sorted_rows = _sort_result_rows(rows)
+    for row in sorted_rows:
+        family = row.get("StageFamily") or "UNKNOWN"
+        if family != current_family:
+            current_family = family
+            family_count = sum(1 for item in sorted_rows if (item.get("StageFamily") or "UNKNOWN") == family)
+            body.append(
+                f'<tr class="group-row"><th colspan="{len(columns)}">'
+                f'{html.escape(family)} | {family_count} rows | sorted by WeightedScore descending</th></tr>'
+            )
         _label, tone = _review_intent(row)
         body.append(
             f'<tr class="row-{tone}">'
@@ -496,12 +580,30 @@ def render_results_table(rows: tuple[dict[str, str], ...]) -> str:
             + "</tr>"
         )
     return (
+        f'<p class="empty">Showing {len(sorted_rows)} rows grouped by StageFamily and sorted by WeightedScore descending.</p>'
         "<table><thead><tr>"
         + "".join(f'<th class="{"num" if column in {"TotalScore", "DPlus1ReturnPct"} else ""}">{column}</th>' for column in columns)
         + "</tr></thead><tbody>"
         + "".join(body)
         + "</tbody></table>"
     )
+
+
+def _sort_result_rows(rows: tuple[dict[str, str], ...]) -> tuple[dict[str, str], ...]:
+    return tuple(
+        sorted(
+            rows,
+            key=lambda row: (
+                row.get("StageFamily") or "UNKNOWN",
+                -_score_for_sort(row),
+                row.get("Symbol") or "",
+            ),
+        )
+    )
+
+
+def _score_for_sort(row: dict[str, str]) -> float:
+    return _float_or_none(row.get("WeightedScore", "")) or _float_or_none(row.get("TotalScore", "")) or 0.0
 
 
 def _table_cell(row: dict[str, str], column: str) -> str:
@@ -573,6 +675,67 @@ def _display_value(row: dict[str, str], column: str) -> str:
 def _review_intent(row: dict[str, str]) -> tuple[str, str]:
     state = row.get("CandidateState") or row.get("CandidateStateRaw") or "STATUS_QUO"
     return REVIEW_INTENTS.get(state, ("Manual review", "neutral"))
+
+
+def parse_form_values(handler: BaseHTTPRequestHandler) -> dict[str, str]:
+    content_type = handler.headers.get("Content-Type", "")
+    if content_type.startswith("multipart/form-data"):
+        return _parse_multipart_form(handler)
+
+    length = int(handler.headers.get("Content-Length", "0"))
+    parsed_values = parse_qs(handler.rfile.read(length).decode("utf-8"))
+    return _flatten_form_values(parsed_values)
+
+
+def _parse_multipart_form(handler: BaseHTTPRequestHandler) -> dict[str, str]:
+    length = int(handler.headers.get("Content-Length", "0"))
+    body = handler.rfile.read(length)
+    message = BytesParser(policy=policy.default).parsebytes(
+        b"Content-Type: " + handler.headers.get("Content-Type", "").encode("utf-8") + b"\r\n\r\n" + body
+    )
+    parsed: dict[str, list[str]] = {}
+    upload_path = ""
+    for part in message.iter_parts():
+        key = part.get_param("name", header="content-disposition")
+        if not key:
+            continue
+        filename = part.get_filename()
+        payload = part.get_payload(decode=True) or b""
+        if key == "universe_upload":
+            if filename and payload:
+                upload_path = _save_uploaded_universe(filename, payload)
+            continue
+        parsed.setdefault(key, []).append(payload.decode("utf-8", errors="replace"))
+    values = _flatten_form_values(parsed)
+    if upload_path:
+        values["universe_file"] = upload_path
+    return values
+
+
+def _flatten_form_values(parsed_values: dict[str, list[str]]) -> dict[str, str]:
+    values = {key: value[-1] for key, value in parsed_values.items() if value}
+    for name in ("stage_family", "candidate_state_filter", "candidate_class_filter"):
+        if name in parsed_values:
+            values[name] = ",".join(value for value in parsed_values[name] if value)
+    return values
+
+
+def _save_uploaded_universe(filename: str, payload: bytes) -> str:
+    filename = Path(filename or "uploaded_universe.csv").name
+    safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", filename).strip("._") or "uploaded_universe.csv"
+    if not safe_name.lower().endswith(".csv"):
+        safe_name += ".csv"
+    UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+    output = UPLOADS_DIR / safe_name
+    output.write_bytes(payload)
+    return output.relative_to(ROOT).as_posix()
+
+
+def _sample_universe_files() -> tuple[Path, ...]:
+    sample_dir = ROOT / "data" / "samples"
+    if not sample_dir.exists():
+        return (Path(DEFAULT_UNIVERSE_FILE),)
+    return tuple(sorted(path.relative_to(ROOT) for path in sample_dir.glob("*.csv")))
 
 
 def _stage_families(values: dict[str, str]) -> tuple[str, ...]:

@@ -127,6 +127,8 @@ def evaluate_crossover(evidence: EvidencePack) -> StageEvaluation:
     risk = evidence.risk_context
 
     crossover_state = str(momentum.get("MACD_1D_CrossoverState") or "UNKNOWN")
+    macd_value = _number(momentum.get("MACD_1D_Value"))
+    macd_signal = _number(momentum.get("MACD_1D_Signal"))
     macd_distance = _number(momentum.get("MACD_1D_CrossoverDistance"))
     histogram = _number(momentum.get("MACD_1D_Histogram"))
     previous_histogram = _number(momentum.get("MACD_1D_PreviousHistogram"))
@@ -144,6 +146,8 @@ def evaluate_crossover(evidence: EvidencePack) -> StageEvaluation:
     histogram_deteriorating = _is_deteriorating(previous_histogram, histogram)
     route = _classify_crossover_route(
         crossover_state=crossover_state,
+        macd_value=macd_value,
+        macd_signal=macd_signal,
         macd_distance=macd_distance,
         histogram=histogram,
         histogram_improving=histogram_improving,
@@ -262,6 +266,8 @@ def evaluate_crossover(evidence: EvidencePack) -> StageEvaluation:
 def _classify_crossover_route(
     *,
     crossover_state: str,
+    macd_value: float | None,
+    macd_signal: float | None,
     macd_distance: float | None,
     histogram: float | None,
     histogram_improving: bool,
@@ -278,6 +284,15 @@ def _classify_crossover_route(
     price_ladder: bool,
 ) -> CrossoverRoute:
     if crossover_state == "BULL_CROSS":
+        if not _macd_is_below_zero_line(macd_value, macd_signal):
+            return CrossoverRoute(
+                candidate_state="STATUS_QUO",
+                opportunity_type="BULLISH_ABOVE_ZERO_CONTINUATION",
+                direction="NONE",
+                route_score=0.0,
+                reason_code="BULL_CROSS_ABOVE_ZERO_LINE_CONTINUATION",
+                timing_profile="none",
+            )
         return CrossoverRoute(
             candidate_state="PRE_BULL_CROSSOVER",
             opportunity_type="BULLISH_TRANSITION_CROSSOVER",
@@ -321,7 +336,15 @@ def _classify_crossover_route(
             reason_code="DAILY_MACD_BELOW_SIGNAL_DETERIORATING",
             timing_profile="developing",
         )
-    if histogram_improving and macd_distance is not None and histogram is not None and macd_distance > -0.15 and histogram > -0.15:
+    if (
+        crossover_state == "BELOW_SIGNAL"
+        and histogram_improving
+        and macd_distance is not None
+        and histogram is not None
+        and macd_distance > -0.15
+        and histogram > -0.15
+        and _macd_is_below_zero_line(macd_value, macd_signal)
+    ):
         return CrossoverRoute(
             candidate_state="PRE_BULL_CROSSOVER",
             opportunity_type="BULLISH_NEAR_TRANSITION",
@@ -338,6 +361,12 @@ def _classify_crossover_route(
         reason_code="NO_CROSSOVER_ROUTE",
         timing_profile="none",
     )
+
+
+def _macd_is_below_zero_line(macd_value: float | None, macd_signal: float | None) -> bool:
+    if macd_value is None and macd_signal is None:
+        return False
+    return (macd_value is not None and macd_value <= 0.0) or (macd_signal is not None and macd_signal <= 0.0)
 
 
 def evaluate_momentum_setup(evidence: EvidencePack) -> StageEvaluation:

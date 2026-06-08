@@ -90,6 +90,32 @@ class CrossoverEvaluatorTests(unittest.TestCase):
 
         self.assertNotEqual(evaluation.candidate_state, "BULL_PULLBACK_REENTRY")
 
+    def test_crossover_does_not_classify_above_zero_bull_continuation_as_pre_bull(self) -> None:
+        evidence = make_bull_transition_evidence()
+        evidence.momentum["MACD_1D_Value"] = 79.8062
+        evidence.momentum["MACD_1D_Signal"] = 67.3786
+        evidence.momentum["MACD_1D_Histogram"] = 12.4276
+        evidence.momentum["MACD_1D_PreviousHistogram"] = 9.8421
+
+        evaluation = evaluate_crossover(evidence)
+
+        self.assertEqual(evaluation.candidate_state, "STATUS_QUO")
+        self.assertEqual(evaluation.diagnostics["CrossoverOpportunityType"], "BULLISH_ABOVE_ZERO_CONTINUATION")
+        self.assertIn("BULL_CROSS_ABOVE_ZERO_LINE_CONTINUATION", evaluation.reason_codes)
+
+    def test_crossover_classifies_below_zero_near_bull_transition_only_while_below_signal(self) -> None:
+        evidence = make_bull_transition_evidence()
+        evidence.momentum["MACD_1D_CrossoverState"] = "BELOW_SIGNAL"
+        evidence.momentum["MACD_1D_Value"] = -0.12
+        evidence.momentum["MACD_1D_Signal"] = -0.04
+        evidence.momentum["MACD_1D_Histogram"] = -0.08
+        evidence.momentum["MACD_1D_CrossoverDistance"] = -0.08
+
+        evaluation = evaluate_crossover(evidence)
+
+        self.assertEqual(evaluation.candidate_state, "PRE_BULL_CROSSOVER")
+        self.assertEqual(evaluation.diagnostics["CrossoverOpportunityType"], "BULLISH_NEAR_TRANSITION")
+
     def test_stage_family_evaluator_selects_best_enabled_family(self) -> None:
         values = [100 - index * 0.12 for index in range(45)] + [95 + index * 0.55 for index in range(55)]
         record = UniverseRecord(symbol="AAA", yahoo_symbol="AAA", sector="Technology", exchange="NASDAQ")
@@ -238,6 +264,8 @@ def make_evidence(structure: dict[str, object]) -> EvidencePack:
         momentum={
             "RSI_1D": 56.0,
             "MACD_1D_CrossoverState": "ABOVE_SIGNAL",
+            "MACD_1D_Value": 0.3,
+            "MACD_1D_Signal": 0.1,
             "MACD_1D_Histogram": 0.2,
             "MACD_1D_CrossoverDistance": 0.2,
             "MACDHistogramImproving": True,
@@ -264,6 +292,8 @@ def make_bull_transition_evidence() -> EvidencePack:
         momentum={
             "RSI_1D": 54.0,
             "MACD_1D_CrossoverState": "BULL_CROSS",
+            "MACD_1D_Value": -0.04,
+            "MACD_1D_Signal": -0.10,
             "MACD_1D_Histogram": 0.06,
             "MACD_1D_PreviousHistogram": -0.03,
             "MACD_1D_CrossoverDistance": 0.06,
@@ -297,6 +327,8 @@ def make_bear_evidence(crossover_state: str) -> EvidencePack:
         momentum={
             "RSI_1D": 42.0,
             "MACD_1D_CrossoverState": crossover_state,
+            "MACD_1D_Value": 0.12 if crossover_state == "ABOVE_SIGNAL" else -0.08,
+            "MACD_1D_Signal": 0.08 if crossover_state == "ABOVE_SIGNAL" else 0.0,
             "MACD_1D_Histogram": 0.04 if crossover_state == "ABOVE_SIGNAL" else -0.08,
             "MACD_1D_PreviousHistogram": 0.12,
             "MACD_1D_CrossoverDistance": 0.04 if crossover_state == "ABOVE_SIGNAL" else -0.08,
