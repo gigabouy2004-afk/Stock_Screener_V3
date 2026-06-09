@@ -116,6 +116,27 @@ class CrossoverEvaluatorTests(unittest.TestCase):
         self.assertEqual(evaluation.candidate_state, "PRE_BULL_CROSSOVER")
         self.assertEqual(evaluation.diagnostics["CrossoverOpportunityType"], "BULLISH_NEAR_TRANSITION")
 
+    def test_crossover_does_not_classify_mixed_zero_line_pair_as_near_bull(self) -> None:
+        evidence = make_bull_transition_evidence()
+        evidence.stock_baseline["LatestPrice"] = 16.76
+        evidence.stock_baseline["DailyCloseLocationPct"] = 76.7858
+        evidence.momentum["MACD_1D_CrossoverState"] = "BELOW_SIGNAL"
+        evidence.momentum["MACD_1D_Value"] = -0.0503
+        evidence.momentum["MACD_1D_Signal"] = 0.0669
+        evidence.momentum["MACD_1D_Histogram"] = -0.1172
+        evidence.momentum["MACD_1D_PreviousHistogram"] = -0.1307
+        evidence.momentum["MACD_1D_CrossoverDistance"] = -0.1172
+        evidence.trend["EMA20"] = 17.0192
+        evidence.trend["EMA200"] = 15.651
+        evidence.structure["EMA20_Below"] = True
+        evidence.structure["PriceLadder_Passed"] = False
+        evidence.risk_context["LowLiquidity"] = True
+
+        evaluation = evaluate_crossover(evidence)
+
+        self.assertEqual(evaluation.candidate_state, "STATUS_QUO")
+        self.assertEqual(evaluation.diagnostics["CrossoverOpportunityType"], "NO_CROSSOVER_ROUTE")
+
     def test_stage_family_evaluator_selects_best_enabled_family(self) -> None:
         values = [100 - index * 0.12 for index in range(45)] + [95 + index * 0.55 for index in range(55)]
         record = UniverseRecord(symbol="AAA", yahoo_symbol="AAA", sector="Technology", exchange="NASDAQ")

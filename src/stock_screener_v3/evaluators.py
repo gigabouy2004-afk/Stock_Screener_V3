@@ -284,7 +284,7 @@ def _classify_crossover_route(
     price_ladder: bool,
 ) -> CrossoverRoute:
     if crossover_state == "BULL_CROSS":
-        if not _macd_is_below_zero_line(macd_value, macd_signal):
+        if not _macd_pair_is_below_zero_line(macd_value, macd_signal):
             return CrossoverRoute(
                 candidate_state="STATUS_QUO",
                 opportunity_type="BULLISH_ABOVE_ZERO_CONTINUATION",
@@ -343,7 +343,7 @@ def _classify_crossover_route(
         and histogram is not None
         and macd_distance > -0.15
         and histogram > -0.15
-        and _macd_is_below_zero_line(macd_value, macd_signal)
+        and _macd_pair_is_below_zero_line(macd_value, macd_signal)
     ):
         return CrossoverRoute(
             candidate_state="PRE_BULL_CROSSOVER",
@@ -363,10 +363,10 @@ def _classify_crossover_route(
     )
 
 
-def _macd_is_below_zero_line(macd_value: float | None, macd_signal: float | None) -> bool:
-    if macd_value is None and macd_signal is None:
+def _macd_pair_is_below_zero_line(macd_value: float | None, macd_signal: float | None) -> bool:
+    if macd_value is None or macd_signal is None:
         return False
-    return (macd_value is not None and macd_value <= 0.0) or (macd_signal is not None and macd_signal <= 0.0)
+    return macd_value <= 0.0 and macd_signal <= 0.0
 
 
 def evaluate_momentum_setup(evidence: EvidencePack) -> StageEvaluation:

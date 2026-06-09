@@ -120,7 +120,7 @@ New capital entry review when momentum is transitioning from seller/neutral pres
 
 Hard route evidence:
 
-- Daily MACD bull cross below the zero line, or near bull transition below the zero line with improving histogram.
+- Daily MACD bull cross with both MACD and signal at/below the zero line, or near bull transition with both MACD and signal at/below the zero line plus improving histogram.
 - Above-zero bullish signal crosses are continuation or pullback-re-entry evidence and must not be promoted as `PRE_BULL_CROSSOVER`.
 - Direction must be bullish.
 
