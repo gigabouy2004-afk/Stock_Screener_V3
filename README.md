@@ -93,7 +93,7 @@ No signal-rule change should be promoted without a backtest report that includes
 
 ## Current Implementation Status
 
-Sprint 1 has started with the foundation layer:
+Sprint 1 has produced the foundation layer and a V1-complete Crossover family:
 
 - Python package skeleton under `src/stock_screener_v3`.
 - Core dataclasses for universe records, evidence packs, stage evaluations, scores, and backtest results.
@@ -108,8 +108,12 @@ Sprint 1 has started with the foundation layer:
 - V2-compatible offline CSV header contract.
 - Workspace-safe input/output path resolution.
 - File and console run logging with explicit logger close support for Windows.
-- First production Crossover evaluator slice with deterministic daily evidence calculations.
-- Direction-aware Crossover routes for bull transition entry and bear transition exit/preservation.
+- Crossover stage family V1 complete for the current engine scope:
+  - deterministic daily MACD/RSI/ADX/EMA/volume/structure evidence;
+  - direction-aware bull transition entry and bear transition exit/preservation routes;
+  - below-zero MACD pair requirement for bullish Crossover transition;
+  - explicit rejection of above-zero bull continuation as Crossover;
+  - generated cross-sector and symbol-level calibration reports from existing detail CSVs.
 - First Momentum Setup evaluator slice for bull pullback re-entry and bull continuation.
 - Stage-family dispatcher and CLI stage-family selection for Crossover, Momentum Setup, Divergence, or any restricted subset.
 - Formal ranking diagnostics for choosing the reported stage-family result after holistic traversal.
@@ -143,6 +147,14 @@ $env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
 python -m stock_screener_v3.cli backtest-pack --workspace-root D:\Tools\Stock_Screener_V3 --universe-file data\samples\us_master_sample.csv --d-dates 2026-02-11,2026-03-11 --forward-days 1,2,5
 ```
 
+Generate Crossover calibration reports from existing detail CSVs:
+
+```powershell
+$env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
+python -m stock_screener_v3.cli cross-sector-report --details <comma-separated-detail-csvs> --output validation\runs\cross_sector_report.md --horizon-days 20 --candidate-state PRE_BEAR_CROSSOVER
+python -m stock_screener_v3.cli symbol-failure-report --details <comma-separated-detail-csvs> --output validation\runs\symbol_failure_report.md --horizon-days 20
+```
+
 Run the V3 web console:
 
 ```powershell
@@ -150,3 +162,12 @@ python D:\Tools\Stock_Screener_V3\web_app_v3.py
 ```
 
 The UI opens at `http://127.0.0.1:8010`.
+
+## Current Next Plan
+
+The Crossover stage family is V1 complete and tested for the current engine scope. The next stage-family focus is `DIVERGENCE`:
+
+- review the current Divergence route contract and implemented diagnostics;
+- validate regular and hidden bullish/bearish divergence against multi-date sector packs;
+- calibrate swing geometry and quality thresholds without importing Crossover hard gates;
+- preserve the same reporting discipline before promoting any Divergence rule changes.

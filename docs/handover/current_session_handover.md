@@ -549,10 +549,13 @@ python -m unittest discover -s tests -v
 
 ## What Is Not Yet Built
 
-The actual V3 production engine logic has started but is not complete yet:
+The actual V3 production engine logic is progressing stage family by stage family:
 
-- Crossover v1 exists, but it is a first slice and needs historical calibration.
-- Crossover is direction-aware for bull/bear transition.
+- Crossover V1 is complete and tested for the current engine scope.
+- Crossover remains direction-aware for bull/bear transition:
+  - `PRE_BULL_CROSSOVER` is new-capital entry review and requires a clean below-zero MACD/signal pair for bullish transition.
+  - `PRE_BEAR_CROSSOVER` is exit/capital-preservation review and remains available in bearish baseline contexts.
+  - future Crossover changes should be limited to review-priority/scoring calibration backed by backtest reports, not route-boundary rewrites.
 - Momentum Setup v1 exists for bull pullback re-entry and bull continuation, but still needs calibration.
 - Market/sector/stock regime determination v1 is complete for the current engine layer:
   - configurable benchmark mappings exist in `RegimeBenchmarkConfig`;
@@ -574,7 +577,7 @@ The actual V3 production engine logic has started but is not complete yet:
 
 ## Recommended Next Session Start
 
-Start with ranking validation/backtest review and calibration planning, not UI expansion and not new indicator tuning.
+Move to the `DIVERGENCE` stage family. Start with route-contract validation and historical calibration, not UI expansion and not new indicator tuning.
 
 Current traversal layer status:
 
@@ -599,12 +602,11 @@ Completed in the 2026-06-04 closure pass:
 
 Recommended next implementation order:
 
-1. Consider a future sector-aware Bear Crossover urgency layer after more dates:
-   - stronger for Basic Materials, Technology, and Industrial;
-   - moderate for Energy and Telecom;
-   - lighter for Utilities.
-2. Add generated cross-sector and symbol-level calibration report commands once the manual review formats stabilize.
-3. Consider adding path-metric outcome reporting to risk-tag and review-priority groups if calibration review needs it.
+1. Validate `DIVERGENCE` route geometry and diagnostics against existing multi-date sector detail CSVs.
+2. Split regular vs hidden Divergence outcomes by bullish/bearish direction, sector, date, and review priority.
+3. Add generated Divergence calibration reporting once the review table shape is stable.
+4. Only after Divergence evidence is reviewed, consider any threshold or review-priority changes.
+5. Keep the future sector-aware Bear Crossover urgency layer as a later calibration item, not the next implementation focus.
 
 Parallel WIP track:
 
@@ -633,3 +635,57 @@ Current external code-list source rule:
 - Preserve V2-compatible offline CSV headers.
 - Keep log, output CSV, and summary report separate.
 - Keep the handover document updated after every meaningful change.
+
+## 2026-06-11 Continuation Update
+
+MKTW zero-line status:
+
+- Confirmed the mixed zero-line MKTW case is already covered by production evaluator logic and regression coverage.
+- `PRE_BULL_CROSSOVER` now requires both `MACD_1D_Value <= 0` and `MACD_1D_Signal <= 0`.
+- `test_crossover_does_not_classify_mixed_zero_line_pair_as_near_bull` remains green and verifies that the MKTW-style `MACD < 0 / Signal > 0` pair resolves to `STATUS_QUO`.
+
+Forward execution completed from the pending handover item:
+
+- Added reusable generated calibration report support in `src/stock_screener_v3/reports.py`.
+- Added CLI commands in `src/stock_screener_v3/cli.py`:
+  - `cross-sector-report`
+  - `symbol-failure-report`
+- Added regression tests in `tests/test_reports.py` for both generated report paths.
+- Generated artifacts:
+  - `validation/runs/v3_generated_cross_sector_bear_crossover_report_20260611.md`
+  - `validation/runs/v3_generated_symbol_failure_report_20260611.md`
+
+Generated cross-sector report baseline:
+
+- Input: 15 existing D+20 bear-crossover detail files across Technology, Industrial, Energy, Telecom alias-check, and Utilities.
+- Candidate filter: `PRE_BEAR_CROSSOVER`.
+- Candidate rows: 725.
+- Sector path outcomes reproduce the earlier manual calibration shape:
+  - Technology: 360 candidates, D+20 median worst low -7.00%.
+  - Industrials: 203 candidates, D+20 median worst low -8.89%.
+  - Energy: 69 candidates, D+20 median worst low -8.63%.
+  - Telecommunications: 40 candidates, D+20 median worst low -6.29%.
+  - Utilities: 53 candidates, D+20 median worst low -5.26%.
+
+Verification:
+
+```text
+$env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
+python -m unittest discover -s tests -v
+70 tests OK
+```
+
+Current Crossover closure:
+
+- Crossover family status: V1 complete and tested for current engine scope.
+- Full test suite status: `70 tests OK`.
+- Documentation updated in README and `docs/architecture/v3_evidence_stage_matrix.md`.
+- Generated report commands are available for future calibration checks:
+  - `cross-sector-report`
+  - `symbol-failure-report`
+
+Next recommended work:
+
+1. Begin `DIVERGENCE` stage-family validation.
+2. Add optional filters to `symbol-failure-report` for `--candidate-state`, `--stage-family`, and `--sector` if needed during Divergence failure review.
+3. Continue calibration review before introducing any new signal threshold changes.

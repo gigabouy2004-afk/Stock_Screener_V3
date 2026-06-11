@@ -7,7 +7,14 @@ import unittest
 
 from stock_screener_v3.models import BacktestResult, BacktestRunConfig
 from stock_screener_v3.output_contracts import V2_COMPAT_EXPORT_COLUMNS
-from stock_screener_v3.reports import render_multi_date_summary_markdown, render_summary_markdown, write_detail_csv, write_summary_markdown
+from stock_screener_v3.reports import (
+    render_cross_sector_calibration_markdown,
+    render_multi_date_summary_markdown,
+    render_summary_markdown,
+    render_symbol_failure_markdown,
+    write_detail_csv,
+    write_summary_markdown,
+)
 
 
 class ReportTests(unittest.TestCase):
@@ -196,6 +203,63 @@ class ReportTests(unittest.TestCase):
 
             header = detail.read_text(encoding="utf-8").splitlines()[0].split(",")
             self.assertEqual(V2_COMPAT_EXPORT_COLUMNS, header[: len(V2_COMPAT_EXPORT_COLUMNS)])
+
+    def test_render_cross_sector_calibration_markdown_from_detail_csvs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            detail = Path(tmpdir) / "sector_pack_20260211_details.csv"
+            detail.write_text(
+                "\n".join(
+                    [
+                        "Symbol,Sector,CandidateStateRaw,CandidateState,CandidateClass,ReviewPriority,CrossoverOpportunityType,DPlus20ReturnPct,DPlus20WorstLowReturnPct,DPlus20BestHighReturnPct",
+                        "AAA,Technology,PRE_BEAR_CROSSOVER,PRE_BEAR_CROSSOVER,SELECTED,A,BEARISH_NEAR_TRANSITION,-5,-12,4",
+                        "BBB,Technology,PRE_BEAR_CROSSOVER,PRE_BEAR_CROSSOVER,WATCH,B,BEARISH_BELOW_SIGNAL_DETERIORATING,3,-8,9",
+                        "CCC,Utilities,STATUS_QUO,STATUS_QUO,STATUS_QUO,NONE,NO_CROSSOVER_ROUTE,-1,-2,1",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            markdown = render_cross_sector_calibration_markdown((detail,), horizon_days=20)
+
+            self.assertIn("# V3 Cross-Sector PRE_BEAR_CROSSOVER Calibration Report", markdown)
+            self.assertIn("| Technology | 2 | 50.00% | -1.00% | -1.00% | -10.00% | -10.00% | 50.00% | 0.00% | 6.50% | 6.50% |", markdown)
+            self.assertIn("## Opportunity Type Split", markdown)
+            self.assertIn("| AAA |", markdown)
+
+    def test_render_symbol_failure_markdown_reports_repeated_weak_symbols(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            first = Path(tmpdir) / "pack_20260211_details.csv"
+            second = Path(tmpdir) / "pack_20260311_details.csv"
+            header = "Symbol,Sector,CandidateStateRaw,CandidateClass,ReviewPriority,ReasonCodes,DPlus20ReturnPct,DPlus20WorstLowReturnPct,DPlus20BestHighReturnPct"
+            first.write_text(
+                "\n".join(
+                    [
+                        header,
+                        "AAA,Basic Materials,PRE_BULL_CROSSOVER,SELECTED,A,DAILY_MACD_NEAR_BULL_TRANSITION,-10,-15,2",
+                        "BBB,Basic Materials,PRE_BEAR_CROSSOVER,WATCH,B,DAILY_MACD_BEAR_CROSS,4,-3,8",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            second.write_text(
+                "\n".join(
+                    [
+                        header,
+                        "AAA,Basic Materials,PRE_BEAR_CROSSOVER,WATCH,B,DAILY_MACD_NEAR_BEAR_TRANSITION,-6,-11,1",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            markdown = render_symbol_failure_markdown((first, second), horizon_days=20, limit=5)
+
+            self.assertIn("# V3 Symbol-Level Failure Report", markdown)
+            self.assertIn("| 2026-02-11 | AAA | Basic Materials | PRE_BULL_CROSSOVER | SELECTED | A | -10.00% | -15.00% | 2.00% |", markdown)
+            self.assertIn("## Repeated Weak Symbols", markdown)
+            self.assertIn("| AAA | 2 | -8.00% | -10.00% | -6.00% | 2026-02-11, 2026-03-11 |", markdown)
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ import argparse
 from datetime import date
 from pathlib import Path
 
+from stock_screener_v3.reports import write_cross_sector_calibration_report, write_symbol_failure_report
 from stock_screener_v3.runner import run_backtest, run_backtest_pack
 
 
@@ -37,6 +38,16 @@ def parse_args() -> argparse.Namespace:
     pack.add_argument("--stage-family", default="CROSSOVER,MOMENTUM_SETUP,DIVERGENCE", help="Comma-separated stage families.")
     pack.add_argument("--run-label", default="v3_backtest_pack", help="Artifact filename prefix.")
     pack.add_argument("--aggregate-summary-output", default=None, help="Optional multi-date summary markdown path.")
+    cross_sector = subparsers.add_parser("cross-sector-report", help="Generate a cross-sector calibration report from detail CSV files.")
+    cross_sector.add_argument("--details", required=True, help="Comma-separated detail CSV paths.")
+    cross_sector.add_argument("--output", required=True, help="Markdown output path.")
+    cross_sector.add_argument("--horizon-days", type=int, default=20, help="Forward horizon to summarize.")
+    cross_sector.add_argument("--candidate-state", default="PRE_BEAR_CROSSOVER", help="Candidate state to include.")
+    symbol_failure = subparsers.add_parser("symbol-failure-report", help="Generate a symbol-level failure report from detail CSV files.")
+    symbol_failure.add_argument("--details", required=True, help="Comma-separated detail CSV paths.")
+    symbol_failure.add_argument("--output", required=True, help="Markdown output path.")
+    symbol_failure.add_argument("--horizon-days", type=int, default=20, help="Forward horizon to summarize.")
+    symbol_failure.add_argument("--limit", type=int, default=15, help="Maximum rows per failure table.")
     return parser.parse_args()
 
 
@@ -82,6 +93,24 @@ def main() -> int:
         print(f"Aggregate summary: {result.summary_output}")
         for run in result.runs:
             print(f"{run.result.config.d_date.isoformat()}: processed={run.result.symbols_processed} candidates={run.result.candidates_found}")
+        return 0
+    if args.command == "cross-sector-report":
+        write_cross_sector_calibration_report(
+            _split_csv(args.details),
+            args.output,
+            horizon_days=args.horizon_days,
+            candidate_state=args.candidate_state,
+        )
+        print(f"Cross-sector report: {args.output}")
+        return 0
+    if args.command == "symbol-failure-report":
+        write_symbol_failure_report(
+            _split_csv(args.details),
+            args.output,
+            horizon_days=args.horizon_days,
+            limit=args.limit,
+        )
+        print(f"Symbol failure report: {args.output}")
         return 0
     raise AssertionError(f"Unhandled command: {args.command}")
 

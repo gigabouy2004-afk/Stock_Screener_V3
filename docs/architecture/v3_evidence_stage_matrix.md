@@ -110,6 +110,14 @@ Legend:
 
 ## 6. Crossover Matrix
 
+Implementation status:
+
+```text
+V1 complete and tested for the current engine scope as of 2026-06-11.
+```
+
+Completion means the Crossover family has a stable route contract, regression coverage, generated calibration reporting, and documented validation artifacts. It does not mean future review-priority or scoring calibration is forbidden; future changes still require backtest evidence and must preserve the family boundary.
+
 ### `PRE_BULL_CROSSOVER`
 
 Purpose:
@@ -142,6 +150,7 @@ Output:
 Invalid Crossover route:
 
 - `BULL_CROSS_ABOVE_ZERO_LINE_CONTINUATION` means the MACD line/signal are already above zero. That is not a seller-to-buyer Crossover transition; it belongs in `MOMENTUM_SETUP` review if the Momentum Setup route qualifies.
+- Mixed zero-line bullish pairs such as `MACD <= 0` with `Signal > 0` are not valid `PRE_BULL_CROSSOVER` routes. Both MACD and signal must be at/below zero for a below-zero bullish Crossover transition.
 
 ### `PRE_BEAR_CROSSOVER`
 
@@ -169,7 +178,14 @@ Output:
 
 - `CandidateState = PRE_BEAR_CROSSOVER`.
 - `CrossoverDirection = BEARISH`.
-- `CrossoverOpportunityType = BEARISH_TRANSITION_CROSSOVER` or `BEARISH_NEAR_TRANSITION`.
+- `CrossoverOpportunityType = BEARISH_TRANSITION_CROSSOVER`, `BEARISH_NEAR_TRANSITION`, or `BEARISH_BELOW_SIGNAL_DETERIORATING`.
+
+Validated Crossover artifacts:
+
+- `validation/runs/v3_crossover_zero_line_fix_review_20260609.md`
+- `validation/runs/v3_crossover_zero_pair_fix_review_20260609.md`
+- `validation/runs/v3_generated_cross_sector_bear_crossover_report_20260611.md`
+- `validation/runs/v3_generated_symbol_failure_report_20260611.md`
 
 ## 7. Momentum Setup Matrix
 

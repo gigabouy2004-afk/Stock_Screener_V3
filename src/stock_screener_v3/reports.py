@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
+import re
 from typing import Any
 
 from stock_screener_v3.backtest_engine import summarize_result
@@ -85,6 +86,127 @@ def write_summary_markdown(result: BacktestResult, path: str | Path) -> None:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(render_summary_markdown(result), encoding="utf-8")
+
+
+def write_cross_sector_calibration_report(
+    detail_paths: tuple[str | Path, ...],
+    output_path: str | Path,
+    *,
+    horizon_days: int = 20,
+    candidate_state: str = "PRE_BEAR_CROSSOVER",
+) -> None:
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(
+        render_cross_sector_calibration_markdown(
+            detail_paths,
+            horizon_days=horizon_days,
+            candidate_state=candidate_state,
+        ),
+        encoding="utf-8",
+    )
+
+
+def render_cross_sector_calibration_markdown(
+    detail_paths: tuple[str | Path, ...],
+    *,
+    horizon_days: int = 20,
+    candidate_state: str = "PRE_BEAR_CROSSOVER",
+) -> str:
+    rows = _candidate_rows_from_csvs(detail_paths)
+    rows = [row for row in rows if row_value(row, "CandidateStateRaw") == candidate_state or row_value(row, "CandidateState") == candidate_state]
+    lines: list[str] = [
+        f"# V3 Cross-Sector {candidate_state} Calibration Report",
+        "",
+        f"- Horizon: D+{horizon_days}",
+        f"- Detail files: {len(detail_paths)}",
+        f"- Candidate rows: {len(rows)}",
+        "",
+        "## Sector Path Outcomes",
+        "",
+        "| Sector | Candidates | Endpoint Hit Rate | Endpoint Avg | Endpoint Median | Avg Worst Low | Median Worst Low | Worst Low <= -10% | Worst Low <= -20% | Avg Best High | Median Best High |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    for sector, sector_rows in _group_rows(rows, "Sector").items():
+        metrics = _calibration_metrics(sector_rows, horizon_days)
+        lines.append(
+            f"| {sector} | {len(sector_rows)} | {metrics['hit_rate']} | {metrics['endpoint_avg']} | "
+            f"{metrics['endpoint_median']} | {metrics['worst_avg']} | {metrics['worst_median']} | "
+            f"{metrics['worst_lte_10']} | {metrics['worst_lte_20']} | {metrics['best_avg']} | {metrics['best_median']} |"
+        )
+    _append_calibration_split(lines, "Date Split", rows, "DDate", horizon_days)
+    _append_calibration_split(lines, "Opportunity Type Split", rows, "CrossoverOpportunityType", horizon_days)
+    lines.extend(["", "## Worst Rows", "", "| Sector | D Date | Symbol | Opportunity Type | Class | Priority | Endpoint | Worst Low | Best High | Risk Tags |", "|---|---|---|---|---|---|---:|---:|---:|---|"])
+    for row in _worst_rows(rows, horizon_days, limit=15):
+        lines.append(
+            f"| {row_value(row, 'Sector') or 'UNKNOWN'} | {row_value(row, 'DDate') or _date_from_source(row)} | "
+            f"{row_value(row, 'Symbol')} | {row_value(row, 'CrossoverOpportunityType') or 'UNKNOWN'} | "
+            f"{row_value(row, 'CandidateClass')} | {row_value(row, 'ReviewPriority')} | "
+            f"{_format_pct_value(row.get(f'DPlus{horizon_days}ReturnPct'))} | "
+            f"{_format_pct_value(row.get(f'DPlus{horizon_days}WorstLowReturnPct'))} | "
+            f"{_format_pct_value(row.get(f'DPlus{horizon_days}BestHighReturnPct'))} | "
+            f"{row_value(row, 'RiskTags') or 'none'} |"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def write_symbol_failure_report(
+    detail_paths: tuple[str | Path, ...],
+    output_path: str | Path,
+    *,
+    horizon_days: int = 20,
+    limit: int = 15,
+) -> None:
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(
+        render_symbol_failure_markdown(detail_paths, horizon_days=horizon_days, limit=limit),
+        encoding="utf-8",
+    )
+
+
+def render_symbol_failure_markdown(
+    detail_paths: tuple[str | Path, ...],
+    *,
+    horizon_days: int = 20,
+    limit: int = 15,
+) -> str:
+    rows = _candidate_rows_from_csvs(detail_paths)
+    endpoint_key = f"DPlus{horizon_days}ReturnPct"
+    failed_rows = [row for row in rows if (_number(row.get(endpoint_key)) is not None and _number(row.get(endpoint_key), 0.0) < 0)]
+    lines: list[str] = [
+        "# V3 Symbol-Level Failure Report",
+        "",
+        f"- Horizon: D+{horizon_days}",
+        f"- Detail files: {len(detail_paths)}",
+        f"- Candidate rows: {len(rows)}",
+        f"- Negative endpoint rows: {len(failed_rows)}",
+        "",
+        "## Worst Endpoint Rows",
+        "",
+        "| D Date | Symbol | Sector | Candidate State | Class | Priority | Endpoint | Worst Low | Best High | Reason Codes |",
+        "|---|---|---|---|---|---|---:|---:|---:|---|",
+    ]
+    for row in sorted(failed_rows, key=lambda item: _number(item.get(endpoint_key), 0.0) or 0.0)[:limit]:
+        lines.append(
+            f"| {row_value(row, 'DDate') or _date_from_source(row)} | {row_value(row, 'Symbol')} | "
+            f"{row_value(row, 'Sector') or 'UNKNOWN'} | {row_value(row, 'CandidateStateRaw') or row_value(row, 'CandidateState')} | "
+            f"{row_value(row, 'CandidateClass')} | {row_value(row, 'ReviewPriority')} | "
+            f"{_format_pct_value(row.get(endpoint_key))} | "
+            f"{_format_pct_value(row.get(f'DPlus{horizon_days}WorstLowReturnPct'))} | "
+            f"{_format_pct_value(row.get(f'DPlus{horizon_days}BestHighReturnPct'))} | "
+            f"{row_value(row, 'ReasonCodes')} |"
+        )
+    repeated = _repeated_symbol_failures(failed_rows, horizon_days)
+    if repeated:
+        lines.extend(["", "## Repeated Weak Symbols", "", "| Symbol | Rows | Average Endpoint | Worst Endpoint | Best Endpoint | Dates |", "|---|---:|---:|---:|---:|---|"])
+        for symbol, metrics in repeated[:limit]:
+            dates = ", ".join(metrics["dates"])
+            lines.append(
+                f"| {symbol} | {metrics['rows']} | {_format_pct_value(metrics['average'])} | "
+                f"{_format_pct_value(metrics['worst'])} | {_format_pct_value(metrics['best'])} | {dates} |"
+            )
+    return "\n".join(lines) + "\n"
 
 
 def render_multi_date_summary_markdown(results: tuple[BacktestResult, ...]) -> str:
@@ -284,11 +406,11 @@ def _format_pct_value(value: object) -> str:
         return ""
 
 
-def _number(value: object) -> float | None:
+def _number(value: object, default: float | None = None) -> float | None:
     try:
-        return None if value is None else float(value)
+        return default if value is None else float(value)
     except (TypeError, ValueError):
-        return None
+        return default
 
 
 def _mean(values: list[float]) -> float | None:
@@ -348,3 +470,115 @@ def _ranking_collision_buckets(rows: list[dict[str, Any]]) -> dict[str, int]:
         bucket = "+".join(sorted(active_families)) if active_families else "NONE"
         buckets[bucket] = buckets.get(bucket, 0) + 1
     return buckets
+
+
+def _candidate_rows_from_csvs(detail_paths: tuple[str | Path, ...]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for detail_path in detail_paths:
+        path = Path(detail_path)
+        with path.open("r", encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle)
+            for row in reader:
+                if row.get("CandidateClass") not in {"SELECTED", "WATCH"}:
+                    continue
+                enriched = dict(row)
+                enriched["_SourceFile"] = str(path)
+                if not enriched.get("DDate"):
+                    enriched["DDate"] = _date_from_filename(path)
+                rows.append(enriched)
+    return rows
+
+
+def _group_rows(rows: list[dict[str, Any]], key: str) -> dict[str, list[dict[str, Any]]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        group = row_value(row, key) or "UNKNOWN"
+        grouped.setdefault(group, []).append(row)
+    return dict(sorted(grouped.items()))
+
+
+def _append_calibration_split(lines: list[str], title: str, rows: list[dict[str, Any]], key: str, horizon_days: int) -> None:
+    grouped = _group_rows(rows, key)
+    if not grouped:
+        return
+    lines.extend(["", f"## {title}", "", f"| {key} | Candidates | Endpoint Avg | Avg Worst Low | Median Worst Low | Worst Low <= -10% | Avg Best High |", "|---|---:|---:|---:|---:|---:|---:|"])
+    for group, group_rows in grouped.items():
+        metrics = _calibration_metrics(group_rows, horizon_days)
+        lines.append(
+            f"| {group} | {len(group_rows)} | {metrics['endpoint_avg']} | {metrics['worst_avg']} | "
+            f"{metrics['worst_median']} | {metrics['worst_lte_10']} | {metrics['best_avg']} |"
+        )
+
+
+def _calibration_metrics(rows: list[dict[str, Any]], horizon_days: int) -> dict[str, str]:
+    endpoint_values = _numeric_column(rows, f"DPlus{horizon_days}ReturnPct")
+    worst_values = _numeric_column(rows, f"DPlus{horizon_days}WorstLowReturnPct")
+    best_values = _numeric_column(rows, f"DPlus{horizon_days}BestHighReturnPct")
+    positives = [value for value in endpoint_values if value > 0]
+    worst_lte_10 = [value for value in worst_values if value <= -10.0]
+    worst_lte_20 = [value for value in worst_values if value <= -20.0]
+    return {
+        "hit_rate": _format_ratio(len(positives), len(endpoint_values)),
+        "endpoint_avg": _format_pct_value(_mean(endpoint_values)),
+        "endpoint_median": _format_pct_value(_median(endpoint_values)),
+        "worst_avg": _format_pct_value(_mean(worst_values)),
+        "worst_median": _format_pct_value(_median(worst_values)),
+        "worst_lte_10": _format_ratio(len(worst_lte_10), len(worst_values)),
+        "worst_lte_20": _format_ratio(len(worst_lte_20), len(worst_values)),
+        "best_avg": _format_pct_value(_mean(best_values)),
+        "best_median": _format_pct_value(_median(best_values)),
+    }
+
+
+def _numeric_column(rows: list[dict[str, Any]], key: str) -> list[float]:
+    return [value for value in (_number(row.get(key)) for row in rows) if value is not None]
+
+
+def _worst_rows(rows: list[dict[str, Any]], horizon_days: int, *, limit: int) -> list[dict[str, Any]]:
+    key = f"DPlus{horizon_days}WorstLowReturnPct"
+    with_values = [row for row in rows if _number(row.get(key)) is not None]
+    return sorted(with_values, key=lambda row: _number(row.get(key), 0.0) or 0.0)[:limit]
+
+
+def _repeated_symbol_failures(rows: list[dict[str, Any]], horizon_days: int) -> list[tuple[str, dict[str, Any]]]:
+    grouped = _group_rows(rows, "Symbol")
+    repeated: list[tuple[str, dict[str, Any]]] = []
+    for symbol, symbol_rows in grouped.items():
+        if len(symbol_rows) < 2:
+            continue
+        values = _numeric_column(symbol_rows, f"DPlus{horizon_days}ReturnPct")
+        if not values:
+            continue
+        dates = sorted({row_value(row, "DDate") or _date_from_source(row) for row in symbol_rows})
+        repeated.append(
+            (
+                symbol,
+                {
+                    "rows": len(symbol_rows),
+                    "average": _mean(values),
+                    "worst": min(values),
+                    "best": max(values),
+                    "dates": dates,
+                },
+            )
+        )
+    return sorted(repeated, key=lambda item: (item[1]["average"], item[0]))
+
+
+def _format_ratio(numerator: int, denominator: int) -> str:
+    if denominator == 0:
+        return ""
+    return f"{numerator / denominator:.2%}"
+
+
+def _date_from_source(row: dict[str, Any]) -> str:
+    source = row.get("_SourceFile")
+    return _date_from_filename(Path(str(source))) if source else "UNKNOWN"
+
+
+def _date_from_filename(path: Path) -> str:
+    matches = re.findall(r"(20\d{2})(\d{2})(\d{2})", path.stem)
+    if not matches:
+        return ""
+    year, month, day = matches[-1]
+    return f"{year}-{month}-{day}"
