@@ -165,9 +165,9 @@ The UI opens at `http://127.0.0.1:8010`.
 
 ## Current Next Plan
 
-The Crossover stage family is V1 complete and tested for the current engine scope. The next stage-family focus is `DIVERGENCE`:
+The Crossover and Divergence stage families are V1 complete and tested for the current engine scope. The next stage-family focus is `MOMENTUM_SETUP`:
 
-- review the current Divergence route contract and implemented diagnostics;
-- validate regular and hidden bullish/bearish divergence against multi-date sector packs;
-- calibrate swing geometry and quality thresholds without importing Crossover hard gates;
-- preserve the same reporting discipline before promoting any Divergence rule changes.
+- validate `BULL_PULLBACK_REENTRY` and `BULL_CONTINUATION_MOMENTUM` separately;
+- generate path-enabled Momentum Setup calibration reports from existing multi-date sector detail CSVs;
+- review continuation/re-entry quality without importing Crossover or Divergence hard gates;
+- preserve the same reporting discipline before promoting any Momentum Setup rule changes.

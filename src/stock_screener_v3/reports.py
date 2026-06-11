@@ -209,6 +209,69 @@ def render_symbol_failure_markdown(
     return "\n".join(lines) + "\n"
 
 
+def write_stage_family_calibration_report(
+    detail_paths: tuple[str | Path, ...],
+    output_path: str | Path,
+    *,
+    stage_family: str,
+    horizon_days: int = 20,
+) -> None:
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(
+        render_stage_family_calibration_markdown(detail_paths, stage_family=stage_family, horizon_days=horizon_days),
+        encoding="utf-8",
+    )
+
+
+def render_stage_family_calibration_markdown(
+    detail_paths: tuple[str | Path, ...],
+    *,
+    stage_family: str,
+    horizon_days: int = 20,
+) -> str:
+    family = stage_family.upper()
+    rows = [row for row in _candidate_rows_from_csvs(detail_paths) if row_value(row, "StageFamily").upper() == family]
+    lines: list[str] = [
+        f"# V3 {family} Calibration Report",
+        "",
+        f"- Horizon: D+{horizon_days}",
+        f"- Detail files: {len(detail_paths)}",
+        f"- Candidate rows: {len(rows)}",
+    ]
+    _append_stage_family_split(lines, "Candidate State Outcomes", rows, "CandidateStateRaw", horizon_days)
+    _append_stage_family_split(lines, "Sector Outcomes", rows, "Sector", horizon_days)
+    _append_stage_family_split(lines, "Date Outcomes", rows, "DDate", horizon_days)
+    if family == "DIVERGENCE":
+        _append_stage_family_split(lines, "Divergence Direction Outcomes", rows, "DivergenceDirection", horizon_days)
+        _append_stage_family_split(lines, "Divergence Type Outcomes", rows, "DivergenceType", horizon_days)
+        _append_stage_family_split(lines, "Divergence Opportunity Outcomes", rows, "DivergenceOpportunityType", horizon_days)
+    if family == "MOMENTUM_SETUP":
+        _append_stage_family_split(lines, "Momentum Opportunity Outcomes", rows, "MomentumSetupOpportunityType", horizon_days)
+    lines.extend(
+        [
+            "",
+            "## Worst Endpoint Rows",
+            "",
+            "| D Date | Symbol | Sector | Candidate State | Class | Priority | Endpoint | Worst Low | Best High | Reason Codes |",
+            "|---|---|---|---|---|---|---:|---:|---:|---|",
+        ]
+    )
+    endpoint_key = f"DPlus{horizon_days}ReturnPct"
+    rows_with_endpoint = [row for row in rows if _number(row.get(endpoint_key)) is not None]
+    for row in sorted(rows_with_endpoint, key=lambda item: _number(item.get(endpoint_key), 0.0) or 0.0)[:15]:
+        lines.append(
+            f"| {row_value(row, 'DDate') or _date_from_source(row)} | {row_value(row, 'Symbol')} | "
+            f"{row_value(row, 'Sector') or 'UNKNOWN'} | {row_value(row, 'CandidateStateRaw') or row_value(row, 'CandidateState')} | "
+            f"{row_value(row, 'CandidateClass')} | {row_value(row, 'ReviewPriority')} | "
+            f"{_format_pct_value(row.get(endpoint_key))} | "
+            f"{_format_pct_value(row.get(f'DPlus{horizon_days}WorstLowReturnPct'))} | "
+            f"{_format_pct_value(row.get(f'DPlus{horizon_days}BestHighReturnPct'))} | "
+            f"{row_value(row, 'ReasonCodes')} |"
+        )
+    return "\n".join(lines) + "\n"
+
+
 def render_multi_date_summary_markdown(results: tuple[BacktestResult, ...]) -> str:
     lines: list[str] = [
         "# V3 Multi-Date Backtest Summary",
@@ -507,6 +570,28 @@ def _append_calibration_split(lines: list[str], title: str, rows: list[dict[str,
         lines.append(
             f"| {group} | {len(group_rows)} | {metrics['endpoint_avg']} | {metrics['worst_avg']} | "
             f"{metrics['worst_median']} | {metrics['worst_lte_10']} | {metrics['best_avg']} |"
+        )
+
+
+def _append_stage_family_split(lines: list[str], title: str, rows: list[dict[str, Any]], key: str, horizon_days: int) -> None:
+    grouped = _group_rows(rows, key)
+    if not grouped:
+        return
+    lines.extend(
+        [
+            "",
+            f"## {title}",
+            "",
+            "| Group | Candidates | Endpoint Hit Rate | Endpoint Avg | Endpoint Median | Avg Worst Low | Median Worst Low | Avg Best High | Median Best High |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+    )
+    for group, group_rows in grouped.items():
+        metrics = _calibration_metrics(group_rows, horizon_days)
+        lines.append(
+            f"| {group} | {len(group_rows)} | {metrics['hit_rate']} | {metrics['endpoint_avg']} | "
+            f"{metrics['endpoint_median']} | {metrics['worst_avg']} | {metrics['worst_median']} | "
+            f"{metrics['best_avg']} | {metrics['best_median']} |"
         )
 
 

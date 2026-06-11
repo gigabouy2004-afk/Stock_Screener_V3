@@ -10,6 +10,7 @@ from stock_screener_v3.output_contracts import V2_COMPAT_EXPORT_COLUMNS
 from stock_screener_v3.reports import (
     render_cross_sector_calibration_markdown,
     render_multi_date_summary_markdown,
+    render_stage_family_calibration_markdown,
     render_summary_markdown,
     render_symbol_failure_markdown,
     write_detail_csv,
@@ -260,6 +261,51 @@ class ReportTests(unittest.TestCase):
             self.assertIn("| 2026-02-11 | AAA | Basic Materials | PRE_BULL_CROSSOVER | SELECTED | A | -10.00% | -15.00% | 2.00% |", markdown)
             self.assertIn("## Repeated Weak Symbols", markdown)
             self.assertIn("| AAA | 2 | -8.00% | -10.00% | -6.00% | 2026-02-11, 2026-03-11 |", markdown)
+
+    def test_render_stage_family_calibration_markdown_splits_divergence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            detail = Path(tmpdir) / "sector_pack_20260211_details.csv"
+            detail.write_text(
+                "\n".join(
+                    [
+                        "Symbol,Sector,StageFamily,CandidateStateRaw,CandidateClass,ReviewPriority,DivergenceDirection,DivergenceType,DivergenceOpportunityType,ReasonCodes,DPlus20ReturnPct,DPlus20WorstLowReturnPct,DPlus20BestHighReturnPct",
+                        "AAA,Misc,DIVERGENCE,BULLISH_DIVERGENCE,WATCH,B,BULLISH,REGULAR,BULLISH_REGULAR_DIVERGENCE,BULLISH_REGULAR_DIVERGENCE_ROUTE,-4,-8,5",
+                        "BBB,Misc,DIVERGENCE,HIDDEN_BEARISH_DIVERGENCE,SELECTED,A,BEARISH,HIDDEN,HIDDEN_BEARISH_CONTINUATION,HIDDEN_BEARISH_DIVERGENCE_ROUTE,6,-3,9",
+                        "CCC,Misc,CROSSOVER,PRE_BEAR_CROSSOVER,SELECTED,A,,,,DAILY_MACD_BEAR_CROSS,-2,-5,2",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            markdown = render_stage_family_calibration_markdown((detail,), stage_family="DIVERGENCE", horizon_days=20)
+
+            self.assertIn("# V3 DIVERGENCE Calibration Report", markdown)
+            self.assertIn("## Divergence Direction Outcomes", markdown)
+            self.assertIn("| BULLISH | 1 | 0.00% | -4.00% | -4.00% | -8.00% | -8.00% | 5.00% | 5.00% |", markdown)
+            self.assertIn("| HIDDEN_BEARISH_DIVERGENCE | 1 | 100.00% | 6.00% | 6.00% | -3.00% | -3.00% | 9.00% | 9.00% |", markdown)
+            self.assertNotIn("PRE_BEAR_CROSSOVER", markdown)
+
+    def test_render_stage_family_calibration_markdown_splits_momentum_setup(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            detail = Path(tmpdir) / "sector_pack_20260211_details.csv"
+            detail.write_text(
+                "\n".join(
+                    [
+                        "Symbol,Sector,StageFamily,CandidateStateRaw,CandidateClass,ReviewPriority,MomentumSetupOpportunityType,ReasonCodes,DPlus20ReturnPct,DPlus20WorstLowReturnPct,DPlus20BestHighReturnPct",
+                        "AAA,Technology,MOMENTUM_SETUP,BULL_PULLBACK_REENTRY,WATCH,B,BULLISH_PULLBACK_REENTRY,BULL_PULLBACK_REENTRY_ROUTE,-7,-12,3",
+                        "BBB,Technology,MOMENTUM_SETUP,BULL_CONTINUATION_MOMENTUM,SELECTED,A,BULLISH_CONTINUATION_MOMENTUM,BULL_CONTINUATION_ROUTE,8,-2,11",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            markdown = render_stage_family_calibration_markdown((detail,), stage_family="MOMENTUM_SETUP", horizon_days=20)
+
+            self.assertIn("# V3 MOMENTUM_SETUP Calibration Report", markdown)
+            self.assertIn("## Momentum Opportunity Outcomes", markdown)
+            self.assertIn("| BULLISH_PULLBACK_REENTRY | 1 | 0.00% | -7.00% | -7.00% | -12.00% | -12.00% | 3.00% | 3.00% |", markdown)
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ import argparse
 from datetime import date
 from pathlib import Path
 
-from stock_screener_v3.reports import write_cross_sector_calibration_report, write_symbol_failure_report
+from stock_screener_v3.reports import write_cross_sector_calibration_report, write_stage_family_calibration_report, write_symbol_failure_report
 from stock_screener_v3.runner import run_backtest, run_backtest_pack
 
 
@@ -48,6 +48,11 @@ def parse_args() -> argparse.Namespace:
     symbol_failure.add_argument("--output", required=True, help="Markdown output path.")
     symbol_failure.add_argument("--horizon-days", type=int, default=20, help="Forward horizon to summarize.")
     symbol_failure.add_argument("--limit", type=int, default=15, help="Maximum rows per failure table.")
+    stage_family = subparsers.add_parser("stage-family-report", help="Generate a stage-family calibration report from detail CSV files.")
+    stage_family.add_argument("--details", required=True, help="Comma-separated detail CSV paths.")
+    stage_family.add_argument("--output", required=True, help="Markdown output path.")
+    stage_family.add_argument("--stage-family", required=True, help="Stage family to include, e.g. DIVERGENCE or MOMENTUM_SETUP.")
+    stage_family.add_argument("--horizon-days", type=int, default=20, help="Forward horizon to summarize.")
     return parser.parse_args()
 
 
@@ -111,6 +116,15 @@ def main() -> int:
             limit=args.limit,
         )
         print(f"Symbol failure report: {args.output}")
+        return 0
+    if args.command == "stage-family-report":
+        write_stage_family_calibration_report(
+            _split_csv(args.details),
+            args.output,
+            stage_family=args.stage_family,
+            horizon_days=args.horizon_days,
+        )
+        print(f"Stage-family report: {args.output}")
         return 0
     raise AssertionError(f"Unhandled command: {args.command}")
 

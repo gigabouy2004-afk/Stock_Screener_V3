@@ -13,8 +13,10 @@ Divergence is a separate stage family. It must not inherit Crossover hard gates 
 Implementation status:
 
 ```text
-V1 evaluator implemented. Historical calibration pending.
+V1 complete and tested for the current engine scope as of 2026-06-11.
 ```
+
+Completion means the route contract, diagnostics, ranking participation, and generated calibration reporting are in place. Future changes should be limited to evidence-backed scoring, review-priority, or swing-geometry calibration and must not import Crossover or Momentum Setup hard gates.
 
 It covers four candidate states:
 
@@ -217,3 +219,21 @@ These fields should be appended after existing V2-compatible columns and current
 - Treat EMA200, RSI, ADX, volume, and candle acceptance as context/quality, not universal hard gates.
 - Separate regular and hidden divergence in reason codes and diagnostics.
 - Do not tune from a single ticker or single historical event.
+
+## 11. Validation Closure
+
+V1 validation artifacts:
+
+- `validation/runs/v3_divergence_smoke_20260211_summary.md`
+- `validation/runs/v3_divergence_stage_family_calibration_20260611.md`
+- `validation/runs/v3_divergence_path_enabled_calibration_20260611.md`
+- `validation/runs/v3_divergence_family_v1_completion_20260611.md`
+
+Path-enabled calibration baseline:
+
+- Detail files: 15.
+- Candidate rows: 962.
+- D+20 endpoint and path metrics are split by candidate state, sector, date, direction, type, and opportunity.
+- Regular bullish divergence is the weakest current slice:
+  - `BULLISH_DIVERGENCE`: 211 candidates, 44.08% endpoint hit rate, -1.45% median endpoint, -11.13% median worst low.
+- No route-boundary change is promoted from this pass.

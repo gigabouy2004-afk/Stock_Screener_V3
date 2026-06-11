@@ -577,7 +577,7 @@ The actual V3 production engine logic is progressing stage family by stage famil
 
 ## Recommended Next Session Start
 
-Move to the `DIVERGENCE` stage family. Start with route-contract validation and historical calibration, not UI expansion and not new indicator tuning.
+Move to the `MOMENTUM_SETUP` stage family. Start with route-contract validation and historical calibration, not UI expansion and not new indicator tuning.
 
 Current traversal layer status:
 
@@ -602,10 +602,10 @@ Completed in the 2026-06-04 closure pass:
 
 Recommended next implementation order:
 
-1. Validate `DIVERGENCE` route geometry and diagnostics against existing multi-date sector detail CSVs.
-2. Split regular vs hidden Divergence outcomes by bullish/bearish direction, sector, date, and review priority.
-3. Add generated Divergence calibration reporting once the review table shape is stable.
-4. Only after Divergence evidence is reviewed, consider any threshold or review-priority changes.
+1. Generate a path-enabled `MOMENTUM_SETUP` stage-family report from the same existing multi-date sector detail CSVs used for Divergence closure.
+2. Split `BULL_PULLBACK_REENTRY` vs `BULL_CONTINUATION_MOMENTUM` outcomes by sector, date, review priority, and opportunity type.
+3. Review whether pullback re-entry below EMA200 needs a review-priority downgrade while preserving signal visibility.
+4. Only after Momentum Setup evidence is reviewed, consider any threshold or review-priority changes.
 5. Keep the future sector-aware Bear Crossover urgency layer as a later calibration item, not the next implementation focus.
 
 Parallel WIP track:
@@ -686,6 +686,42 @@ Current Crossover closure:
 
 Next recommended work:
 
-1. Begin `DIVERGENCE` stage-family validation.
-2. Add optional filters to `symbol-failure-report` for `--candidate-state`, `--stage-family`, and `--sector` if needed during Divergence failure review.
-3. Continue calibration review before introducing any new signal threshold changes.
+1. Begin `MOMENTUM_SETUP` stage-family validation.
+2. Generate and review `validation/runs/v3_momentum_setup_stage_family_calibration_20260611.md`.
+3. Add optional filters to `symbol-failure-report` for `--candidate-state`, `--stage-family`, and `--sector` if needed during Momentum Setup failure review.
+4. Continue calibration review before introducing any new signal threshold changes.
+
+## 2026-06-11 Divergence Closure Update
+
+Divergence status:
+
+- `DIVERGENCE` is V1 complete and tested for the current engine scope.
+- Route states covered:
+  - `BULLISH_DIVERGENCE`
+  - `BEARISH_DIVERGENCE`
+  - `HIDDEN_BULLISH_DIVERGENCE`
+  - `HIDDEN_BEARISH_DIVERGENCE`
+- Generated report support now includes generic `stage-family-report`.
+- Validation artifacts:
+  - `validation/runs/v3_divergence_stage_family_calibration_20260611.md`
+  - `validation/runs/v3_divergence_path_enabled_calibration_20260611.md`
+  - `validation/runs/v3_divergence_family_v1_completion_20260611.md`
+
+Path-enabled baseline:
+
+- Input: 15 existing D+20 path-enabled sector detail files across Technology, Industrial, Energy, Telecom alias-check, and Utilities.
+- Candidate rows: 962.
+- `BULLISH_DIVERGENCE` is the weakest current Divergence slice:
+  - 211 candidates;
+  - 44.08% D+20 endpoint hit rate;
+  - -1.45% median D+20 endpoint;
+  - -11.13% median D+20 worst low.
+- No Divergence route-boundary change is promoted from this pass.
+
+Verification after Divergence closure:
+
+```text
+$env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
+python -m unittest discover -s tests -v
+72 tests OK
+```
