@@ -861,3 +861,45 @@ Next exact path:
    - `BELOW_EMA200`
    - weak February-March Industrials
 3. Do not add more reporting before completing the Momentum Setup evaluator path-forward rule.
+
+## 2026-06-11 Divergence Rule Backtest Update
+
+Comprehensive backtest completed after the raw bullish Divergence below-EMA200 rule.
+
+Executed:
+
+- Full unit/regression suite:
+  - `python -m unittest discover -s tests -v`
+  - `76 tests OK`
+- 15 fresh post-rule backtests:
+  - Technology, Industrial, Energy, Telecom, Utilities.
+  - 2026-02-11, 2026-03-11, 2026-04-11.
+  - Horizons: D+1, D+2, D+5, D+10, D+20.
+
+Validation artifacts:
+
+- `validation/runs/v3_divergence_rule_backtest_review_20260611.md`
+- `validation/runs/v3_divergence_rule_stage_family_calibration_20260611.md`
+- `validation/runs/v3_divergence_rule_integrated_calibration_20260611.md`
+
+Backtest read:
+
+- Before-rule selected/watch candidate baseline: 3,144.
+- Post-rule selected/watch candidates: 3,056.
+- Rows directly rejected by `RAW_BULLISH_DIVERGENCE_BELOW_EMA200`: 33.
+- Those 33 rows were mixed overall:
+  - 54.55% D+20 hit rate;
+  - 0.25% median D+20 endpoint;
+  - -7.55% median D+20 worst low.
+- The weak concentration remains date/sector-specific:
+  - Technology March 2026: 7 rows, 14.29% hit rate, -2.92% median endpoint.
+  - Telecom March 2026: 3 rows, 0.00% hit rate, -0.23% median endpoint.
+
+Decision:
+
+- Keep the Divergence rule as a conservative risk-separation guardrail.
+- Do not add further Divergence tightening from this evidence alone.
+- Move implementation focus to the Momentum Setup path-forward rule:
+  - `BULL_PULLBACK_REENTRY`
+  - `BELOW_EMA200`
+  - weak February-March Industrials

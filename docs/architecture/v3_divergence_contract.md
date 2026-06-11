@@ -260,3 +260,38 @@ Regression coverage:
 
 - `test_divergence_rejects_raw_bullish_divergence_below_ema200`
 - `test_divergence_keeps_confirmed_bullish_below_ema200_as_manual_watch`
+
+## 13. Post-Rule Backtest Result
+
+Backtested on 2026-06-11:
+
+```text
+validation/runs/v3_divergence_rule_backtest_review_20260611.md
+validation/runs/v3_divergence_rule_stage_family_calibration_20260611.md
+validation/runs/v3_divergence_rule_integrated_calibration_20260611.md
+```
+
+Scope:
+
+- 15 fresh post-rule runs.
+- Sectors: Technology, Industrial, Energy, Telecom, Utilities.
+- Dates: 2026-02-11, 2026-03-11, 2026-04-11.
+- Horizons: D+1, D+2, D+5, D+10, D+20.
+
+Result:
+
+- Selected/watch candidates changed from 3,144 before-rule baseline rows to 3,056 post-rule rows.
+- The new rule directly rejected 33 rows with `RAW_BULLISH_DIVERGENCE_BELOW_EMA200`.
+- Those 33 rows were mixed overall:
+  - 54.55% D+20 hit rate;
+  - 0.25% median D+20 endpoint;
+  - -7.55% median D+20 worst low.
+- Weakness was concentrated in:
+  - Technology, 2026-03-11: 7 rows, 14.29% hit rate, -2.92% median endpoint.
+  - Telecom, 2026-03-11: 3 rows, 0.00% hit rate, -0.23% median endpoint.
+
+Calibration read:
+
+- The rule is safe as a conservative audit/risk separation rule, but it is not a broad performance improvement across all sectors and dates.
+- Do not add more Divergence tightening from this evidence alone.
+- The next implementation focus should move to the analogous Momentum Setup weakness: `BULL_PULLBACK_REENTRY` below EMA200, especially weak February-March Industrial slices.
