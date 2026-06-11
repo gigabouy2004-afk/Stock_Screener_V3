@@ -12,6 +12,16 @@ Latest confirmed local and pushed code baseline: current `main` after the backte
 
 Local `main` and `origin/main` should be verified in sync at restart with `git status --short --branch`.
 
+## Low-Token Restart Pointer
+
+For the next session on this same topic, read this compact signoff first:
+
+```text
+docs/handover/transition_signoff_2026-06-11.md
+```
+
+It contains the current pushed commit, completed Crossover/Divergence/Momentum status, the Divergence backtest result, and the exact next path. Do not rediscover the long history below unless a referenced artifact is missing.
+
 ## Purpose Of This Document
 
 This is the restart trace for the next session. Keep this document updated whenever the working direction, completed foundation, next step, or open risk changes.
