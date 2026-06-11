@@ -289,6 +289,43 @@ def render_stage_family_calibration_markdown(
     return "\n".join(lines) + "\n"
 
 
+def write_integrated_calibration_report(
+    detail_paths: tuple[str | Path, ...],
+    output_path: str | Path,
+    *,
+    horizon_days: int = 20,
+) -> None:
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(
+        render_integrated_calibration_markdown(detail_paths, horizon_days=horizon_days),
+        encoding="utf-8",
+    )
+
+
+def render_integrated_calibration_markdown(
+    detail_paths: tuple[str | Path, ...],
+    *,
+    horizon_days: int = 20,
+) -> str:
+    rows = _candidate_rows_from_csvs(detail_paths)
+    lines: list[str] = [
+        "# V3 Integrated Holistic Calibration Report",
+        "",
+        f"- Horizon: D+{horizon_days}",
+        f"- Detail files: {len(detail_paths)}",
+        f"- Candidate rows: {len(rows)}",
+    ]
+    _append_stage_family_split(lines, "Stage Family Outcomes", rows, "StageFamily", horizon_days)
+    _append_stage_family_split(lines, "Candidate State Outcomes", rows, "CandidateStateRaw", horizon_days)
+    _append_stage_family_split(lines, "Review Priority Outcomes", rows, "ReviewPriority", horizon_days)
+    _append_stage_family_split(lines, "Risk Tag Outcomes", _rows_by_exploded_risk_tag(rows), "_RiskTag", horizon_days)
+    _append_stage_family_split(lines, "Ranking Collision Outcomes", _rows_by_ranking_collision_bucket(rows), "_RankingCollisionBucket", horizon_days)
+    _append_winner_family_collision_split(lines, rows, horizon_days)
+    _append_integrated_worst_rows(lines, rows, horizon_days, limit=20)
+    return "\n".join(lines) + "\n"
+
+
 def render_multi_date_summary_markdown(results: tuple[BacktestResult, ...]) -> str:
     lines: list[str] = [
         "# V3 Multi-Date Backtest Summary",
@@ -542,14 +579,18 @@ def _path_metrics(rows: list[dict[str, Any]], forward_days: tuple[int, ...]) -> 
 def _ranking_collision_buckets(rows: list[dict[str, Any]]) -> dict[str, int]:
     buckets: dict[str, int] = {}
     for row in rows:
-        active_families = []
-        for part in str(row.get("RankingCandidateStates") or "").split("|"):
-            family, separator, state = part.partition(":")
-            if separator and family and state and state != "STATUS_QUO":
-                active_families.append(family)
-        bucket = "+".join(sorted(active_families)) if active_families else "NONE"
+        bucket = _ranking_collision_bucket(row)
         buckets[bucket] = buckets.get(bucket, 0) + 1
     return buckets
+
+
+def _ranking_collision_bucket(row: dict[str, Any]) -> str:
+    active_families = []
+    for part in str(row.get("RankingCandidateStates") or "").split("|"):
+        family, separator, state = part.partition(":")
+        if separator and family and state and state != "STATUS_QUO":
+            active_families.append(family)
+    return "+".join(sorted(active_families)) if active_families else "NONE"
 
 
 def _candidate_rows_from_csvs(detail_paths: tuple[str | Path, ...]) -> list[dict[str, Any]]:
@@ -575,6 +616,28 @@ def _group_rows(rows: list[dict[str, Any]], key: str) -> dict[str, list[dict[str
         group = row_value(row, key) or "UNKNOWN"
         grouped.setdefault(group, []).append(row)
     return dict(sorted(grouped.items()))
+
+
+def _rows_by_exploded_risk_tag(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    exploded: list[dict[str, Any]] = []
+    for row in rows:
+        tags = [tag.strip() for tag in row_value(row, "RiskTags").split(",") if tag.strip()]
+        if not tags:
+            tags = ["NO_RISK_TAG"]
+        for tag in tags:
+            tagged = dict(row)
+            tagged["_RiskTag"] = tag
+            exploded.append(tagged)
+    return exploded
+
+
+def _rows_by_ranking_collision_bucket(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    bucketed: list[dict[str, Any]] = []
+    for row in rows:
+        bucketed_row = dict(row)
+        bucketed_row["_RankingCollisionBucket"] = _ranking_collision_bucket(row)
+        bucketed.append(bucketed_row)
+    return bucketed
 
 
 def _filter_rows(
@@ -633,6 +696,58 @@ def _append_stage_family_split(lines: list[str], title: str, rows: list[dict[str
             f"| {group} | {len(group_rows)} | {metrics['hit_rate']} | {metrics['endpoint_avg']} | "
             f"{metrics['endpoint_median']} | {metrics['worst_avg']} | {metrics['worst_median']} | "
             f"{metrics['best_avg']} | {metrics['best_median']} |"
+        )
+
+
+def _append_winner_family_collision_split(lines: list[str], rows: list[dict[str, Any]], horizon_days: int) -> None:
+    grouped: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for row in rows:
+        bucket = _ranking_collision_bucket(row)
+        family = row_value(row, "StageFamily") or row_value(row, "RankingWinnerFamily") or "UNKNOWN"
+        grouped.setdefault((bucket, family), []).append(row)
+    if not grouped:
+        return
+    lines.extend(
+        [
+            "",
+            "## Winner Family vs Ranking Collision",
+            "",
+            "| Ranking Bucket | Winner Family | Candidates | Endpoint Hit Rate | Endpoint Avg | Endpoint Median | Avg Worst Low | Median Worst Low | Avg Best High | Median Best High |",
+            "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+    )
+    for bucket, family in sorted(grouped):
+        group_rows = grouped[(bucket, family)]
+        metrics = _calibration_metrics(group_rows, horizon_days)
+        lines.append(
+            f"| {bucket} | {family} | {len(group_rows)} | {metrics['hit_rate']} | {metrics['endpoint_avg']} | "
+            f"{metrics['endpoint_median']} | {metrics['worst_avg']} | {metrics['worst_median']} | "
+            f"{metrics['best_avg']} | {metrics['best_median']} |"
+        )
+
+
+def _append_integrated_worst_rows(lines: list[str], rows: list[dict[str, Any]], horizon_days: int, *, limit: int) -> None:
+    endpoint_key = f"DPlus{horizon_days}ReturnPct"
+    rows_with_endpoint = [row for row in rows if _number(row.get(endpoint_key)) is not None]
+    lines.extend(
+        [
+            "",
+            "## Worst Endpoint Rows",
+            "",
+            "| D Date | Symbol | Sector | Stage Family | Candidate State | Class | Priority | Ranking Bucket | Endpoint | Worst Low | Best High | Risk Tags |",
+            "|---|---|---|---|---|---|---|---|---:|---:|---:|---|",
+        ]
+    )
+    for row in sorted(rows_with_endpoint, key=lambda item: _number(item.get(endpoint_key), 0.0) or 0.0)[:limit]:
+        lines.append(
+            f"| {row_value(row, 'DDate') or _date_from_source(row)} | {row_value(row, 'Symbol')} | "
+            f"{row_value(row, 'Sector') or 'UNKNOWN'} | {row_value(row, 'StageFamily') or 'UNKNOWN'} | "
+            f"{row_value(row, 'CandidateStateRaw') or row_value(row, 'CandidateState')} | "
+            f"{row_value(row, 'CandidateClass')} | {row_value(row, 'ReviewPriority')} | "
+            f"{_ranking_collision_bucket(row)} | {_format_pct_value(row.get(endpoint_key))} | "
+            f"{_format_pct_value(row.get(f'DPlus{horizon_days}WorstLowReturnPct'))} | "
+            f"{_format_pct_value(row.get(f'DPlus{horizon_days}BestHighReturnPct'))} | "
+            f"{row_value(row, 'RiskTags') or 'none'} |"
         )
 
 

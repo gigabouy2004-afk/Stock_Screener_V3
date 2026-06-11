@@ -153,6 +153,8 @@ Generate Crossover calibration reports from existing detail CSVs:
 $env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
 python -m stock_screener_v3.cli cross-sector-report --details <comma-separated-detail-csvs> --output validation\runs\cross_sector_report.md --horizon-days 20 --candidate-state PRE_BEAR_CROSSOVER
 python -m stock_screener_v3.cli symbol-failure-report --details <comma-separated-detail-csvs> --output validation\runs\symbol_failure_report.md --horizon-days 20
+python -m stock_screener_v3.cli stage-family-report --details <comma-separated-detail-csvs> --output validation\runs\stage_family_report.md --stage-family DIVERGENCE --horizon-days 20
+python -m stock_screener_v3.cli integrated-report --details <comma-separated-detail-csvs> --output validation\runs\integrated_report.md --horizon-days 20
 ```
 
 Run the V3 web console:
@@ -167,9 +169,14 @@ The UI opens at `http://127.0.0.1:8010`.
 
 The Crossover, Divergence, and Momentum Setup stage families are V1 complete and tested for the current engine scope.
 
-The next focus is integrated holistic validation:
+Integrated holistic validation now has a repeatable report command and baseline artifact:
 
-- validate ranking collisions across `CROSSOVER`, `DIVERGENCE`, and `MOMENTUM_SETUP`;
-- review review-priority calibration across sectors and D dates;
-- decide whether a sector/date/context urgency layer is warranted;
+- `python -m stock_screener_v3.cli integrated-report ...`
+- `validation/runs/v3_integrated_holistic_calibration_20260611.md`
+
+The next focus is review-priority and collision-slice calibration:
+
+- inspect weak ranking buckets `MOMENTUM_SETUP` and `DIVERGENCE+MOMENTUM_SETUP`;
+- review `NEEDS_MANUAL_REVIEW` and `BELOW_EMA200` calibration across sectors and D dates;
+- decide whether a sector/date/context urgency layer is warranted before threshold changes;
 - keep enriched universe metadata/filtering as the parallel data-quality track.

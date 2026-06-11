@@ -4,7 +4,12 @@ import argparse
 from datetime import date
 from pathlib import Path
 
-from stock_screener_v3.reports import write_cross_sector_calibration_report, write_stage_family_calibration_report, write_symbol_failure_report
+from stock_screener_v3.reports import (
+    write_cross_sector_calibration_report,
+    write_integrated_calibration_report,
+    write_stage_family_calibration_report,
+    write_symbol_failure_report,
+)
 from stock_screener_v3.runner import run_backtest, run_backtest_pack
 
 
@@ -56,6 +61,10 @@ def parse_args() -> argparse.Namespace:
     stage_family.add_argument("--output", required=True, help="Markdown output path.")
     stage_family.add_argument("--stage-family", required=True, help="Stage family to include, e.g. DIVERGENCE or MOMENTUM_SETUP.")
     stage_family.add_argument("--horizon-days", type=int, default=20, help="Forward horizon to summarize.")
+    integrated = subparsers.add_parser("integrated-report", help="Generate an integrated ranking and calibration report from detail CSV files.")
+    integrated.add_argument("--details", required=True, help="Comma-separated detail CSV paths.")
+    integrated.add_argument("--output", required=True, help="Markdown output path.")
+    integrated.add_argument("--horizon-days", type=int, default=20, help="Forward horizon to summarize.")
     return parser.parse_args()
 
 
@@ -131,6 +140,14 @@ def main() -> int:
             horizon_days=args.horizon_days,
         )
         print(f"Stage-family report: {args.output}")
+        return 0
+    if args.command == "integrated-report":
+        write_integrated_calibration_report(
+            _split_csv(args.details),
+            args.output,
+            horizon_days=args.horizon_days,
+        )
+        print(f"Integrated report: {args.output}")
         return 0
     raise AssertionError(f"Unhandled command: {args.command}")
 

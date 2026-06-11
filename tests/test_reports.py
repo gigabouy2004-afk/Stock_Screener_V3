@@ -9,6 +9,7 @@ from stock_screener_v3.models import BacktestResult, BacktestRunConfig
 from stock_screener_v3.output_contracts import V2_COMPAT_EXPORT_COLUMNS
 from stock_screener_v3.reports import (
     render_cross_sector_calibration_markdown,
+    render_integrated_calibration_markdown,
     render_multi_date_summary_markdown,
     render_stage_family_calibration_markdown,
     render_summary_markdown,
@@ -327,6 +328,35 @@ class ReportTests(unittest.TestCase):
             self.assertIn("# V3 MOMENTUM_SETUP Calibration Report", markdown)
             self.assertIn("## Momentum Opportunity Outcomes", markdown)
             self.assertIn("| BULLISH_PULLBACK_REENTRY | 1 | 0.00% | -7.00% | -7.00% | -12.00% | -12.00% | 3.00% | 3.00% |", markdown)
+
+    def test_render_integrated_calibration_markdown_splits_ranking_and_risk(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            detail = Path(tmpdir) / "integrated_20260211_details.csv"
+            detail.write_text(
+                "\n".join(
+                    [
+                        "Symbol,Sector,StageFamily,CandidateStateRaw,CandidateClass,ReviewPriority,RiskTags,RankingCandidateStates,DPlus20ReturnPct,DPlus20WorstLowReturnPct,DPlus20BestHighReturnPct",
+                        "AAA,Technology,CROSSOVER,PRE_BEAR_CROSSOVER,SELECTED,A,,CROSSOVER:PRE_BEAR_CROSSOVER|MOMENTUM_SETUP:STATUS_QUO|DIVERGENCE:BULLISH_DIVERGENCE,-4,-8,3",
+                        "BBB,Technology,MOMENTUM_SETUP,BULL_PULLBACK_REENTRY,WATCH,NEEDS_MANUAL_REVIEW,BELOW_EMA200,CROSSOVER:STATUS_QUO|MOMENTUM_SETUP:BULL_PULLBACK_REENTRY|DIVERGENCE:STATUS_QUO,5,-2,9",
+                        "CCC,Technology,CROSSOVER,STATUS_QUO,STATUS_QUO,NONE,,CROSSOVER:STATUS_QUO|MOMENTUM_SETUP:STATUS_QUO|DIVERGENCE:STATUS_QUO,-1,-3,2",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            markdown = render_integrated_calibration_markdown((detail,), horizon_days=20)
+
+            self.assertIn("# V3 Integrated Holistic Calibration Report", markdown)
+            self.assertIn("## Stage Family Outcomes", markdown)
+            self.assertIn("| CROSSOVER | 1 | 0.00% | -4.00% | -4.00% | -8.00% | -8.00% | 3.00% | 3.00% |", markdown)
+            self.assertIn("## Risk Tag Outcomes", markdown)
+            self.assertIn("| BELOW_EMA200 | 1 | 100.00% | 5.00% | 5.00% | -2.00% | -2.00% | 9.00% | 9.00% |", markdown)
+            self.assertIn("## Ranking Collision Outcomes", markdown)
+            self.assertIn("| CROSSOVER+DIVERGENCE | 1 | 0.00% | -4.00% | -4.00% | -8.00% | -8.00% | 3.00% | 3.00% |", markdown)
+            self.assertIn("## Winner Family vs Ranking Collision", markdown)
+            self.assertIn("| CROSSOVER+DIVERGENCE | CROSSOVER | 1 | 0.00% | -4.00% | -4.00% | -8.00% | -8.00% | 3.00% | 3.00% |", markdown)
+            self.assertNotIn("| 2026-02-11 | CCC |", markdown)
 
 
 if __name__ == "__main__":

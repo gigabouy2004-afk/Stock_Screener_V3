@@ -768,3 +768,58 @@ $env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
 python -m unittest discover -s tests -v
 73 tests OK
 ```
+
+## 2026-06-11 Integrated Holistic Validation Update
+
+Integrated validation status:
+
+- Added repeatable CLI support:
+  - `integrated-report`
+- Generated validation artifact:
+  - `validation/runs/v3_integrated_holistic_calibration_20260611.md`
+- Input: 15 existing D+20 path-enabled sector detail files across Technology, Industrial, Energy, Telecom alias-check, and Utilities.
+- Candidate rows: 3,144 selected/watch rows.
+
+Stage-family baseline:
+
+- `CROSSOVER`: 903 candidates, 55.37% D+20 hit rate, 2.00% median endpoint.
+- `DIVERGENCE`: 962 candidates, 53.33% D+20 hit rate, 0.97% median endpoint.
+- `MOMENTUM_SETUP`: 1,279 candidates, 49.34% D+20 hit rate, -0.39% median endpoint.
+
+Ranking collision baseline:
+
+- `CROSSOVER`: 675 candidates, 54.96% hit rate, 1.91% median endpoint.
+- `CROSSOVER+DIVERGENCE`: 765 candidates, 55.95% hit rate, 1.59% median endpoint.
+- `CROSSOVER+DIVERGENCE+MOMENTUM_SETUP`: 520 candidates, 53.46% hit rate, 1.09% median endpoint.
+- `CROSSOVER+MOMENTUM_SETUP`: 626 candidates, 53.04% hit rate, 1.11% median endpoint.
+- Weak collision buckets:
+  - `MOMENTUM_SETUP`: 198 candidates, 32.32% hit rate, -4.64% median endpoint.
+  - `DIVERGENCE+MOMENTUM_SETUP`: 126 candidates, 39.68% hit rate, -2.64% median endpoint.
+
+Review-priority/risk baseline:
+
+- `A`: 1,999 candidates, 53.28% hit rate, 1.37% median endpoint.
+- `B`: 489 candidates, 54.81% hit rate, 1.25% median endpoint.
+- `NEEDS_MANUAL_REVIEW`: 656 candidates, 47.41% hit rate, -0.42% median endpoint.
+- `BELOW_EMA200`: 385 candidates, 42.08% hit rate, -2.34% median endpoint.
+
+Verification after integrated validation:
+
+```text
+$env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
+python -m unittest discover -s tests -v
+74 tests OK
+```
+
+Recommended next session start:
+
+1. Start from `validation/runs/v3_integrated_holistic_calibration_20260611.md`.
+2. Calibrate the weak ranking buckets before introducing new signal thresholds:
+   - `MOMENTUM_SETUP`
+   - `DIVERGENCE+MOMENTUM_SETUP`
+3. Split those buckets by sector/date and inspect whether weakness is driven by:
+   - `NEEDS_MANUAL_REVIEW`;
+   - `BELOW_EMA200`;
+   - February-March Industrials;
+   - standalone Momentum Setup candidates.
+4. Decide whether review-priority or context urgency should be adjusted before any family route-boundary change.

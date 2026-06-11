@@ -66,3 +66,26 @@ User-selected stage-family restrictions remain authoritative. For example, `--st
 - Positive elimination still applies before ranking. A blocked bullish route is returned as `STATUS_QUO` with block diagnostics before it enters ranking.
 - Divergence uses `DivergenceDirection` for the same bullish-route baseline block used by Crossover and Momentum Setup.
 - Divergence calibration remains separate from ranking. The V1 ranking layer makes Divergence dispatch auditable; it does not claim that Divergence thresholds are historically calibrated.
+
+## Validation Baseline
+
+2026-06-11 integrated validation artifact:
+
+```text
+validation/runs/v3_integrated_holistic_calibration_20260611.md
+```
+
+Baseline input:
+
+- 15 path-enabled D+20 sector detail files.
+- 3,144 selected/watch candidate rows across Crossover, Divergence, and Momentum Setup.
+
+Current findings:
+
+- `CROSSOVER`: 903 candidates, 55.37% D+20 endpoint hit rate, 2.00% median endpoint.
+- `DIVERGENCE`: 962 candidates, 53.33% D+20 endpoint hit rate, 0.97% median endpoint.
+- `MOMENTUM_SETUP`: 1,279 candidates, 49.34% D+20 endpoint hit rate, -0.39% median endpoint.
+- Weak ranking buckets to review before threshold changes:
+  - `MOMENTUM_SETUP`: 198 candidates, 32.32% hit rate, -4.64% median endpoint.
+  - `DIVERGENCE+MOMENTUM_SETUP`: 126 candidates, 39.68% hit rate, -2.64% median endpoint.
+- `NEEDS_MANUAL_REVIEW` and `BELOW_EMA200` remain the first review-priority/risk-tag slices to calibrate.
