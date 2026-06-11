@@ -15,8 +15,8 @@ venv/
 # Validation outputs can be large; keep summaries intentionally when needed.
 validation/runs/**/*.csv
 validation/runs/**/*.html
+validation/uploads/
 
 # Market data dumps
 data/raw/
 data/cache/
-
