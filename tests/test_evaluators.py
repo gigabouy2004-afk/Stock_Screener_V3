@@ -172,6 +172,31 @@ class CrossoverEvaluatorTests(unittest.TestCase):
         self.assertEqual(evaluation.diagnostics["DivergenceOpportunityType"], "BULLISH_REGULAR_DIVERGENCE")
         self.assertIn(evaluation.candidate_class, {CandidateClass.SELECTED, CandidateClass.WATCH})
 
+    def test_divergence_rejects_raw_bullish_divergence_below_ema200(self) -> None:
+        evidence = make_divergence_evidence("BULLISH_DIVERGENCE")
+        evidence.structure["DivergenceConfirmationState"] = "RAW"
+        evidence.risk_context["BelowEMA200"] = True
+
+        evaluation = evaluate_divergence(evidence)
+
+        self.assertEqual(evaluation.candidate_state, "BULLISH_DIVERGENCE")
+        self.assertEqual(evaluation.candidate_class, CandidateClass.REJECTED)
+        self.assertEqual(evaluation.review_priority, ReviewPriority.C)
+        self.assertIn("BELOW_EMA200", evaluation.risk_tags)
+        self.assertIn("RAW_BULLISH_DIVERGENCE_BELOW_EMA200", evaluation.reason_codes)
+
+    def test_divergence_keeps_confirmed_bullish_below_ema200_as_manual_watch(self) -> None:
+        evidence = make_divergence_evidence("BULLISH_DIVERGENCE")
+        evidence.risk_context["BelowEMA200"] = True
+
+        evaluation = evaluate_divergence(evidence)
+
+        self.assertEqual(evaluation.candidate_state, "BULLISH_DIVERGENCE")
+        self.assertEqual(evaluation.candidate_class, CandidateClass.WATCH)
+        self.assertEqual(evaluation.review_priority, ReviewPriority.NEEDS_MANUAL_REVIEW)
+        self.assertIn("BELOW_EMA200", evaluation.risk_tags)
+        self.assertNotIn("RAW_BULLISH_DIVERGENCE_BELOW_EMA200", evaluation.reason_codes)
+
     def test_divergence_evaluator_classifies_regular_bearish_divergence(self) -> None:
         evaluation = evaluate_divergence(make_divergence_evidence("BEARISH_DIVERGENCE"))
 

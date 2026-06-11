@@ -236,4 +236,27 @@ Path-enabled calibration baseline:
 - D+20 endpoint and path metrics are split by candidate state, sector, date, direction, type, and opportunity.
 - Regular bullish divergence is the weakest current slice:
   - `BULLISH_DIVERGENCE`: 211 candidates, 44.08% endpoint hit rate, -1.45% median endpoint, -11.13% median worst low.
-- No route-boundary change is promoted from this pass.
+
+## 12. Path-Forward Calibration Rule
+
+Implemented on 2026-06-11 after the Technology weak-watch review and the cross-sector path-enabled calibration both confirmed weakness in bullish Divergence below EMA200.
+
+Rule:
+
+- Raw or unconfirmed bullish Divergence below EMA200 remains auditable as `BULLISH_DIVERGENCE` or `HIDDEN_BULLISH_DIVERGENCE`.
+- It is not promoted into the normal `WATCH` path.
+- It is emitted as `REJECTED` with:
+  - `BELOW_EMA200`
+  - `RAW_BULLISH_DIVERGENCE_BELOW_EMA200`
+- Confirmed bullish Divergence below EMA200 can still be `WATCH` with `NEEDS_MANUAL_REVIEW`.
+
+Guardrail:
+
+- This does not suppress Divergence geometry.
+- This does not apply Crossover zero-line rules or Momentum Setup continuation rules to Divergence.
+- Bearish Divergence and confirmed bullish Divergence behavior is unchanged.
+
+Regression coverage:
+
+- `test_divergence_rejects_raw_bullish_divergence_below_ema200`
+- `test_divergence_keeps_confirmed_bullish_below_ema200_as_manual_watch`

@@ -553,6 +553,13 @@ def evaluate_divergence(evidence: EvidencePack) -> StageEvaluation:
         risk_tags.append("LOW_LIQUIDITY")
     if route.direction == "BULLISH" and risk.get("BelowEMA200"):
         risk_tags.append("BELOW_EMA200")
+    raw_bullish_below_ema200 = (
+        route.direction == "BULLISH"
+        and risk.get("BelowEMA200")
+        and confirmation_state != "CONFIRMED"
+    )
+    if raw_bullish_below_ema200:
+        reason_codes.append("RAW_BULLISH_DIVERGENCE_BELOW_EMA200")
 
     if not route.is_valid:
         candidate_state = "STATUS_QUO"
@@ -564,7 +571,7 @@ def evaluate_divergence(evidence: EvidencePack) -> StageEvaluation:
         candidate_class = CandidateClass.SELECTED
         priority = ReviewPriority.A
         confidence = "HIGH"
-    elif total >= 56:
+    elif total >= 56 and not raw_bullish_below_ema200:
         candidate_state = route.candidate_state
         candidate_class = CandidateClass.WATCH
         priority = ReviewPriority.B if not risk_tags else ReviewPriority.NEEDS_MANUAL_REVIEW

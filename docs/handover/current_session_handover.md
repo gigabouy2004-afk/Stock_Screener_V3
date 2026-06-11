@@ -823,3 +823,41 @@ Recommended next session start:
    - February-March Industrials;
    - standalone Momentum Setup candidates.
 4. Decide whether review-priority or context urgency should be adjusted before any family route-boundary change.
+
+## 2026-06-11 Divergence Path-Forward Implementation Update
+
+Correction to execution path:
+
+- The next required work was not just another report; Divergence needed a concrete path-forward calibration rule from the validated weak slices.
+- Implemented rule: raw/unconfirmed bullish Divergence below EMA200 is no longer promoted into the normal `WATCH` path.
+- The signal remains auditable as its Divergence candidate state, but is emitted as `REJECTED` with:
+  - `BELOW_EMA200`
+  - `RAW_BULLISH_DIVERGENCE_BELOW_EMA200`
+- Confirmed bullish Divergence below EMA200 remains eligible for `WATCH` with `NEEDS_MANUAL_REVIEW`.
+
+Files changed:
+
+- `src/stock_screener_v3/evaluators.py`
+- `tests/test_evaluators.py`
+- `docs/architecture/v3_divergence_contract.md`
+
+Verification:
+
+```text
+$env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
+python -m unittest discover -s tests -v
+76 tests OK
+```
+
+Next exact path:
+
+1. Quantify this Divergence path-forward rule by rerunning the path-enabled sector validation packs and comparing candidate counts for:
+   - `BULLISH_DIVERGENCE`
+   - `HIDDEN_BULLISH_DIVERGENCE`
+   - `BELOW_EMA200`
+   - `RAW_BULLISH_DIVERGENCE_BELOW_EMA200`
+2. Then move to the analogous Momentum Setup action item:
+   - `BULL_PULLBACK_REENTRY`
+   - `BELOW_EMA200`
+   - weak February-March Industrials
+3. Do not add more reporting before completing the Momentum Setup evaluator path-forward rule.
