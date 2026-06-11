@@ -577,7 +577,7 @@ The actual V3 production engine logic is progressing stage family by stage famil
 
 ## Recommended Next Session Start
 
-Move to the `MOMENTUM_SETUP` stage family. Start with route-contract validation and historical calibration, not UI expansion and not new indicator tuning.
+All three stage families are now V1 complete for the current engine scope. Move to integrated holistic validation and review-priority calibration, not UI expansion and not new indicator tuning.
 
 Current traversal layer status:
 
@@ -602,11 +602,14 @@ Completed in the 2026-06-04 closure pass:
 
 Recommended next implementation order:
 
-1. Generate a path-enabled `MOMENTUM_SETUP` stage-family report from the same existing multi-date sector detail CSVs used for Divergence closure.
-2. Split `BULL_PULLBACK_REENTRY` vs `BULL_CONTINUATION_MOMENTUM` outcomes by sector, date, review priority, and opportunity type.
-3. Review whether pullback re-entry below EMA200 needs a review-priority downgrade while preserving signal visibility.
-4. Only after Momentum Setup evidence is reviewed, consider any threshold or review-priority changes.
-5. Keep the future sector-aware Bear Crossover urgency layer as a later calibration item, not the next implementation focus.
+1. Validate ranking collisions across the closed families:
+   - `CROSSOVER`
+   - `DIVERGENCE`
+   - `MOMENTUM_SETUP`
+2. Review review-priority calibration across sectors, D dates, stage families, and risk tags.
+3. Decide whether a sector/date/context urgency layer is warranted.
+4. Keep enriched universe metadata/filtering as the parallel data-quality track.
+5. Do not change route boundaries without a new validation report.
 
 Parallel WIP track:
 
@@ -686,9 +689,12 @@ Current Crossover closure:
 
 Next recommended work:
 
-1. Begin `MOMENTUM_SETUP` stage-family validation.
-2. Generate and review `validation/runs/v3_momentum_setup_stage_family_calibration_20260611.md`.
-3. Add optional filters to `symbol-failure-report` for `--candidate-state`, `--stage-family`, and `--sector` if needed during Momentum Setup failure review.
+1. Generate an integrated ranking/review-priority calibration report from the same path-enabled multi-date sector detail CSVs.
+2. Compare winning family outcomes against `RankingCandidateStates` collision buckets.
+3. Review weak slices already identified:
+   - Momentum Setup / Industrials / February-March.
+   - Divergence / `BULLISH_DIVERGENCE`.
+   - Bear Crossover sector urgency differences.
 4. Continue calibration review before introducing any new signal threshold changes.
 
 ## 2026-06-11 Divergence Closure Update
@@ -724,4 +730,41 @@ Verification after Divergence closure:
 $env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
 python -m unittest discover -s tests -v
 72 tests OK
+```
+
+## 2026-06-11 Momentum Setup Closure Update
+
+Momentum Setup status:
+
+- `MOMENTUM_SETUP` is V1 complete and tested for the current engine scope.
+- Route states covered:
+  - `BULL_PULLBACK_REENTRY`
+  - `BULL_CONTINUATION_MOMENTUM`
+- Opportunity subtypes covered:
+  - `BULLISH_PULLBACK_REENTRY`
+  - `BULLISH_CONTINUATION_MOMENTUM`
+  - `BULLISH_MOMENTUM_EXPANSION`
+- Generated report support now includes filtered `symbol-failure-report`.
+- Validation artifacts:
+  - `validation/runs/v3_momentum_setup_stage_family_calibration_20260611.md`
+  - `validation/runs/v3_momentum_setup_symbol_failure_report_20260611.md`
+  - `validation/runs/v3_momentum_setup_family_v1_completion_20260611.md`
+
+Path-enabled baseline:
+
+- Input: 15 existing D+20 path-enabled sector detail files across Technology, Industrial, Energy, Telecom alias-check, and Utilities.
+- Candidate rows: 1,279.
+- `BULL_PULLBACK_REENTRY`: 1,246 candidates, 49.28% hit rate, -0.39% median endpoint, -7.36% median worst low.
+- `BULL_CONTINUATION_MOMENTUM`: 33 candidates, 51.52% hit rate, 0.36% median endpoint, -6.01% median worst low.
+- Weaker slices:
+  - Industrials: 39.79% hit rate, -3.75% median endpoint.
+  - February 2026: 34.46% hit rate, -6.06% median endpoint.
+- No Momentum Setup route-boundary change is promoted from this pass.
+
+Verification after Momentum Setup closure:
+
+```text
+$env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
+python -m unittest discover -s tests -v
+73 tests OK
 ```

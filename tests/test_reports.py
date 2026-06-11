@@ -262,6 +262,27 @@ class ReportTests(unittest.TestCase):
             self.assertIn("## Repeated Weak Symbols", markdown)
             self.assertIn("| AAA | 2 | -8.00% | -10.00% | -6.00% | 2026-02-11, 2026-03-11 |", markdown)
 
+    def test_render_symbol_failure_markdown_applies_stage_family_filter(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            detail = Path(tmpdir) / "pack_20260211_details.csv"
+            detail.write_text(
+                "\n".join(
+                    [
+                        "Symbol,Sector,StageFamily,CandidateStateRaw,CandidateClass,ReviewPriority,ReasonCodes,DPlus20ReturnPct,DPlus20WorstLowReturnPct,DPlus20BestHighReturnPct",
+                        "AAA,Technology,MOMENTUM_SETUP,BULL_PULLBACK_REENTRY,WATCH,B,BULL_PULLBACK_REENTRY_ROUTE,-7,-12,3",
+                        "BBB,Technology,CROSSOVER,PRE_BEAR_CROSSOVER,WATCH,B,DAILY_MACD_BEAR_CROSS,-9,-10,2",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            markdown = render_symbol_failure_markdown((detail,), horizon_days=20, stage_family="MOMENTUM_SETUP")
+
+            self.assertIn("- Stage family filter: MOMENTUM_SETUP", markdown)
+            self.assertIn("| 2026-02-11 | AAA | Technology | BULL_PULLBACK_REENTRY | WATCH | B | -7.00% | -12.00% | 3.00% |", markdown)
+            self.assertNotIn("PRE_BEAR_CROSSOVER", markdown)
+
     def test_render_stage_family_calibration_markdown_splits_divergence(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             detail = Path(tmpdir) / "sector_pack_20260211_details.csv"

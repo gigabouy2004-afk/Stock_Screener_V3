@@ -156,11 +156,21 @@ def write_symbol_failure_report(
     *,
     horizon_days: int = 20,
     limit: int = 15,
+    stage_family: str = "",
+    candidate_state: str = "",
+    sector: str = "",
 ) -> None:
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(
-        render_symbol_failure_markdown(detail_paths, horizon_days=horizon_days, limit=limit),
+        render_symbol_failure_markdown(
+            detail_paths,
+            horizon_days=horizon_days,
+            limit=limit,
+            stage_family=stage_family,
+            candidate_state=candidate_state,
+            sector=sector,
+        ),
         encoding="utf-8",
     )
 
@@ -170,8 +180,12 @@ def render_symbol_failure_markdown(
     *,
     horizon_days: int = 20,
     limit: int = 15,
+    stage_family: str = "",
+    candidate_state: str = "",
+    sector: str = "",
 ) -> str:
     rows = _candidate_rows_from_csvs(detail_paths)
+    rows = _filter_rows(rows, stage_family=stage_family, candidate_state=candidate_state, sector=sector)
     endpoint_key = f"DPlus{horizon_days}ReturnPct"
     failed_rows = [row for row in rows if (_number(row.get(endpoint_key)) is not None and _number(row.get(endpoint_key), 0.0) < 0)]
     lines: list[str] = [
@@ -179,6 +193,9 @@ def render_symbol_failure_markdown(
         "",
         f"- Horizon: D+{horizon_days}",
         f"- Detail files: {len(detail_paths)}",
+        f"- Stage family filter: {stage_family or 'ALL'}",
+        f"- Candidate state filter: {candidate_state or 'ALL'}",
+        f"- Sector filter: {sector or 'ALL'}",
         f"- Candidate rows: {len(rows)}",
         f"- Negative endpoint rows: {len(failed_rows)}",
         "",
@@ -558,6 +575,30 @@ def _group_rows(rows: list[dict[str, Any]], key: str) -> dict[str, list[dict[str
         group = row_value(row, key) or "UNKNOWN"
         grouped.setdefault(group, []).append(row)
     return dict(sorted(grouped.items()))
+
+
+def _filter_rows(
+    rows: list[dict[str, Any]],
+    *,
+    stage_family: str = "",
+    candidate_state: str = "",
+    sector: str = "",
+) -> list[dict[str, Any]]:
+    filtered = rows
+    if stage_family:
+        expected = stage_family.upper()
+        filtered = [row for row in filtered if row_value(row, "StageFamily").upper() == expected]
+    if candidate_state:
+        expected = candidate_state.upper()
+        filtered = [
+            row
+            for row in filtered
+            if row_value(row, "CandidateStateRaw").upper() == expected or row_value(row, "CandidateState").upper() == expected
+        ]
+    if sector:
+        expected = sector.upper()
+        filtered = [row for row in filtered if row_value(row, "Sector").upper() == expected]
+    return filtered
 
 
 def _append_calibration_split(lines: list[str], title: str, rows: list[dict[str, Any]], key: str, horizon_days: int) -> None:

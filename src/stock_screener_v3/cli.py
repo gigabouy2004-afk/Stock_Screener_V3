@@ -48,6 +48,9 @@ def parse_args() -> argparse.Namespace:
     symbol_failure.add_argument("--output", required=True, help="Markdown output path.")
     symbol_failure.add_argument("--horizon-days", type=int, default=20, help="Forward horizon to summarize.")
     symbol_failure.add_argument("--limit", type=int, default=15, help="Maximum rows per failure table.")
+    symbol_failure.add_argument("--stage-family", default="", help="Optional stage-family filter.")
+    symbol_failure.add_argument("--candidate-state", default="", help="Optional candidate-state filter.")
+    symbol_failure.add_argument("--sector", default="", help="Optional sector filter.")
     stage_family = subparsers.add_parser("stage-family-report", help="Generate a stage-family calibration report from detail CSV files.")
     stage_family.add_argument("--details", required=True, help="Comma-separated detail CSV paths.")
     stage_family.add_argument("--output", required=True, help="Markdown output path.")
@@ -114,6 +117,9 @@ def main() -> int:
             args.output,
             horizon_days=args.horizon_days,
             limit=args.limit,
+            stage_family=args.stage_family,
+            candidate_state=args.candidate_state,
+            sector=args.sector,
         )
         print(f"Symbol failure report: {args.output}")
         return 0

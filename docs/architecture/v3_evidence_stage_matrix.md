@@ -41,7 +41,7 @@ Therefore, evidence calculation must remain separate from stage classification.
 |---|---|---|
 | `CROSSOVER` | `PRE_BULL_CROSSOVER`, `PRE_BEAR_CROSSOVER` | Phase transition: seller-to-buyer entry review or buyer-to-seller exit/preservation review. |
 | `MOMENTUM_SETUP` | `BULL_PULLBACK_REENTRY`, `BULL_CONTINUATION_MOMENTUM` | Bull phase continuation or re-entry after bullish phase already exists. |
-| `DIVERGENCE` | `BULLISH_DIVERGENCE`, `BEARISH_DIVERGENCE`, `HIDDEN_BULLISH_DIVERGENCE`, `HIDDEN_BEARISH_DIVERGENCE` | Price and momentum disagreement. V1 evaluator implemented; calibration pending. |
+| `DIVERGENCE` | `BULLISH_DIVERGENCE`, `BEARISH_DIVERGENCE`, `HIDDEN_BULLISH_DIVERGENCE`, `HIDDEN_BEARISH_DIVERGENCE` | Price and momentum disagreement. V1 complete for current engine scope. |
 | `STATUS_QUO` | `STATUS_QUO` | No selected family has sufficient route evidence. |
 
 `CROSSOVER` must not claim bull pullback re-entry or bull continuation. Those belong to `MOMENTUM_SETUP`.
@@ -189,6 +189,14 @@ Validated Crossover artifacts:
 
 ## 7. Momentum Setup Matrix
 
+Implementation status:
+
+```text
+V1 complete and tested for the current engine scope as of 2026-06-11.
+```
+
+Completion means the bull pullback re-entry and bull continuation route contract, diagnostics, baseline blocking behavior, generated calibration reporting, and validation artifacts are in place. Future changes should focus on review-priority/scoring calibration, especially weak pullback re-entry slices, not route-boundary rewrites.
+
 Purpose:
 
 ```text
@@ -239,6 +247,13 @@ Output:
 
 - `CandidateState = BULL_CONTINUATION_MOMENTUM`.
 - `MomentumSetupOpportunityType = BULLISH_CONTINUATION_MOMENTUM` or `BULLISH_MOMENTUM_EXPANSION`.
+
+Validated Momentum Setup artifacts:
+
+- `validation/runs/v3_momentum_setup_smoke_20260211_summary.md`
+- `validation/runs/v3_momentum_setup_stage_family_calibration_20260611.md`
+- `validation/runs/v3_momentum_setup_symbol_failure_report_20260611.md`
+- `validation/runs/v3_momentum_setup_family_v1_completion_20260611.md`
 
 ## 8. Divergence Matrix Contract
 
