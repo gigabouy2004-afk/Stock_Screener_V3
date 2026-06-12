@@ -86,6 +86,16 @@ Examples of this path include:
 - continuation after MACD is already positive
 - setups where price movement is expected after an already-established bullish structure
 
+Momentum may use bounded context checks when the user asks for them. Examples:
+
+- sector information for the supplied stock or supplied CSV universe
+- stock behavior in one-month candles
+- lifetime high and lifetime low checks
+- boundary analysis against prior major highs/lows
+- market-regime context as supporting evidence
+
+These checks are valid only as supporting context for the selected Momentum Setup / Bull Extension analysis. They must not trigger a broad sector scan, cross-sector calibration project, or extra analysis path.
+
 ## V2 Level Architecture To Preserve
 
 V3 must retain the path-first V2 architecture and make it stricter.
@@ -210,6 +220,9 @@ The following items may be carried forward because they are processing capabilit
 - no-lookahead historical slicing.
 - EMA200 as a risk/evidence component where it supports the selected analysis path.
 - market regime as bounded contextual evidence, not as a separate screening project.
+- sector information as bounded context for the supplied stock/CSV when the user asks for it.
+- one-month candle behavior as bounded path evidence.
+- lifetime high/low and major-boundary checks as bounded path evidence.
 - future AI/sentiment analysis as an optional evidence module, only after the core three-path engine is stable.
 
 These components must stay subordinate to the core workflow:
