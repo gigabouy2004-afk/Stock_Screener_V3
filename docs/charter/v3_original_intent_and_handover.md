@@ -71,6 +71,65 @@ If a calculation is added, the implementer must answer these before coding:
 4. What data does it request from the API?
 5. What test proves it cannot override another path?
 
+## Stage-Family Indicator Matrix Requirement
+
+The engine must be designed from a stage-family indicator matrix.
+
+The V2 design described a two-axis route/indicator model. The current V3 repository still contains the active equivalent:
+
+```text
+docs/architecture/v3_evidence_stage_matrix.md
+```
+
+That document is the current implementation-era matrix. It is grounded in the V2 route/indicator hierarchy and must be reused, not rediscovered.
+
+The required matrix shape for construction is:
+
+```text
+Rows    = Technical Analysis indicators, evidence modules, gates, or context aids
+Columns = selected stage families / stage gates / candidate trajectories
+Cells   = whether the item is Route, Timing, Quality, Context, Audit, or Not Used
+```
+
+Allowed stage-family columns:
+
+- `CROSSOVER`
+- `DIVERGENCE`
+- `MOMENTUM_SETUP` / `BULL_EXTENSION`
+
+Each matrix row must define:
+
+- indicator/evidence name
+- API data required
+- calculation level: L1, L2, L3, L4, or L5
+- input fields
+- output fields
+- path-specific meaning
+- whether it can affect route, timing, quality, confidence score, risk, audit, or backtest only
+- anti-leakage rule proving it cannot override another path
+
+Examples:
+
+| Indicator / evidence | Crossover | Divergence | Momentum Setup / Bull Extension |
+|---|---|---|---|
+| MACD 1D | Route/timing for transition. | Context or swing comparison input. | Context/quality for existing bull phase. |
+| MACD 4H / 1H | Timing/confirmation only when Crossover path requests it. | Not default; only if divergence design later requires it. | Not default; only if Momentum confirmation later requires it. |
+| MACD histogram history | Crossover readiness/probability aid. | Swing comparison for divergence. | Stock-specific phase strength and maturity. |
+| RSI | Quality/context, not hard route. | Momentum disagreement input or confirmation. | Quality/headroom scoring. |
+| RSI upper boundary 80 | Usually not route. | Usually context only. | Upper-bound/headroom aid: distance from current RSI to 80 can contribute to WeightedScore/confidence, not route. |
+| EMA200 | Risk/headroom context. | Support/resistance context. | Quality/risk/headroom aid. |
+| Lifetime high / EMA lifetime-high percentage | Not base route. | Context if relevant to resistance/support. | Headroom/extension scoring aid. |
+| Sector / market context | Bounded context only when requested. | Bounded context only when requested. | Bounded context only when requested. |
+
+This matrix is the main mechanism that prevents isolated implementation from breaking the engine. No indicator should be added directly to code until its row/cell meaning is documented.
+
+The matrix can be refined over time, but the rule is fixed:
+
+```text
+An indicator belongs to a path only through an explicit matrix cell.
+No indicator is globally meaningful across all paths by default.
+```
+
 ## User Workflow Contract
 
 The user workflow is fixed:
@@ -321,6 +380,7 @@ Source:
 
 - `docs/archive_unified_stock_scanner_engine_design.md`
 - `docs/archive_unified_engine_recap_and_action_plan_2026-05-24.md`
+- `docs/architecture/v3_evidence_stage_matrix.md`
 
 Reuse:
 
@@ -330,6 +390,7 @@ Reuse:
 - L3 on-demand indicator/evidence functions
 - no global calculation of every indicator/timeframe before route
 - audit fields showing baseline, route, and functions called
+- stage-family indicator/evidence matrix with rows as evidence and columns as stage-family meanings
 
 ### Momentum / MACD Baseline
 
@@ -421,6 +482,7 @@ This matrix consolidates the individual V2 intents that must be preserved in V3.
 | V2 intent | Source pointer | V3 level | Carry-forward rule | Anti-regression guardrail |
 |---|---|---|---|---|
 | Engine must be path-first, not indicator-first. | design lines 7-9; recap lines 18-21 | Whole engine | Baseline, route, then evidence. | Do not calculate every indicator/timeframe globally before path selection. |
+| Stage-family indicator matrix governs usage. | design lines 253-263; recap lines 130-149; `v3_evidence_stage_matrix.md` sections 4-5 | L2/L3/L4 | Every indicator/evidence item must have a path-specific matrix meaning. | Do not add an indicator directly into an evaluator without documenting its matrix row/cell. |
 | L1 baseline establishes current technical state. | design lines 185-207; recap lines 89-103 | L1 | Determine where the stock is now. | Baseline sets route context; it is not final classification. |
 | L2 router chooses the relevant path. | design lines 209-232; recap lines 105-128 | L2 | Router respects baseline and user-selected families. | Router must prevent Crossover/Divergence/Momentum leakage. |
 | L3 functions calculate only evidence required by L2. | design lines 234-277; recap lines 130-149, 346-356 | L3 | Indicator functions are compute-only and on-demand. | No classification inside raw indicator calculation. |

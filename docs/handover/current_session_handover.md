@@ -32,6 +32,8 @@ Single-engine construction rule: V2 details such as EMA200, lifetime high, EMA l
 
 The canonical document now includes a V2 Design Intent Validation Matrix. Use that matrix as the starting checklist for engine construction; do not rediscover V2 intent from scattered artifacts.
 
+The canonical document also records the Stage-Family Indicator Matrix requirement. Use `docs/architecture/v3_evidence_stage_matrix.md` as the current matrix reference: indicator/evidence rows, stage-family columns, and cell meanings such as Route, Timing, Quality, Context, Audit, or Not Used.
+
 ## Low-Token Restart Pointer
 
 For the next session on this same topic, read the canonical document above first, then read this compact signoff:
