@@ -30,6 +30,8 @@ Do not describe OHLCV as the universal V3 input requirement. V2's MACD/Momentum 
 
 Single-engine construction rule: V2 details such as EMA200, lifetime high, EMA lifetime-high percentage, RSI, one-month candles, sector context, and market-regime context can refine confidence/risk/explanation only inside a selected path trajectory. They must not become base-level drivers, route selectors, or overrides of Crossover, Divergence, or Momentum Setup.
 
+The canonical document now includes a V2 Design Intent Validation Matrix. Use that matrix as the starting checklist for engine construction; do not rediscover V2 intent from scattered artifacts.
+
 ## Low-Token Restart Pointer
 
 For the next session on this same topic, read the canonical document above first, then read this compact signoff:

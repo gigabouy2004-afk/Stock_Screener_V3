@@ -403,6 +403,106 @@ The following should not drive engine construction:
 
 These artifacts may be read only to understand mistakes, candidate failure modes, or potential bottom-level evidence ideas.
 
+## V2 Design Intent Validation Matrix
+
+This matrix consolidates the individual V2 intents that must be preserved in V3. Each intent is valid only at its proper hierarchy level. The past failure mode was implementing these ideas in isolation, causing path leakage, global gates, or incorrect overrides.
+
+### Input And User Control
+
+| V2 intent | Source pointer | V3 level | Carry-forward rule | Anti-regression guardrail |
+|---|---|---|---|---|
+| User supplies the universe through CSV/manual symbols. | `archive_unified_stock_scanner_engine_design.md` lines 7, 63-71; `archive_unified_engine_recap_and_action_plan_2026-05-24.md` lines 13, 27 | L0 | CSV/manual input defines the universe. | Do not expand to pan-USA, sector folders, or broad markets unless user supplied that universe. |
+| User selects stage families. | design lines 65, 108-116, 232; recap lines 77-85, 128 | L0/L2 | Only selected paths are eligible. | If user selects Crossover, Divergence or Momentum must not produce final candidates. |
+| `STATUS_QUO` is output, not a user path. | design lines 116, 727-745; recap lines 237-249 | L5 | Use `STATUS_QUO` when selected paths do not qualify. | Do not expose `STATUS_QUO` as an analysis option or score it as a candidate family. |
+| Defaults and thresholds live outside decision code. | design lines 120-157; recap lines 253-269 | Config/L0 | Parameters are configurable per run/profile. | Do not bury market/sector/stock-sensitive thresholds inside evaluator code. |
+
+### Hierarchical Engine Flow
+
+| V2 intent | Source pointer | V3 level | Carry-forward rule | Anti-regression guardrail |
+|---|---|---|---|---|
+| Engine must be path-first, not indicator-first. | design lines 7-9; recap lines 18-21 | Whole engine | Baseline, route, then evidence. | Do not calculate every indicator/timeframe globally before path selection. |
+| L1 baseline establishes current technical state. | design lines 185-207; recap lines 89-103 | L1 | Determine where the stock is now. | Baseline sets route context; it is not final classification. |
+| L2 router chooses the relevant path. | design lines 209-232; recap lines 105-128 | L2 | Router respects baseline and user-selected families. | Router must prevent Crossover/Divergence/Momentum leakage. |
+| L3 functions calculate only evidence required by L2. | design lines 234-277; recap lines 130-149, 346-356 | L3 | Indicator functions are compute-only and on-demand. | No classification inside raw indicator calculation. |
+| Baseline must not erase transition versus established regime. | design lines 302-318; evidence matrix lines 47, 152 | L1/L2 | Separate transition, continuation, divergence, and fallback. | Above-zero bull continuation must not become `PRE_BULL_CROSSOVER`. |
+| Stage-family scores are not equivalent across paths. | design line 347 | L4/L5 | Score inside each path and compare only through an explicit ranking contract. | Do not treat Crossover 80 as equivalent to Divergence 80 without ranking rules. |
+
+### Data And API Method
+
+| V2 intent | Source pointer | V3 level | Carry-forward rule | Anti-regression guardrail |
+|---|---|---|---|---|
+| Use provider abstraction. | design line 183 | L0 | API/provider retrieves data required by selected calculation. | Provider behavior must not leak into strategy rules. |
+| Fetch daily baseline data first. | design line 175 | L0/L1 | Daily data supports baseline. | Do not fetch lower timeframes unless path evidence needs them. |
+| Fetch 4H/1H only when route needs it. | design lines 176, 298-299; recap lines 174, 277-279, 350-354 | L3 | Lower timeframe is timing/confirmation only. | Lower timeframe must not override base route blindly. |
+| Momentum MACD baseline needs Close series. | design lines 582-587; recap lines 207-212 | L3 Momentum | Close series is enough for MACD baseline. | Do not impose OHLCV as universal input. |
+| Volume is optional confirmation for Momentum baseline. | design lines 586, 716; recap lines 211, 230 | L3/L4 | Use volume only as quality/context when requested or configured. | Volume must not become a hidden base gate. |
+
+### Crossover Intent
+
+| V2 intent | Source pointer | V3 level | Carry-forward rule | Anti-regression guardrail |
+|---|---|---|---|---|
+| Crossover means transition, not established regime. | design lines 401-405; recap lines 152-156 | L2/L4 | Classify only transition or near-transition states. | Do not classify already bullish continuation as Crossover. |
+| Detect bullish and bearish MACD/signal crosses. | design lines 409-412; recap lines 156-159 | L3/L4 | MACD line/signal cross is core Crossover evidence. | Directional Crossover states remain separate. |
+| Freshness must be recorded. | design lines 437-444 | L3/L4/L5 | Include bars since MACD/signal and zero-line crosses. | Stale crosses must be classified/audited separately. |
+| Zero-line context is separate from crossover detection. | design lines 448-465; recap lines 165-170 | L3/L4 | Zero-line improves context/quality. | Do not require `histogram > 0.5` or `MACD > 0.5` for generic `PRE_BULL_CROSSOVER`. |
+| Histogram confirms real/non-flat crossover. | design lines 424-433, 750-758; recap lines 165-170 | L3/L4 | Use histogram/spread as readiness or quality evidence. | No universal histogram strength gate across paths. |
+| Historical MACD/histogram behavior can aid readiness. | design lines 28, 245, 283-287; recap lines 55, 263 | L3/L4 | Use as probability/confidence aid for near-crossover. | It cannot relabel Momentum continuation as Crossover. |
+
+### Divergence Intent
+
+| V2 intent | Source pointer | V3 level | Carry-forward rule | Anti-regression guardrail |
+|---|---|---|---|---|
+| Divergence means price/momentum disagreement. | design lines 484-488; recap lines 176-180 | L2/L4 | Keep as independent stage family. | Do not infer Divergence from Crossover failure or Momentum continuation. |
+| Raw divergence is evidence, not final candidate. | design lines 506-520; recap lines 187-194 | L3/L4 | Raw geometry remains auditable. | Do not promote raw divergence without confirmation/context. |
+| Confirmed divergence waits for histogram momentum to turn. | design lines 520-524 | L3/L4 | Bullish: histogram below zero but improving. Bearish: above zero but deteriorating. | Developing evidence must not be promoted as confirmed. |
+| Divergence uses swing/histogram comparison. | design lines 506-537; recap lines 189-194 | L3 | Compare price swing and histogram swing. | Do not apply generic `histogram > 0.5` strength gate. |
+| Divergence scoring stays separate. | design lines 498, 543-557; divergence contract lines 7, 217-219 | L4/L5 | Emit direction/type/confirmation/reason fields. | Do not import Crossover hard gates or Momentum continuation gates. |
+
+### Momentum Setup / Bull Extension Intent
+
+| V2 intent | Source pointer | V3 level | Carry-forward rule | Anti-regression guardrail |
+|---|---|---|---|---|
+| Momentum replaces old generic `Setup`. | design lines 559-567; recap lines 198-202 | L2/L4 | Momentum is its own selected path. | It must not modify Crossover or Divergence rules. |
+| Momentum uses stock-specific historical MACD behavior. | design lines 571-599; recap lines 204-222 | L3/L4 | Compare current momentum with the stock's own history. | Do not use universal histogram strength as primary definition. |
+| Default Momentum MACD reference is `MACD(8,21,5)`. | design lines 582-585; recap lines 207-210 | L3 | Use configurable Momentum MACD parameters. | Keep parameters in config, not buried in code. |
+| Momentum phases are histogram episodes. | design lines 593-617; recap lines 214-222 | L3 | Split bull/bear phases and consecutive episodes. | Positive bars alone are not equivalent to phase episodes. |
+| Momentum strength is percentile/history based. | design lines 619-665 | L3/L4 | Compare current histogram to stock-specific averages/percentiles. | Do not use a global `0.5` threshold as primary strength. |
+| Phase maturity is confidence context. | design lines 671-687; recap lines 224-233 | L4 | Early/developing/mature/extended affects confidence and chase risk. | Maturity must not override path routing. |
+| RSI, ADX, volume, liquidity, extension risk need scoped decisions. | design lines 712-720; recap lines 224-230 | L3/L4 | Use as bounded quality/confidence inputs after route. | Do not let them become global gates. |
+
+### Scoring, Ranking, And Output
+
+| V2 intent | Source pointer | V3 level | Carry-forward rule | Anti-regression guardrail |
+|---|---|---|---|---|
+| WeightedScore was unreliable as promotion logic. | gap analysis lines 227-241, 390-391 | L4/L5 | Rebuild as component confidence/detail score. | Do not use old WeightedScore as promotion gate. |
+| Distinguish route validity, quality, context risk, and output priority. | gap analysis lines 15-24, 145-176, 195-209 | L2/L4/L5 | Keep separate fields for each decision layer. | Do not mix invalidating evidence with probability evidence. |
+| Ranking is reporting/prioritization. | `docs/architecture/v3_ranking_contract.md` lines 9, 61-68 | L5 | Ranking chooses display winner after family logic. | Ranking must not mutate family signal logic or suppress evidence. |
+| Failed checks remain auditable. | evidence matrix lines 51-60, 338-342 | L5 | Emit reason codes, risk tags, diagnostics. | Do not silently hide weak/failed route evidence. |
+| V2-compatible output visibility should remain. | `docs/architecture/v2_operational_parity_contract.md` lines 5-59 | L5/UI | Keep CSV/log/summary auditability and leading V2 columns where useful. | UI must not hide why a symbol was selected/skipped. |
+
+### Backtesting, Metadata, And Operations
+
+| V2 intent | Source pointer | V3 level | Carry-forward rule | Anti-regression guardrail |
+|---|---|---|---|---|
+| Historical replay/backtesting is required for validation. | gap analysis lines 296-302, 451-485; design lines 907-908 | L5 | Same production engine should run against D-date slices. | Do not tune from isolated live examples. |
+| D-date processing must avoid lookahead. | canonical rule plus backtesting utility intent | L0/L5 | Classify with data through D, validate later with D+X. | D+X data must never enter initial classification. |
+| Preserve input metadata for audit. | design lines 87, 835-862; gap analysis lines 268-284, 412 | L0/L5 | Keep source metadata like sector/industry/volume when supplied. | Do not use current profile facts as historical truth without tagging. |
+| One symbol failure must not fail the run. | design lines 818-831; recap lines 377-381 | L0/L5 | Record per-symbol provider/data errors. | Only input/output layer failures should stop the whole run. |
+| Performance cannot break trading logic. | design lines 792-813, 922 | Whole engine | Batch and optimize after correctness. | A faster path is unacceptable if classification correctness is reduced. |
+
+## V3 Validation Requirement From The Matrix
+
+Before implementing or carrying forward any V2 item, create or identify a validation check for:
+
+1. correct V3 hierarchy placement;
+2. selected-path restriction;
+3. no override of the other two paths;
+4. no global gate unless explicitly defined as a base gate;
+5. D-date no-lookahead behavior where dates are involved;
+6. output diagnostics proving why the item affected score, risk, or classification.
+
+This matrix is the start point for engine construction. Future implementation should not re-discover these V2 points from scratch.
+
 ## Date Processing And D+X Self-Backtesting
 
 Date processing is part of the core engine, not an optional later feature.
