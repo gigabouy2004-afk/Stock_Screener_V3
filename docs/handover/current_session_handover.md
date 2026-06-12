@@ -1,6 +1,6 @@
 # Stock Screener V3 Handover
 
-Last updated: 2026-06-07
+Last updated: 2026-06-13
 
 Repo: `D:\Tools\Stock_Screener_V3`
 
@@ -8,13 +8,25 @@ GitHub: `https://github.com/gigabouy2004-afk/Stock_Screener_V3.git`
 
 Branch: `main`
 
-Latest confirmed local and pushed code baseline: current `main` after the backtesting expansion checkpoint.
+Latest confirmed local and pushed code baseline: current `main` after the canonical V3 original-intent documentation checkpoint.
 
 Local `main` and `origin/main` should be verified in sync at restart with `git status --short --branch`.
 
+## Canonical Immutable Scope
+
+Read this document first in every future session:
+
+```text
+docs/charter/v3_original_intent_and_handover.md
+```
+
+It is the authoritative source for V3's original intent: user CSV input, exactly three analysis paths (`CROSSOVER`, `DIVERGENCE`, `MOMENTUM_SETUP` / `BULL_EXTENSION`), V2 L0/L1/L2/L3-style path-first architecture, D-date processing, D+X self-backtesting, and the rule that local documentation and GitHub must be updated before ending a completed step.
+
+This canonical document supersedes any scattered handover, validation, sector/regime, or calibration artifact that appears to broaden the core V3 scope without explicit user approval.
+
 ## Low-Token Restart Pointer
 
-For the next session on this same topic, read this compact signoff first:
+For the next session on this same topic, read the canonical document above first, then read this compact signoff:
 
 ```text
 docs/handover/transition_signoff_2026-06-11.md
@@ -25,6 +37,10 @@ It contains the current pushed commit, completed Crossover/Divergence/Momentum s
 ## Purpose Of This Document
 
 This is the restart trace for the next session. Keep this document updated whenever the working direction, completed foundation, next step, or open risk changes.
+
+Canonical original-intent and handover document:
+
+- `docs/charter/v3_original_intent_and_handover.md`
 
 Canonical signoff/restart document for the current transition:
 
@@ -49,7 +65,7 @@ Expected status at this handover:
 Expected tests at this handover:
 
 ```text
-63 tests passing
+77 tests passing
 ```
 
 ## Current Decision
@@ -71,6 +87,7 @@ The actual production signal engine/stage evaluators are not yet complete.
 
 Documentation and architecture:
 
+- Canonical V3 original-intent and handover document.
 - Fresh program charter.
 - V2 gap analysis against the fresh charter.
 - V3 initial analysis and way-forward plan.

@@ -6,7 +6,19 @@ It exists to keep the new program charter, architecture analysis, backtesting pl
 
 ## Intent
 
-Build a user-driven tactical technical-analysis scanner that can:
+Canonical V3 intent is recorded in [docs/charter/v3_original_intent_and_handover.md](docs/charter/v3_original_intent_and_handover.md). That document is the first source of truth for all future work.
+
+At the core, V3 is a CSV-based, user-directed stock analysis engine with exactly three user-facing analysis paths:
+
+- `CROSSOVER`
+- `DIVERGENCE`
+- `MOMENTUM_SETUP` / `BULL_EXTENSION`
+
+The engine must preserve the V2 path-first architecture, including baseline analysis, path routing, path-specific evidence, date processing, and D+X self-backtesting.
+
+Broader context work below is historical/background unless explicitly requested by the user for a specific step.
+
+Previous broad rebuild language:
 
 - Load a user-selected CSV universe containing NSE, BSE, NYSE, and NASDAQ stock codes.
 - Establish market, sector, and stock context.
@@ -19,6 +31,7 @@ The engine is not intended to perform automated trading, position sizing, capita
 
 ## Source Documents
 
+- Canonical V3 original intent and handover: [docs/charter/v3_original_intent_and_handover.md](docs/charter/v3_original_intent_and_handover.md)
 - Fresh charter: [docs/charter/engine_program_charter_fresh_2026-06-01.md](docs/charter/engine_program_charter_fresh_2026-06-01.md)
 - Current engine gap analysis: [docs/analysis/current_engine_gap_analysis_against_fresh_charter_2026-06-01.md](docs/analysis/current_engine_gap_analysis_against_fresh_charter_2026-06-01.md)
 - V2 operational parity contract: [docs/architecture/v2_operational_parity_contract.md](docs/architecture/v2_operational_parity_contract.md)
