@@ -32,6 +32,8 @@ The engine is not intended to perform automated trading, position sizing, capita
 ## Source Documents
 
 - Canonical V3 original intent and handover: [docs/charter/v3_original_intent_and_handover.md](docs/charter/v3_original_intent_and_handover.md)
+- V3 rebuild startup for `v3-engine-rebuild-from-charter`: [docs/handover/v3_engine_rebuild_startup.md](docs/handover/v3_engine_rebuild_startup.md)
+- Working stage-family indicator matrix: [docs/architecture/v3_stage_family_indicator_working_matrix.md](docs/architecture/v3_stage_family_indicator_working_matrix.md)
 - Fresh charter: [docs/charter/engine_program_charter_fresh_2026-06-01.md](docs/charter/engine_program_charter_fresh_2026-06-01.md)
 - Current engine gap analysis: [docs/analysis/current_engine_gap_analysis_against_fresh_charter_2026-06-01.md](docs/analysis/current_engine_gap_analysis_against_fresh_charter_2026-06-01.md)
 - V2 operational parity contract: [docs/architecture/v2_operational_parity_contract.md](docs/architecture/v2_operational_parity_contract.md)

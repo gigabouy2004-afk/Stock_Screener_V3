@@ -6,11 +6,11 @@ Repo: `D:\Tools\Stock_Screener_V3`
 
 GitHub: `https://github.com/gigabouy2004-afk/Stock_Screener_V3.git`
 
-Branch: `main`
+Branch: `v3-engine-rebuild-from-charter`
 
-Latest confirmed local and pushed code baseline: current `main` after the canonical V3 original-intent documentation checkpoint.
+Latest confirmed local and pushed code baseline: current `v3-engine-rebuild-from-charter` after the canonical V3 original-intent documentation checkpoint and working matrix setup.
 
-Local `main` and `origin/main` should be verified in sync at restart with `git status --short --branch`.
+Local `v3-engine-rebuild-from-charter` and `origin/v3-engine-rebuild-from-charter` should be verified in sync at restart with `git status --short --branch`.
 
 ## Canonical Immutable Scope
 
@@ -38,13 +38,19 @@ The working matrix now includes a `Backtesting / D+X` column: user supplies a hi
 
 ## Low-Token Restart Pointer
 
-For the next session on this same topic, read the canonical document above first, then read this compact signoff:
+For the next session on this same topic, read the canonical document above first, then read this rebuild startup document:
+
+```text
+docs/handover/v3_engine_rebuild_startup.md
+```
+
+Only after that, read this older compact signoff if historical context is needed:
 
 ```text
 docs/handover/transition_signoff_2026-06-11.md
 ```
 
-It contains the current pushed commit, completed Crossover/Divergence/Momentum status, the Divergence backtest result, and the exact next path. Do not rediscover the long history below unless a referenced artifact is missing.
+The older signoff contains historical stage-family calibration context. It is not the controlling direction for the rebuild branch.
 
 ## Purpose Of This Document
 
@@ -53,6 +59,10 @@ This is the restart trace for the next session. Keep this document updated whene
 Canonical original-intent and handover document:
 
 - `docs/charter/v3_original_intent_and_handover.md`
+
+Rebuild branch startup document:
+
+- `docs/handover/v3_engine_rebuild_startup.md`
 
 Canonical signoff/restart document for the current transition:
 
@@ -69,7 +79,7 @@ git log --oneline --decorate -8
 Expected status at this handover:
 
 ```text
-## main...origin/main
+## v3-engine-rebuild-from-charter...origin/v3-engine-rebuild-from-charter
 ```
 
 ## Test Status Warning
