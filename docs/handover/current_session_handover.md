@@ -943,19 +943,73 @@ python -m unittest discover -s tests -v
 77 tests OK
 ```
 
-Validation note:
+## 2026-06-13 Momentum Setup Rule Backtest Update
 
-- A full post-rule sector-pack rerun was started for Technology, Industrial, Energy, Telecom, and Utilities.
-- The command timed out after Technology completed two dates and started the third, so no partial validation artifacts were promoted.
-- Full sector/date validation remains the next required step.
+Completed the post-rule sector/date validation for:
 
-Next required validation:
+- Technology;
+- Industrial;
+- Energy;
+- Telecom;
+- Utilities.
 
-1. Run the same Technology, Industrial, Energy, Telecom, and Utilities path-enabled packs for 2026-02-11, 2026-03-11, and 2026-04-11.
-2. Compare before/after selected/watch candidate counts for:
-   - `MOMENTUM_SETUP`;
-   - `BULL_PULLBACK_REENTRY`;
-   - `BELOW_EMA200`;
-   - `PULLBACK_REENTRY_BELOW_EMA200`;
-   - February-March Industrials.
-3. Decide whether this rule should remain broad or become sector/date-calibrated after validation.
+Dates:
+
+- 2026-02-11;
+- 2026-03-11;
+- 2026-04-11.
+
+Validation artifacts:
+
+- `validation/runs/v3_momentum_pullback_rule_validation_review_20260612.md`
+- `validation/runs/v3_momentum_pullback_rule_stage_family_calibration_20260612.md`
+- `validation/runs/v3_momentum_pullback_rule_integrated_calibration_20260612.md`
+- `validation/runs/v3_momentum_pullback_rule_symbol_failure_20260612.md`
+
+Data availability note:
+
+- Utilities 2026-03-11 and 2026-04-11 processed zero rows because the live Yahoo provider returned no daily data for the sector file during this run.
+- Rule-impact interpretation uses the comparable core set: Technology, Industrial, Energy, and Telecom.
+
+Comparable core before/after:
+
+- Before-rule processed rows: 3,503.
+- After-rule processed rows: 3,503.
+- Selected/watch candidates fell from 2,737 to 2,602.
+- Momentum Setup selected/watch rows fell from 1,131 to 974.
+- `BULL_PULLBACK_REENTRY + BELOW_EMA200` selected/watch rows fell from 157 to 0.
+- Rule-rejected rows after implementation: 154.
+
+Industrial February-March focus:
+
+- Before: 701 selected/watch candidates; 297 Momentum Setup; 30 pullback re-entry below EMA200.
+- After: 674 selected/watch candidates; 267 Momentum Setup; 27 rule-rejected rows.
+- Before Industrial February-March Momentum Setup D+20:
+  - 297 rows;
+  - 19.53% hit rate;
+  - -7.93% average;
+  - -10.48% median;
+  - -15.01% median worst low.
+- After Industrial February-March Momentum Setup D+20:
+  - 267 rows;
+  - 19.48% hit rate;
+  - -8.37% average;
+  - -10.80% median;
+  - -14.97% median worst low.
+
+Decision:
+
+- Keep `PULLBACK_REENTRY_BELOW_EMA200` as a broad conservative risk-separation guardrail.
+- Do not add another Momentum Setup threshold change yet.
+- The remaining weak area is high-score Industrial February-March `BULL_PULLBACK_REENTRY` without `BELOW_EMA200`.
+
+Next exact path:
+
+1. Inspect remaining Industrial February-March Momentum Setup failures, especially high-score `BULL_PULLBACK_REENTRY` rows without `BELOW_EMA200`.
+2. Split those failures by confirmation components:
+   - `BULL_PHASE_STRUCTURE_SUPPORT`;
+   - `PARTICIPATION_SUPPORT`;
+   - `ACCEPTANCE_SUPPORT`;
+   - `ReviewPriority`;
+   - ranking collision bucket.
+3. Only then decide whether a second Momentum Setup calibration rule is justified.
