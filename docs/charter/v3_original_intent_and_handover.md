@@ -108,6 +108,18 @@ Crossover must not classify an already-extended bull continuation as `PRE_BULL_C
 
 If MACD is already above the zero line and the evidence describes continuation or re-entry, the engine must route the stock to Momentum Setup / Bull Extension logic, not Crossover transition logic.
 
+Crossover may use bounded MACD-history aids from V2:
+
+- MACD line, signal line, and histogram.
+- MACD/signal crossover state.
+- histogram improvement or deterioration near crossover.
+- minimum histogram/spread only to confirm the cross is real and non-flat.
+- bars since MACD/signal crossover.
+- bars since MACD zero-line cross.
+- historical histogram phase/episode behavior as a probability or confidence aid for near-crossover readiness.
+
+These aids can support Crossover confidence or readiness. They must not become a universal histogram threshold and must not relabel Momentum continuation as Crossover.
+
 ### Divergence
 
 Divergence is for price-versus-indicator disagreement.
@@ -349,6 +361,8 @@ Reuse:
 - already bullish or already bearish continuation must not be classified as Crossover
 - MACD zero-line context is confirmation/context, not a reason to relabel continuation
 - `PRE_BULL_CROSSOVER` must not be produced for an already above-zero bull continuation
+- historical MACD histogram behavior may support crossover probability/readiness scoring
+- histogram should confirm that a cross is real/non-flat, not act as a universal `> 0.5` gate
 
 ### Divergence Boundaries
 
