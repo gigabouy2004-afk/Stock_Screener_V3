@@ -430,11 +430,19 @@ def evaluate_momentum_setup(evidence: EvidencePack) -> StageEvaluation:
         risk_tags.append("LOW_LIQUIDITY")
     if risk.get("BelowEMA200"):
         risk_tags.append("BELOW_EMA200")
+    pullback_reentry_below_ema200 = route.candidate_state == "BULL_PULLBACK_REENTRY" and bool(risk.get("BelowEMA200"))
+    if pullback_reentry_below_ema200:
+        reason_codes.append("PULLBACK_REENTRY_BELOW_EMA200")
 
     if not route.is_valid:
         candidate_state = "STATUS_QUO"
         candidate_class = CandidateClass.STATUS_QUO
         priority = ReviewPriority.NONE
+        confidence = "LOW"
+    elif pullback_reentry_below_ema200:
+        candidate_state = route.candidate_state
+        candidate_class = CandidateClass.REJECTED
+        priority = ReviewPriority.C
         confidence = "LOW"
     elif total >= 72 and not risk_tags:
         candidate_state = route.candidate_state
@@ -470,6 +478,8 @@ def evaluate_momentum_setup(evidence: EvidencePack) -> StageEvaluation:
                 f"route={route_score};timing={timing_score};structure={structure_score};"
                 f"participation={participation_score};context={context_score};risk={risk_score}"
             ),
+            "MomentumSetupContextRule": "PULLBACK_REENTRY_BELOW_EMA200" if pullback_reentry_below_ema200 else "NONE",
+            "MomentumSetupContextAction": "REJECT" if pullback_reentry_below_ema200 else "NONE",
             "MomentumSetupTimingProfile": route.timing_profile,
             "MomentumSetupReason": "; ".join(reason_codes),
             "MomentumSetupReasonCodes": ",".join(reason_codes),

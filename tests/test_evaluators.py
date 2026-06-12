@@ -70,6 +70,23 @@ class CrossoverEvaluatorTests(unittest.TestCase):
         self.assertEqual(evaluation.diagnostics["MomentumSetupOpportunityType"], "BULLISH_PULLBACK_REENTRY")
         self.assertIn("BULL_PULLBACK_REENTRY_ROUTE", evaluation.reason_codes)
 
+    def test_momentum_pullback_reentry_below_ema200_is_rejected(self) -> None:
+        evidence = make_evidence(
+            structure={"EMA20_Reclaim": True, "HigherLow_5D": False, "PriceLadder_Passed": True},
+        )
+        evidence.trend["EMA200"] = 110.0
+        evidence.risk_context["BelowEMA200"] = True
+
+        evaluation = evaluate_momentum_setup(evidence)
+
+        self.assertEqual(evaluation.candidate_state, "BULL_PULLBACK_REENTRY")
+        self.assertEqual(evaluation.candidate_class, CandidateClass.REJECTED)
+        self.assertEqual(evaluation.review_priority, ReviewPriority.C)
+        self.assertEqual(evaluation.diagnostics["MomentumSetupContextRule"], "PULLBACK_REENTRY_BELOW_EMA200")
+        self.assertEqual(evaluation.diagnostics["MomentumSetupContextAction"], "REJECT")
+        self.assertIn("BELOW_EMA200", evaluation.risk_tags)
+        self.assertIn("PULLBACK_REENTRY_BELOW_EMA200", evaluation.reason_codes)
+
     def test_momentum_evaluator_classifies_bull_continuation(self) -> None:
         evaluation = evaluate_momentum_setup(
             make_evidence(

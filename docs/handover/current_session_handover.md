@@ -913,3 +913,49 @@ Decision:
   - `BULL_PULLBACK_REENTRY`
   - `BELOW_EMA200`
   - weak February-March Industrials
+
+## 2026-06-12 Momentum Setup Path-Forward Implementation Update
+
+Implemented the Momentum Setup risk-separation rule called out by the June 11 calibration handover.
+
+Rule:
+
+- `BULL_PULLBACK_REENTRY` below EMA200 is no longer promoted into the normal selected/watch path.
+- The route remains auditable as `BULL_PULLBACK_REENTRY`.
+- It is emitted as `REJECTED` with:
+  - `BELOW_EMA200`;
+  - `PULLBACK_REENTRY_BELOW_EMA200`;
+  - `MomentumSetupContextRule = PULLBACK_REENTRY_BELOW_EMA200`;
+  - `MomentumSetupContextAction = REJECT`.
+
+Files changed:
+
+- `src/stock_screener_v3/evaluators.py`
+- `src/stock_screener_v3/output_contracts.py`
+- `tests/test_evaluators.py`
+- `docs/architecture/v3_evidence_stage_matrix.md`
+
+Verification:
+
+```text
+$env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
+python -m unittest discover -s tests -v
+77 tests OK
+```
+
+Validation note:
+
+- A full post-rule sector-pack rerun was started for Technology, Industrial, Energy, Telecom, and Utilities.
+- The command timed out after Technology completed two dates and started the third, so no partial validation artifacts were promoted.
+- Full sector/date validation remains the next required step.
+
+Next required validation:
+
+1. Run the same Technology, Industrial, Energy, Telecom, and Utilities path-enabled packs for 2026-02-11, 2026-03-11, and 2026-04-11.
+2. Compare before/after selected/watch candidate counts for:
+   - `MOMENTUM_SETUP`;
+   - `BULL_PULLBACK_REENTRY`;
+   - `BELOW_EMA200`;
+   - `PULLBACK_REENTRY_BELOW_EMA200`;
+   - February-March Industrials.
+3. Decide whether this rule should remain broad or become sector/date-calibrated after validation.

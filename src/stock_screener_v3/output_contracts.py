@@ -239,6 +239,8 @@ V3_BACKTEST_EXTRA_COLUMNS = [
     "CrossoverDirection",
     "MomentumSetupOpportunityType",
     "MomentumSetupDirection",
+    "MomentumSetupContextRule",
+    "MomentumSetupContextAction",
     "MomentumSetupReasonCodes",
     "DivergenceDirection",
     "DivergenceType",

@@ -221,6 +221,14 @@ Quality evidence:
 - Volume support.
 - Strong close location.
 
+Context separation:
+
+- `BULL_PULLBACK_REENTRY` below EMA200 is no longer promoted into the normal `WATCH` path.
+- The route remains auditable as `BULL_PULLBACK_REENTRY`, but is emitted as `REJECTED` with:
+  - `BELOW_EMA200`;
+  - `PULLBACK_REENTRY_BELOW_EMA200`.
+- This is a context/risk separation rule, not a route-boundary change.
+
 Output:
 
 - `CandidateState = BULL_PULLBACK_REENTRY`.
