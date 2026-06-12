@@ -26,6 +26,8 @@ V3 is not a new broad market research project. It is not a pan-USA screening eng
 
 The engine must process stocks from a user-provided CSV and produce analysis only for the user-selected processing path or paths.
 
+Only processing logic explicitly confirmed by the user should be carried forward. That includes reusable utilities and confirmed evidence concepts, not every artifact produced during prior V3 drift.
+
 ## User Workflow Contract
 
 The user workflow is fixed:
@@ -43,6 +45,8 @@ The only allowed user-facing analysis options are:
 - `MOMENTUM_SETUP` / `BULL_EXTENSION`
 
 No hidden fourth path should be added. No sector, market-regime, ETF, or universe-expansion path should be treated as part of the core engine unless the user explicitly requests that as a separate feature.
+
+Market regime, EMA200, future-price processing, backtesting utilities, and future AI/sentiment analysis may be incorporated only as supporting evidence or validation components inside the CSV-driven engine. They must not replace the three-path workflow or create broad sector/universe calibration work.
 
 ## Three Analysis Paths
 
@@ -195,6 +199,27 @@ If a future TradingView API or another market-data API is used, it must be integ
 
 Live mode and historical/backtest mode must use the same logical data contract. The only difference should be the date window and whether forward D+X bars are available for validation.
 
+## Confirmed Processing Components To Carry Forward
+
+The following items may be carried forward because they are processing capabilities or evidence concepts aligned with the original engine intent:
+
+- CSV input handling and symbol normalization.
+- D-date processing.
+- D+X future-price processing.
+- backtesting/self-validation utility.
+- no-lookahead historical slicing.
+- EMA200 as a risk/evidence component where it supports the selected analysis path.
+- market regime as bounded contextual evidence, not as a separate screening project.
+- future AI/sentiment analysis as an optional evidence module, only after the core three-path engine is stable.
+
+These components must stay subordinate to the core workflow:
+
+```text
+CSV input -> selected path -> L0/L1/L2/L3/L4/L5 processing -> D+X validation
+```
+
+They must not introduce additional user-facing analysis paths.
+
 ## Date Processing And D+X Self-Backtesting
 
 Date processing is part of the core engine, not an optional later feature.
@@ -241,7 +266,8 @@ The following are not part of the core V3 intent:
 
 - default pan-USA market scanning
 - default sector-by-sector calibration
-- market regime modeling as a prerequisite for signal classification
+- market regime or sector analysis as a separate screening/calibration project
+- treating market regime as a reason to expand beyond the supplied CSV
 - ETF portfolio mapping
 - automated trading
 - order execution
@@ -313,6 +339,8 @@ Recent repository history includes sector, regime, and broad calibration work. T
 
 Do not delete or revert that history without explicit user approval. Treat it as historical context only.
 
+Do not carry forward the current drift version of V3's market-regime, sector, and cross-sector calibration work as accepted product direction. Only extract confirmed processing pieces that fit the canonical CSV-driven engine, such as bounded market-regime context, EMA200 evidence, backtesting utility, and D/D+X date handling.
+
 The forward direction is this canonical intent:
 
 ```text
@@ -380,4 +408,3 @@ git log --oneline --decorate -8
 
 3. Read `docs/handover/current_session_handover.md`.
 4. Continue only on tasks that align with this document unless the user explicitly changes direction.
-

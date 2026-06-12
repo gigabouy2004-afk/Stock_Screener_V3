@@ -24,6 +24,8 @@ It is the authoritative source for V3's original intent: user CSV input, exactly
 
 This canonical document supersedes any scattered handover, validation, sector/regime, or calibration artifact that appears to broaden the core V3 scope without explicit user approval.
 
+Carry forward only user-confirmed processing logic: backtesting utility, D-date and D+X future processing, EMA200 evidence/risk handling, bounded market-regime context, and future AI/sentiment evidence. Do not carry forward the prior broad market-regime, sector, or cross-sector calibration work as V3 direction.
+
 ## Low-Token Restart Pointer
 
 For the next session on this same topic, read the canonical document above first, then read this compact signoff:
