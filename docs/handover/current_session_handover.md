@@ -1013,3 +1013,52 @@ Next exact path:
    - `ReviewPriority`;
    - ranking collision bucket.
 3. Only then decide whether a second Momentum Setup calibration rule is justified.
+
+## 2026-06-13 Industrial Momentum Remaining Failure Review
+
+Completed the focused review of remaining Industrial February-March Momentum Setup failures after the `PULLBACK_REENTRY_BELOW_EMA200` rule.
+
+Review artifact:
+
+- `validation/runs/v3_industrial_momentum_remaining_failure_review_20260613.md`
+
+Scope:
+
+- Industrial only.
+- D dates:
+  - 2026-02-11;
+  - 2026-03-11.
+- `StageFamily = MOMENTUM_SETUP`.
+- `CandidateStateRaw = BULL_PULLBACK_REENTRY`.
+- `CandidateClass in SELECTED,WATCH`.
+- Excludes `BELOW_EMA200`.
+
+Readout:
+
+- Focus rows: 260.
+- D+20 hit rate: 19.23%.
+- D+20 average endpoint: -8.46%.
+- D+20 median endpoint: -10.87%.
+- D+20 median worst low: -15.03%.
+- High-score rows with `TotalScore >= 85`: 165.
+- High-score failed rows: 127.
+
+Component split:
+
+- `BULL_PHASE_STRUCTURE_SUPPORT`: 104 rows, 16.35% hit rate, -10.95% median endpoint.
+- `BULL_PHASE_STRUCTURE_SUPPORT+PARTICIPATION_SUPPORT`: 98 rows, 18.37% hit rate, -10.28% median endpoint.
+- `BULL_PHASE_STRUCTURE_SUPPORT+PARTICIPATION_SUPPORT+ACCEPTANCE_SUPPORT`: 21 rows, 19.05% hit rate, -13.49% median endpoint.
+- `BULL_PHASE_STRUCTURE_SUPPORT+ACCEPTANCE_SUPPORT`: 26 rows, 23.08% hit rate, -14.49% median endpoint.
+
+Decision:
+
+- Do not introduce a second hard Momentum Setup suppression rule from this split alone.
+- The weakness is not isolated to missing confirmation; even rows with participation and acceptance support remain weak.
+- High score and ReviewPriority do not separate the failure mode cleanly.
+- The next safer implementation path is broader date/regime context or a reportable caution diagnostic, validated on more dates before suppressing additional candidates.
+
+Next exact path:
+
+1. Add broader date/regime context to calibration reporting before changing evaluator thresholds again.
+2. Review whether February 2026 Industrial weakness coincides with market/sector regime deterioration, ranking collision patterns, or cross-family bearish warnings.
+3. If a diagnostic is added, keep it report-only first; do not demote more Momentum Setup candidates until validated across more dates.
