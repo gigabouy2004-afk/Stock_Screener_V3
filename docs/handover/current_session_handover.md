@@ -24,7 +24,9 @@ It is the authoritative source for V3's original intent: user CSV input, exactly
 
 This canonical document supersedes any scattered handover, validation, sector/regime, or calibration artifact that appears to broaden the core V3 scope without explicit user approval.
 
-Carry forward only user-confirmed processing logic: backtesting utility, D-date and D+X future processing, EMA200 evidence/risk handling, bounded market-regime context, bounded sector context when requested, one-month candle behavior, lifetime high/low boundary checks, and future AI/sentiment evidence. Do not carry forward the prior broad market-regime, sector, or cross-sector calibration work as V3 direction.
+Carry forward only user-confirmed processing logic: API-based data retrieval per calculation, V2-style two-year historical pull where applicable, backtesting utility, D-date and D+X future processing, EMA200 evidence/risk handling, EMA lifetime-high percentage style datapoints, bounded market-regime context, bounded sector context when requested, one-month candle behavior, lifetime high/low boundary checks, and future AI/sentiment evidence. Do not carry forward the prior broad market-regime, sector, or cross-sector calibration work as V3 direction.
+
+Do not describe OHLCV as the universal V3 input requirement. V2's MACD/Momentum baseline used Close series; other fields should be requested from the API only when a selected evidence module needs them.
 
 ## Low-Token Restart Pointer
 

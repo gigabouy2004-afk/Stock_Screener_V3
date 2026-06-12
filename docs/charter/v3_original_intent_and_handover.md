@@ -119,7 +119,7 @@ Responsibilities:
 - validate required columns
 - resolve exchange/provider symbol format
 - prepare D-date analysis context
-- fetch or load required historical OHLCV data
+- fetch required historical data through the configured API/provider
 - enforce no-lookahead data slicing for production classification
 - record provider/data failures per symbol
 
@@ -194,16 +194,23 @@ The engine must use a provider abstraction rather than letting provider behavior
 
 Current implementation work has used a Yahoo/yfinance-style provider wrapper in the repository. That is an implementation detail, not the product identity of V3.
 
-The required data-provider contract is:
+The required method is API-based. For any calculation, the engine must request the required data from the configured market-data API/provider for the supplied CSV symbols.
 
-- daily OHLCV history for the D-date window
-- enough historical depth for indicators used by the selected path
-- forward OHLCV bars for D+X self-backtesting
+The provider contract is calculation-specific:
+
+- fetch enough historical data for the selected path and requested supporting evidence
+- preserve the V2-style default historical window where applicable, including the current two-year style provider pull used by the implementation
+- fetch Close series for V2-style MACD/Momentum baseline calculations
+- fetch High/Low/Open/Volume only when a selected evidence calculation requires those fields
+- fetch lifetime or long-range history only when lifetime high/low, EMA lifetime-high percentage, or major-boundary analysis is requested
+- fetch forward price data for D+X self-backtesting
 - deterministic slicing so classification uses only data available as of D
 - per-symbol failure handling
 - clear handling for missing dates, holidays, suspended symbols, provider gaps, and insufficient bars
 - cache or reuse behavior that does not change analysis semantics
 - rate-limit and provider-error reporting
+
+V3 must not assume OHLCV as the universal input contract. V2's MACD/Momentum baseline required a Close price series; Volume was optional confirmation, and OHLC fields were not required for that baseline. V3 should request only the fields needed by the selected path and requested evidence modules.
 
 If a future TradingView API or another market-data API is used, it must be integrated behind this provider contract. The analysis engine should not be rewritten around the provider.
 
@@ -218,11 +225,13 @@ The following items may be carried forward because they are processing capabilit
 - D+X future-price processing.
 - backtesting/self-validation utility.
 - no-lookahead historical slicing.
+- API-based data retrieval for each required calculation.
+- V2-style two-year historical pull where applicable.
 - EMA200 as a risk/evidence component where it supports the selected analysis path.
 - market regime as bounded contextual evidence, not as a separate screening project.
 - sector information as bounded context for the supplied stock/CSV when the user asks for it.
 - one-month candle behavior as bounded path evidence.
-- lifetime high/low and major-boundary checks as bounded path evidence.
+- lifetime high/low, EMA lifetime-high percentage, and major-boundary checks as bounded path evidence.
 - future AI/sentiment analysis as an optional evidence module, only after the core three-path engine is stable.
 
 These components must stay subordinate to the core workflow:
