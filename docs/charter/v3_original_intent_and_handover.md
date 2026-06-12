@@ -129,6 +129,8 @@ Examples:
 
 This matrix is the main mechanism that prevents isolated implementation from breaking the engine. No indicator should be added directly to code until its row/cell meaning is documented.
 
+The working matrix also contains a `Backtesting / D+X` column. That column records how each item is validated when the user supplies a historical D-date and a D+X horizon/date. Backtesting runs the same selected path logic on D-date data first, then loads D+X price data only for validation.
+
 The matrix can be refined over time, but the rule is fixed:
 
 ```text
@@ -556,6 +558,7 @@ This matrix consolidates the individual V2 intents that must be preserved in V3.
 |---|---|---|---|---|
 | Historical replay/backtesting is required for validation. | gap analysis lines 296-302, 451-485; design lines 907-908 | L5 | Same production engine should run against D-date slices. | Do not tune from isolated live examples. |
 | D-date processing must avoid lookahead. | canonical rule plus backtesting utility intent | L0/L5 | Classify with data through D, validate later with D+X. | D+X data must never enter initial classification. |
+| Backtesting uses same selected path as live analysis. | working matrix Backtesting column | L5 | User supplies D-date, provider fetches historical data, engine runs selected Crossover/Divergence/Momentum path as of D, then D+X validates price movement. | Backtesting must not introduce a fourth path or alternate evaluator. |
 | Preserve input metadata for audit. | design lines 87, 835-862; gap analysis lines 268-284, 412 | L0/L5 | Keep source metadata like sector/industry/volume when supplied. | Do not use current profile facts as historical truth without tagging. |
 | One symbol failure must not fail the run. | design lines 818-831; recap lines 377-381 | L0/L5 | Record per-symbol provider/data errors. | Only input/output layer failures should stop the whole run. |
 | Performance cannot break trading logic. | design lines 792-813, 922 | Whole engine | Batch and optimize after correctness. | A faster path is unacceptable if classification correctness is reduced. |

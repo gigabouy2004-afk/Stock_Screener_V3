@@ -34,6 +34,8 @@ The canonical document now includes a V2 Design Intent Validation Matrix. Use th
 
 The canonical document also records the Stage-Family Indicator Matrix requirement. Use `docs/architecture/v3_evidence_stage_matrix.md` as the current matrix reference and `docs/architecture/v3_stage_family_indicator_working_matrix.md` as the editable working table for adding/subtracting/modifying individual V2/V3 indicator rows before coding.
 
+The working matrix now includes a `Backtesting / D+X` column: user supplies a historical D-date, the API/provider fetches data, the same selected path runs as of D, and D+X price is loaded only afterward for simple price validation and optional best-high/worst-low metrics.
+
 ## Low-Token Restart Pointer
 
 For the next session on this same topic, read the canonical document above first, then read this compact signoff:
