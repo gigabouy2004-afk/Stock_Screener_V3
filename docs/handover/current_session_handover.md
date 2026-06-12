@@ -52,8 +52,6 @@ If the computer/session restarts, start here first, then run:
 cd D:\Tools\Stock_Screener_V3
 git status --short --branch
 git log --oneline --decorate -8
-$env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
-python -m unittest discover -s tests -v
 ```
 
 Expected status at this handover:
@@ -62,11 +60,20 @@ Expected status at this handover:
 ## main...origin/main
 ```
 
-Expected tests at this handover:
+## Test Status Warning
 
-```text
-77 tests passing
-```
+Do not carry forward any existing test-count statement, including "77 tests passing", as proof that V3 satisfies the original engine intent.
+
+The current automated tests are only current-code smoke/regression checks. They are not the acceptance tests for the canonical V3 engine.
+
+The required acceptance tests still need to be derived from `docs/charter/v3_original_intent_and_handover.md`, especially:
+
+- CSV-only universe processing.
+- exactly three user paths: `CROSSOVER`, `DIVERGENCE`, `MOMENTUM_SETUP` / `BULL_EXTENSION`.
+- L1 baseline and L2 routing preventing path leakage.
+- V2 parity for Crossover, Divergence, and Momentum Setup / Bull Extension.
+- D-date no-lookahead processing.
+- D+X forward validation of actual price movement.
 
 ## Current Decision
 

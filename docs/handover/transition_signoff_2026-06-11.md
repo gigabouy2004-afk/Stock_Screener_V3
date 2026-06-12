@@ -18,7 +18,7 @@ Known state at signoff:
 
 - local `HEAD` matched `origin/main`;
 - worktree was clean before this signoff document was created;
-- full test suite passed after the latest engine change.
+- full test suite passed after the latest engine change, but this was only a current-code smoke/regression check and must not be treated as V3 acceptance against the canonical original intent.
 
 ## Completed In This Workstream
 
