@@ -81,7 +81,13 @@ The V2 design described a two-axis route/indicator model. The current V3 reposit
 docs/architecture/v3_evidence_stage_matrix.md
 ```
 
-That document is the current implementation-era matrix. It is grounded in the V2 route/indicator hierarchy and must be reused, not rediscovered.
+The editable working matrix for engine construction is:
+
+```text
+docs/architecture/v3_stage_family_indicator_working_matrix.md
+```
+
+These documents are grounded in the V2 route/indicator hierarchy and must be reused, not rediscovered.
 
 The required matrix shape for construction is:
 
@@ -381,6 +387,7 @@ Source:
 - `docs/archive_unified_stock_scanner_engine_design.md`
 - `docs/archive_unified_engine_recap_and_action_plan_2026-05-24.md`
 - `docs/architecture/v3_evidence_stage_matrix.md`
+- `docs/architecture/v3_stage_family_indicator_working_matrix.md`
 
 Reuse:
 
@@ -391,6 +398,7 @@ Reuse:
 - no global calculation of every indicator/timeframe before route
 - audit fields showing baseline, route, and functions called
 - stage-family indicator/evidence matrix with rows as evidence and columns as stage-family meanings
+- editable working matrix for adding, subtracting, and modifying individual V2/V3 indicator rows before coding
 
 ### Momentum / MACD Baseline
 
