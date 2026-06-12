@@ -28,6 +28,8 @@ Carry forward only user-confirmed processing logic: API-based data retrieval per
 
 Do not describe OHLCV as the universal V3 input requirement. V2's MACD/Momentum baseline used Close series; other fields should be requested from the API only when a selected evidence module needs them.
 
+Single-engine construction rule: V2 details such as EMA200, lifetime high, EMA lifetime-high percentage, RSI, one-month candles, sector context, and market-regime context can refine confidence/risk/explanation only inside a selected path trajectory. They must not become base-level drivers, route selectors, or overrides of Crossover, Divergence, or Momentum Setup.
+
 ## Low-Token Restart Pointer
 
 For the next session on this same topic, read the canonical document above first, then read this compact signoff:

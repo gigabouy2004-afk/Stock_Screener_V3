@@ -28,6 +28,49 @@ The engine must process stocks from a user-provided CSV and produce analysis onl
 
 Only processing logic explicitly confirmed by the user should be carried forward. That includes reusable utilities and confirmed evidence concepts, not every artifact produced during prior V3 drift.
 
+## Single Engine Construction Contract
+
+V3 must be constructed as one cohesive engine, not as separate stitched scripts and not as independent strategy modules that override each other.
+
+The engine's base flow is:
+
+```text
+CSV input
+-> user-selected path
+-> API data retrieval required by that path
+-> L0 preparation
+-> L1 baseline
+-> L2 route
+-> L3 path-specific evidence
+-> L4 classification and scoring
+-> L5 output and D+X validation
+```
+
+Every addition from V2 must enter the engine at the correct level. No V2 detail may bypass the user-selected path, change the base route, or override another signal path.
+
+The key construction rule is:
+
+```text
+V2 additions can refine confidence, risk, explanation, or score only inside the selected path trajectory.
+They must not become base-level drivers.
+```
+
+Examples:
+
+- EMA200 can aid Momentum confidence/risk for `BULL_PULLBACK_REENTRY`; it must not globally suppress all Momentum or force Crossover.
+- Lifetime high or EMA lifetime-high percentage can aid Momentum headroom/extension scoring; it must not become a base route selector.
+- RSI and current price context can support WeightedScore; they must not relabel a continuation as `PRE_BULL_CROSSOVER`.
+- Sector context can aid confidence when requested; it must not trigger a sector scan or cross-sector calibration run.
+- Market regime can provide bounded context; it must not expand the supplied CSV universe or become a fourth path.
+
+If a calculation is added, the implementer must answer these before coding:
+
+1. Which user-selected path does it support?
+2. Which level owns it: L1 fact, L2 route, L3 evidence, L4 score, or L5 validation?
+3. Can it change the path, or only refine score/risk/explanation?
+4. What data does it request from the API?
+5. What test proves it cannot override another path?
+
 ## User Workflow Contract
 
 The user workflow is fixed:
@@ -137,6 +180,8 @@ Responsibilities:
 
 L1 is not the final stage. It only establishes the current technical condition and gives L2 enough information to route safely.
 
+L1 may include neutral facts such as MACD state, RSI, price versus selected moving averages, and other facts needed by the selected run. L1 must not use detail aids such as lifetime high distance or EMA lifetime-high percentage as route decisions unless the canonical path contract is explicitly updated by the user.
+
 ### L2 Stage Router
 
 L2 chooses the eligible path based on:
@@ -164,6 +209,8 @@ Responsibilities:
 - avoid global indicator interpretation before the path is chosen
 - keep Crossover, Divergence, and Momentum evidence independent
 
+V2 additions such as EMA200, lifetime high, EMA lifetime-high percentage, one-month candles, volume confirmation, and sector context belong here when they are evidence for a selected path. They do not belong at the base level as universal gates.
+
 ### L4 Classification And Scoring
 
 L4 converts routed evidence into the final candidate class.
@@ -175,6 +222,16 @@ Responsibilities:
 - assign confidence or priority
 - produce reason codes
 - reject logically inconsistent candidates
+
+WeightedScore belongs in L4 as a confidence/detailing layer after route and path eligibility are known. It must not be used as a global promotion gate or as a substitute for path-specific classification.
+
+For example, in Momentum Setup:
+
+- current RSI may contribute to quality/headroom
+- current price distance versus lifetime high may contribute to headroom
+- price distance versus EMA200 or EMA lifetime-high style datapoints may contribute to risk/headroom
+- these values can improve or reduce confidence score
+- these values must not change the path into Crossover or Divergence
 
 ### L5 Output, Audit, And Backtest
 
@@ -241,6 +298,96 @@ CSV input -> selected path -> L0/L1/L2/L3/L4/L5 processing -> D+X validation
 ```
 
 They must not introduce additional user-facing analysis paths.
+
+## V2 Reuse Map
+
+The following V2 design and analysis artifacts are to be reused directly as references. They should prevent a new rediscovery phase.
+
+### Core Engine Model
+
+Source:
+
+- `docs/archive_unified_stock_scanner_engine_design.md`
+- `docs/archive_unified_engine_recap_and_action_plan_2026-05-24.md`
+
+Reuse:
+
+- path-first engine model
+- L1 baseline before route
+- L2 stage router honoring user-selected families
+- L3 on-demand indicator/evidence functions
+- no global calculation of every indicator/timeframe before route
+- audit fields showing baseline, route, and functions called
+
+### Momentum / MACD Baseline
+
+Source:
+
+- `docs/archive_unified_stock_scanner_engine_design.md`
+- `docs/archive_unified_engine_recap_and_action_plan_2026-05-24.md`
+
+Reuse:
+
+- Momentum-specific MACD baseline is based on Close series
+- default Momentum MACD reference: `MACD(8,21,5)`
+- compare current MACD phase against stock-specific history where applicable
+- Volume is optional confirmation, not part of the baseline MACD calculation
+- OHLC fields are not required for the MACD baseline
+- Momentum methodology applies only to Momentum Trading; it must not change Crossover or Divergence rules
+
+### Crossover Boundaries
+
+Source:
+
+- `docs/archive_unified_stock_scanner_engine_design.md`
+- `docs/architecture/v3_evidence_stage_matrix.md`
+- `docs/analysis/current_engine_gap_analysis_against_fresh_charter_2026-06-01.md`
+
+Reuse:
+
+- Crossover is a transition event or near-transition state
+- already bullish or already bearish continuation must not be classified as Crossover
+- MACD zero-line context is confirmation/context, not a reason to relabel continuation
+- `PRE_BULL_CROSSOVER` must not be produced for an already above-zero bull continuation
+
+### Divergence Boundaries
+
+Source:
+
+- `docs/architecture/v3_divergence_contract.md`
+- `docs/archive_unified_stock_scanner_engine_design.md`
+
+Reuse:
+
+- Divergence is price versus indicator disagreement
+- Divergence must not be inferred from Crossover failure or Momentum continuation
+- EMA200, RSI, volume, and candle acceptance are context/quality unless explicitly defined inside Divergence rules
+
+### Output And UI Parity
+
+Source:
+
+- `docs/architecture/v2_operational_parity_contract.md`
+
+Reuse:
+
+- V2-style explainability
+- CSV-friendly fields
+- reason codes
+- visible route/state diagnostics
+- user-facing controls that map to actual engine capability
+
+### Do Not Reuse As Direction
+
+The following should not drive engine construction:
+
+- broad sector-folder validation as product direction
+- cross-sector calibration reports as base rules
+- current V3 market/sector/regime calibration artifacts as accepted scope
+- old WeightedScore as a promotion gate
+- any rule that was created from one isolated slice without path-specific validation
+
+These artifacts may be read only to understand mistakes, candidate failure modes, or potential bottom-level evidence ideas.
 
 ## Date Processing And D+X Self-Backtesting
 
