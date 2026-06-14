@@ -43,13 +43,15 @@ Nightly handover and restart notes must point to these branch-resident documents
 - The active working root is `V3_charter`.
 - The branch starts from `main`, not from `v3-engine-rebuild-from-charter`.
 - The charter, plan, and handover are now expected to move together on this branch.
+- The detailed execution plan now exists in `docs/architecture/main_engine_way_forward_plan.md`.
+- The next active execution phase is the code-audit preparation phase after documentation baseline completion.
 
 ## Preferred Next Restart Point
 
 1. Verify branch and sync state.
 2. Re-read the new charter.
-3. Re-read the new plan.
-4. Begin the code audit from the `main` tree and classify reusable versus retired material.
+3. Re-read the detailed plan.
+4. Begin Phase 5 code audit from the `main` tree and classify reusable versus retired material.
 
 ## Required Git Check
 
