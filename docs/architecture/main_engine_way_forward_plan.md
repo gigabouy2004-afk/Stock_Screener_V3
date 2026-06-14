@@ -1,310 +1,132 @@
-# Main Engine Way Forward Plan
+# V3 Charter Working Plan
 
 Date: 2026-06-15
 
 Branch: `V3_charter`
 
-This plan is the execution contract for the root-start charter branch.
+This document does not introduce a new phased methodology.
 
-## Plan Intent
+Its purpose is only to restate, in one place, the active working direction already established by the June 12/13 charter and handover documents now carried on `V3_charter`.
 
-This plan operationalizes the June 12/13 charter direction on `V3_charter`.
+## Controlling Documents
 
-It exists to answer four questions clearly before code drift resumes:
+The active document chain for this branch is:
 
-1. What is the controlling document set?
-2. What must be preserved from prior work?
-3. What must be audited before changing behavior?
-4. What validation gates must exist before promoting new engine logic?
+1. `docs/charter/main_engine_charter.md`
+2. `docs/charter/v3_original_intent_and_handover.md`
+3. `docs/handover/current_session_handover.md`
+4. `docs/handover/v3_engine_rebuild_startup.md`
+5. this file
 
-The controlling direction for this branch is:
+If any note conflicts with `docs/charter/v3_original_intent_and_handover.md`, that charter remains controlling unless the user explicitly changes direction.
 
-- `docs/charter/main_engine_charter.md`
-- `docs/charter/v3_original_intent_and_handover.md`
-- `docs/architecture/main_engine_way_forward_plan.md`
-- `docs/handover/current_session_handover.md`
-- `docs/handover/v3_engine_rebuild_startup.md`
-- `docs/handover/main_engine_startup_handover.md`
+## Root Rule
 
-## Core Execution Principles
+The June 12/13 documentation intent is that charter-led work starts from the root only, as branch `V3_charter` from `main`.
 
-- Start from `main` root only.
-- Keep charter, plan, and handover synchronized on the same branch.
-- Treat old artifacts as reusable input, not automatic product direction.
-- Do not add new signal behavior before audit, path ownership, and validation gates are documented.
-- Keep local `D:\Tools\Stock_Screener_V3` and GitHub `origin/V3_charter` synchronized after each completed step.
+The branch-resident charter, handover, and working-plan documents must move together.
 
-## Phase 1: Branch Baseline
+The local repo at:
 
-Goal: establish the charter branch from `main` as the active root documentation path.
+```text
+D:\Tools\Stock_Screener_V3
+```
 
-Deliverables:
+and the GitHub branch at:
 
-- New charter committed on this branch.
-- New plan committed on this branch.
-- New handover committed on this branch.
-- README updated to point to the new branch-resident documents.
-- Local and GitHub sync rule documented explicitly.
-- June 12/13 documentation intent restated as root-start branch direction.
+```text
+origin/V3_charter
+```
 
-Rules:
+must remain synchronized.
 
-- The branch must remain rooted from `main`.
-- The charter, plan, and handover must live together on this branch.
-- No completed step may update only one of local or GitHub.
+## Active Engine Direction
 
-Completion check:
+The active engine direction carried forward from the June 12/13 documents is:
 
-- `git status --short --branch` shows `V3_charter...origin/V3_charter`
-- startup documents point to the branch-resident charter set
-- nightly handover references the in-repo files first
+- the engine is CSV-based and user-directed;
+- it is not a broad market research engine by default;
+- it must process only the user-provided universe;
+- it must analyze only the user-selected path or paths;
+- it must preserve path-first design;
+- it must prevent one path's evidence from leaking into another path's route logic.
 
-## Phase 2: June 12/13 Document Consolidation
+The engine flow remains:
 
-Goal: make the June 12/13 documentation set the explicit operating baseline of `V3_charter`.
+```text
+CSV input
+-> user-selected path
+-> API data retrieval required by that path
+-> L0 preparation
+-> L1 baseline
+-> L2 route
+-> L3 path-specific evidence
+-> L4 classification and scoring
+-> L5 output and D+X validation
+```
 
-Deliverables:
+## Active User-Facing Paths
 
-- The June 12/13 charter is carried forward as active reference in this branch.
-- The June 12/13 handover documents are included in the startup order.
-- Conflicting "start from rebuild branch" interpretations are removed from active guidance.
-- Each active document states the root-start rule from `main`.
+The active allowed user-facing paths remain:
 
-Detailed tasks:
+- `CROSSOVER`
+- `DIVERGENCE`
+- `MOMENTUM_SETUP` / `BULL_EXTENSION`
 
-1. Confirm which June 12/13 files are controlling versus historical.
-2. Record their read order in the branch startup handover.
-3. Mark any older branch-specific restart instructions as non-controlling for `V3_charter`.
-4. Ensure the README sends future sessions to the `V3_charter` document chain first.
+No hidden fourth path should be introduced.
 
-## Phase 3: Root Charter Boundary
+Market context, sector context, EMA200, lifetime high behavior, and other aids may refine confidence, risk, explanation, or validation only inside the selected path trajectory.
 
-Goal: separate the `V3_charter` root branch from the older rebuild branch.
+They must not become a base route selector unless the charter is explicitly changed.
 
-Deliverables:
+## Working Matrix Requirement
 
-- Explicit statement that June 12/13 charter work starts from `main` root as `V3_charter`.
-- Clear rule that `v3-engine-rebuild-from-charter` is not the root for the charter-led track.
-- Branch startup order that points to the new documents first.
+The active matrix requirement carried forward from June 12/13 remains in force.
 
-Boundary rules:
+Reference documents:
 
-- `v3-engine-rebuild-from-charter` may be mined for implementation details, validation evidence, and historical decisions.
-- It must not silently define the active charter or restart root.
-- If a rule, matrix entry, or validation result from that branch is reused, the reuse must be restated on `V3_charter`.
+- `docs/architecture/v3_evidence_stage_matrix.md`
+- `docs/architecture/v3_stage_family_indicator_working_matrix.md`
 
-## Phase 4: New Engine Definition
+No indicator, evidence item, or context aid should be treated as globally meaningful across all paths by default.
 
-Goal: define the charter-led engine scope before code direction changes.
+If an item is used, its path ownership and meaning should be explicit in the matrix.
 
-Deliverables:
+## What This Branch Is Doing
 
-- Confirmed user-facing paths.
-- Confirmed hierarchy ownership by level.
-- Confirmed backtesting role.
-- Confirmed output contract.
+This branch is carrying the June 12/13 charter set forward from `main` root.
 
-Detailed outputs required in this phase:
+It is not changing the underlying charter direction on its own.
 
-- Path catalog:
-  - `CROSSOVER`
-  - `DIVERGENCE`
-  - `MOMENTUM_SETUP` / `BULL_EXTENSION`
-- Hierarchy ownership note for:
-  - L0 input/data/date preparation
-  - L1 baseline
-  - L2 route
-  - L3 path-specific evidence
-  - L4 classification/scoring
-  - L5 output and D+X validation
-- Explicit statement of what cannot become a base route selector.
-- Explicit backtesting rule:
-  - run selected path as of D
-  - load D+X only after classification
-  - preserve no-lookahead behavior
-- Explicit output contract:
-  - explainable candidate state
-  - score/confidence/risk reasoning
-  - audit fields
-  - validation fields
+It is establishing one synchronized branch where:
 
-Decision gate before Phase 5:
+- the charter is present;
+- the handover is present;
+- the working plan is present;
+- local and GitHub stay in sync;
+- future implementation/detailing can happen without losing the June 12/13 source of truth.
 
-- The branch docs must be sufficient for a new session to explain the engine scope without re-reading scattered validation artifacts.
+## Immediate Working Focus
 
-## Phase 5: Code Audit From Main Root
+The immediate focus is to detail the active engine work without changing the June 12/13 charter meaning.
 
-Goal: decide what survives from the `main` tree into the new engine.
+That means:
 
-Deliverables:
+- preserve the exact path-first contract;
+- preserve the exact three-path user model;
+- preserve the L0-L5 hierarchy;
+- preserve D-date and D+X validation rules;
+- preserve the matrix ownership rule;
+- preserve the local/GitHub sync rule;
+- restate implementation details only when they are grounded in the carried-forward docs or code.
 
-- Module inventory.
-- Classification of each module as reusable, historical, delete-later, or unclear.
-- Short audit note under `docs/analysis/`.
+## Restart Rule
 
-Audit scope:
+At restart, begin by re-reading:
 
-- `src/stock_screener_v3/`
-- `tests/`
-- `web_app_v3.py`
-- report/output helpers
-- provider/data-loading helpers
-- evaluator and evidence modules
-- backtesting utilities
+1. `docs/charter/v3_original_intent_and_handover.md`
+2. `docs/handover/current_session_handover.md`
+3. `docs/handover/v3_engine_rebuild_startup.md`
+4. this file
 
-Required classification labels:
-
-- `REUSABLE_UTILITY`
-- `REUSABLE_WITH_REFACTOR`
-- `HISTORICAL_REFERENCE`
-- `DELETE_LATER`
-- `UNCLEAR_REQUIRES_DECISION`
-
-Minimum audit questions per module:
-
-1. Does it enforce or violate path-first design?
-2. Does it mix calculation and decision logic?
-3. Is it tied to V3 rebuild assumptions that no longer control this branch?
-4. Can it survive unchanged, or does it need a boundary wrapper/refactor?
-5. What tests already protect it?
-
-Guardrail:
-
-- Do not change engine behavior until the audit and the branch direction are documented.
-
-## Phase 6: Architecture Freeze For Rebuild
-
-Goal: lock the immediate target architecture before implementation waves begin.
-
-Deliverables:
-
-- Confirmed module boundaries.
-- Confirmed data-provider boundary.
-- Confirmed evidence-pack boundary.
-- Confirmed evaluator boundary per path.
-- Confirmed ranking/output boundary.
-
-Required architecture decisions:
-
-- what belongs in `models.py`
-- what belongs in `data_provider.py`
-- what belongs in `evidence.py`
-- what belongs in `evaluators.py`
-- what belongs in `runner.py`
-- what belongs in `backtesting.py` and `backtest_engine.py`
-- what belongs in reporting/output modules
-
-Guardrail:
-
-- No feature wave starts until path ownership and module ownership are both explicit.
-
-## Phase 7: Implementation Wave 1
-
-Goal: stabilize the shared engine skeleton without adding speculative new rules.
-
-Deliverables:
-
-- Clean L0-L5 orchestration path.
-- Shared input and run contract.
-- Shared evidence-pack assembly rules.
-- Shared output contract for scan and backtest modes.
-- Minimal tests for orchestration and non-leakage.
-
-Focus:
-
-- wiring
-- contracts
-- invariants
-- no-lookahead safety
-- audit visibility
-
-Not the focus:
-
-- calibration-driven score tuning
-- sector expansion
-- new broad context layers
-
-## Phase 8: Path Implementation Waves
-
-Goal: rebuild path logic deliberately, one family at a time, without leakage.
-
-Execution order:
-
-1. `CROSSOVER`
-2. `DIVERGENCE`
-3. `MOMENTUM_SETUP` / `BULL_EXTENSION`
-
-For each path, required deliverables are:
-
-- route definition
-- required evidence definition
-- optional support/context definition
-- scoring and confidence rules
-- anti-leakage tests
-- D+X validation output fields
-
-Per-path promotion gate:
-
-- documented path contract
-- implementation aligned to matrix ownership
-- path-specific tests
-- at least one dated validation note
-
-## Phase 9: Validation Pack
-
-Goal: prevent rule promotion based on isolated examples.
-
-Minimum validation pack:
-
-- at least 5 D dates
-- multiple market regimes
-- restricted-universe runs
-- mixed/random samples
-- candidate-density review
-- score-bucket review
-- best-high / worst-low view where relevant
-- baseline comparison where relevant
-
-Required reports:
-
-- candidate summary
-- failure summary
-- score-bucket summary
-- path-family summary
-- collision/ranking summary when multiple families fire
-
-Promotion rule:
-
-- no rule becomes part of the active engine solely because it fixes one failure cluster
-
-## Phase 10: Handover Discipline
-
-Goal: make restart quality part of the build process.
-
-At the end of a meaningful work block:
-
-- update the charter if product direction changed
-- update this plan if phase scope or sequencing changed
-- update the active handover if restart context changed
-- ensure the nightly handover points to the branch-resident files first
-- leave enough restart context for the next session to continue without rediscovery
-
-Required handover content:
-
-- active branch
-- controlling files
-- current phase
-- completed deliverables
-- next concrete restart point
-- open risks or unresolved decisions
-
-## Completion Discipline
-
-At the end of each completed step:
-
-1. update charter if direction changed;
-2. update this plan if phase order changed;
-3. update handover if restart context changed;
-4. commit locally in `D:\Tools\Stock_Screener_V3`;
-5. push the same branch to GitHub;
-6. verify branch sync with `git status --short --branch` and `git log --oneline --decorate -5`.
+Then continue detailing or implementing from that carried-forward direction only.
