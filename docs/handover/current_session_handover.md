@@ -20,7 +20,7 @@ Read this document first in every future session:
 docs/charter/v3_original_intent_and_handover.md
 ```
 
-It is the authoritative source for V3's original intent: user CSV input, exactly three analysis paths (`CROSSOVER`, `DIVERGENCE`, `MOMENTUM_SETUP` / `BULL_EXTENSION`), V2 L0/L1/L2/L3-style path-first architecture, D-date processing, D+X self-backtesting, and the rule that local documentation and GitHub must be updated before ending a completed step.
+It is the authoritative source for `V3_Charter` intent: user CSV input, exactly three analysis paths (`CROSSOVER`, `DIVERGENCE`, `SETUP`), V2 L0/L1/L2/L3-style path-first architecture, D-date processing, D+X self-backtesting, and the rule that local documentation and GitHub must be updated before ending a completed step.
 
 This canonical document supersedes any scattered handover, validation, sector/regime, or calibration artifact that appears to broaden the core V3 scope without explicit user approval.
 
@@ -81,7 +81,7 @@ The current automated tests are only current-code smoke/regression checks. They 
 The required acceptance tests still need to be derived from `docs/charter/v3_original_intent_and_handover.md`, especially:
 
 - CSV-only universe processing.
-- exactly three user paths: `CROSSOVER`, `DIVERGENCE`, `MOMENTUM_SETUP` / `BULL_EXTENSION`.
+- exactly three user paths: `CROSSOVER`, `DIVERGENCE`, `SETUP`.
 - L1 baseline and L2 routing preventing path leakage.
 - V2 parity for Crossover, Divergence, and Momentum Setup / Bull Extension.
 - D-date no-lookahead processing.

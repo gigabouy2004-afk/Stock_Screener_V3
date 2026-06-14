@@ -6,13 +6,13 @@ It exists to keep the new program charter, architecture analysis, backtesting pl
 
 ## Intent
 
-Canonical V3 intent is recorded in [docs/charter/v3_original_intent_and_handover.md](docs/charter/v3_original_intent_and_handover.md). That document is the first source of truth for all future work.
+Canonical `V3_Charter` intent is recorded in [docs/charter/v3_original_intent_and_handover.md](docs/charter/v3_original_intent_and_handover.md). That document is the only seed/source-of-truth charter for future work.
 
-At the core, V3 is a CSV-based, user-directed stock analysis engine with exactly three user-facing analysis paths:
+At the core, `V3_Charter` is a CSV-based, user-directed stock analysis engine with exactly three user-facing analysis paths:
 
 - `CROSSOVER`
 - `DIVERGENCE`
-- `MOMENTUM_SETUP` / `BULL_EXTENSION`
+- `SETUP`
 
 The engine must preserve the V2 path-first architecture, including baseline analysis, path routing, path-specific evidence, date processing, and D+X self-backtesting.
 
@@ -32,7 +32,6 @@ The engine is not intended to perform automated trading, position sizing, capita
 ## Source Documents
 
 - Canonical V3 original intent and handover: [docs/charter/v3_original_intent_and_handover.md](docs/charter/v3_original_intent_and_handover.md)
-- Fresh charter: [docs/charter/engine_program_charter_fresh_2026-06-01.md](docs/charter/engine_program_charter_fresh_2026-06-01.md)
 - Current engine gap analysis: [docs/analysis/current_engine_gap_analysis_against_fresh_charter_2026-06-01.md](docs/analysis/current_engine_gap_analysis_against_fresh_charter_2026-06-01.md)
 - V2 operational parity contract: [docs/architecture/v2_operational_parity_contract.md](docs/architecture/v2_operational_parity_contract.md)
 - V3 evidence-stage matrix: [docs/architecture/v3_evidence_stage_matrix.md](docs/architecture/v3_evidence_stage_matrix.md)
@@ -127,8 +126,8 @@ Sprint 1 has produced the foundation layer and a V1-complete Crossover family:
   - below-zero MACD pair requirement for bullish Crossover transition;
   - explicit rejection of above-zero bull continuation as Crossover;
   - generated cross-sector and symbol-level calibration reports from existing detail CSVs.
-- First Momentum Setup evaluator slice for bull pullback re-entry and bull continuation.
-- Stage-family dispatcher and CLI stage-family selection for Crossover, Momentum Setup, Divergence, or any restricted subset.
+- First Setup evaluator slice for bull pullback re-entry and bull continuation.
+- Stage-family dispatcher and CLI stage-family selection for Crossover, Setup, Divergence, or any restricted subset.
 - Formal ranking diagnostics for choosing the reported stage-family result after holistic traversal.
 - Baseline router with market/sector/stock regime diagnostics and positive elimination.
 - Configurable market/sector/theme benchmark mapping for regime determination.
@@ -151,7 +150,7 @@ $env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
 python -m stock_screener_v3.cli backtest --workspace-root D:\Tools\Stock_Screener_V3 --universe-file data\samples\us_master_sample.csv --d-date 2026-02-11 --forward-days 1,2,5
 ```
 
-The default stage-family set is `CROSSOVER,MOMENTUM_SETUP,DIVERGENCE`. Use `--stage-family` only when intentionally restricting the engine path.
+The default stage-family set is `CROSSOVER,SETUP,DIVERGENCE`. Use `--stage-family` only when intentionally restricting the engine path.
 
 Run a multi-date V3 backtest pack:
 

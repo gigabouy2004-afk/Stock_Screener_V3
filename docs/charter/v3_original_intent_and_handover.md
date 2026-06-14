@@ -1,4 +1,4 @@
-# Stock Screener V3 Original Intent And Handover
+# Stock Screener V3_Charter Original Intent And Handover
 
 Last updated: 2026-06-13
 
@@ -8,7 +8,7 @@ Branch: `main`
 
 ## Document Authority
 
-This document is the canonical source of truth for Stock Screener V3's original intent.
+This document is the canonical seed and source of truth for `V3_Charter`.
 
 The top-level purpose, user workflow, allowed analysis paths, V2 level architecture, data method, backtesting requirement, and non-goals in this document must not be changed by a future session without explicit user approval.
 
@@ -18,19 +18,19 @@ Every new session must read this document before reading validation notes, calib
 
 ## Original Intent
 
-V3 is a CSV-based, user-directed stock analysis engine.
+`V3_Charter` is a CSV-based, user-directed stock analysis engine.
 
-The purpose of V3 is to preserve the useful V2 analysis logic while rebuilding it into a single cohesive structure that avoids the logical regressions that appeared when separate V2 paths were merged.
+The purpose of `V3_Charter` is to use V2 as a reference library for technical-analysis indicator processing while rebuilding selection, routing, scoring, and validation into a single cohesive structure that avoids the logical regressions that appeared when separate paths were merged.
 
-V3 is not a new broad market research project. It is not a pan-USA screening engine unless the user supplies a pan-USA CSV and explicitly asks for that processing. It is not a sector, regime, or macro calibration project by default.
+`V3_Charter` is not a new broad market research project. It is not a pan-USA screening engine unless the user supplies a pan-USA CSV and explicitly asks for that processing. It is not a sector, regime, or macro calibration project by default.
 
 The engine must process stocks from a user-provided CSV and produce analysis only for the user-selected processing path or paths.
 
-Only processing logic explicitly confirmed by the user should be carried forward. That includes reusable utilities and confirmed evidence concepts, not every artifact produced during prior V3 drift.
+Only processing logic explicitly confirmed by the user should be carried forward. That includes V2 indicator calculations, reusable utilities, and confirmed evidence concepts, not every artifact produced during prior drift.
 
 ## Single Engine Construction Contract
 
-V3 must be constructed as one cohesive engine, not as separate stitched scripts and not as independent strategy modules that override each other.
+`V3_Charter` must be constructed as one cohesive engine, not as separate stitched scripts and not as independent strategy modules that override each other.
 
 The engine's base flow is:
 
@@ -46,7 +46,7 @@ CSV input
 -> L5 output and D+X validation
 ```
 
-Every addition from V2 must enter the engine at the correct level. No V2 detail may bypass the user-selected path, change the base route, or override another signal path.
+Every addition from V2 must enter the engine at the correct level. V2 is a reference library for indicator calculation and tuned variable/threshold processing. No V2 detail may bypass the user-selected path, change the base route, or override another signal path.
 
 The key construction rule is:
 
@@ -75,7 +75,7 @@ If a calculation is added, the implementer must answer these before coding:
 
 The engine must be designed from a stage-family indicator matrix.
 
-The V2 design described a two-axis route/indicator model. The current V3 repository still contains the active equivalent:
+The V2 design described a two-axis route/indicator model. The current repository still contains the active equivalent:
 
 ```text
 docs/architecture/v3_evidence_stage_matrix.md
@@ -101,7 +101,7 @@ Allowed stage-family columns:
 
 - `CROSSOVER`
 - `DIVERGENCE`
-- `MOMENTUM_SETUP` / `BULL_EXTENSION`
+- `SETUP`
 
 Each matrix row must define:
 
@@ -116,7 +116,7 @@ Each matrix row must define:
 
 Examples:
 
-| Indicator / evidence | Crossover | Divergence | Momentum Setup / Bull Extension |
+| Indicator / evidence | Crossover | Divergence | Setup |
 |---|---|---|---|
 | MACD 1D | Route/timing for transition. | Context or swing comparison input. | Context/quality for existing bull phase. |
 | MACD 4H / 1H | Timing/confirmation only when Crossover path requests it. | Not default; only if divergence design later requires it. | Not default; only if Momentum confirmation later requires it. |
@@ -145,18 +145,24 @@ The user workflow is fixed:
 1. User provides a CSV file containing stock symbols or stock rows.
 2. User selects the required analysis path or paths.
 3. User provides the analysis date context where required.
-4. Engine processes each stock through the structured V3 pipeline.
-5. Engine produces explainable output, reason codes, diagnostics, and backtest/self-validation where applicable.
+4. Engine processes each stock through the structured engine pipeline.
+5. Engine produces candidate output, reason codes, diagnostics, rejection logging, and backtest/self-validation where applicable.
 
 The only allowed user-facing analysis options are:
 
 - `CROSSOVER`
 - `DIVERGENCE`
-- `MOMENTUM_SETUP` / `BULL_EXTENSION`
+- `SETUP`
 
 No hidden fourth path should be added. No sector, market-regime, ETF, or universe-expansion path should be treated as part of the core engine unless the user explicitly requests that as a separate feature.
 
 Market regime, EMA200, future-price processing, backtesting utilities, and future AI/sentiment analysis may be incorporated only as supporting evidence or validation components inside the CSV-driven engine. They must not replace the three-path workflow or create broad sector/universe calibration work.
+
+Filter qualification is a first-class engine input. The engine must support user-selected ticker universes, user-selected stage families, and user-selected qualifying filters such as market cap, average volume, or similar metadata-based constraints. Only tickers that satisfy the selected stage or stage combination and the selected filters should be shown as candidates.
+
+Tickers that do not satisfy the selected stage or filters are not user-facing candidates. They must be discarded from the visible candidate list and logged in the processing output with the exact reason for failure and the relevant indicator/value that caused rejection.
+
+`STATUS_QUO` is not part of the intended user-facing engine output for this selection engine.
 
 ## Three Analysis Paths
 
@@ -173,7 +179,7 @@ Valid examples:
 
 Crossover must not classify an already-extended bull continuation as `PRE_BULL_CROSSOVER`.
 
-If MACD is already above the zero line and the evidence describes continuation or re-entry, the engine must route the stock to Momentum Setup / Bull Extension logic, not Crossover transition logic.
+If MACD is already above the zero line and the evidence describes continuation or re-entry, the engine must route the stock to Setup logic, not Crossover transition logic.
 
 Crossover may use bounded MACD-history aids from V2:
 
@@ -191,13 +197,13 @@ These aids can support Crossover confidence or readiness. They must not become a
 
 Divergence is for price-versus-indicator disagreement.
 
-It must remain independent from Crossover and Momentum Setup logic. A divergence candidate must be identified through divergence-specific evidence, not through side effects of crossover or momentum rules.
+It must remain independent from Crossover and Setup logic. A divergence candidate must be identified through divergence-specific evidence, not through side effects of crossover or setup rules.
 
 The divergence path must preserve the V2 intent of finding meaningful bullish or bearish disagreement and then validating whether the signal had forward price behavior.
 
-### Momentum Setup / Bull Extension
+### Setup
 
-Momentum Setup / Bull Extension is for bull-phase continuation, re-entry, pullback recovery, and extension behavior.
+Setup is for bull-phase continuation, re-entry, pullback recovery, and extension behavior.
 
 This path handles stocks where the trend or MACD structure is already in a bullish continuation state. It is not the same as a fresh bullish crossover transition.
 
@@ -208,7 +214,7 @@ Examples of this path include:
 - continuation after MACD is already positive
 - setups where price movement is expected after an already-established bullish structure
 
-Momentum may use bounded context checks when the user asks for them. Examples:
+Setup may use bounded context checks when the user asks for them. Examples:
 
 - sector information for the supplied stock or supplied CSV universe
 - stock behavior in one-month candles
@@ -216,11 +222,11 @@ Momentum may use bounded context checks when the user asks for them. Examples:
 - boundary analysis against prior major highs/lows
 - market-regime context as supporting evidence
 
-These checks are valid only as supporting context for the selected Momentum Setup / Bull Extension analysis. They must not trigger a broad sector scan, cross-sector calibration project, or extra analysis path.
+These checks are valid only as supporting context for the selected Setup analysis. They must not trigger a broad sector scan, cross-sector calibration project, or extra analysis path.
 
 ## V2 Level Architecture To Preserve
 
-V3 must retain the path-first V2 architecture and make it stricter.
+`V3_Charter` must retain the path-first V2 architecture and make it stricter.
 
 The V2 artifacts describe the core model as:
 
@@ -228,7 +234,7 @@ The V2 artifacts describe the core model as:
 L1 baseline -> L2 stage router -> L3 indicator functions
 ```
 
-V3 should extend this into a complete implementation pipeline without changing that core meaning:
+`V3_Charter` should extend this into a complete implementation pipeline without changing that core meaning:
 
 ### L0 Input, Data, And Date Preparation
 
@@ -275,7 +281,7 @@ Examples:
 
 - a continuation state must not be routed as a fresh crossover transition
 - divergence logic must not run because crossover logic failed
-- momentum continuation must not be mixed with pre-crossover classification
+- setup continuation must not be mixed with pre-crossover classification
 
 ### L3 Indicator And Evidence Functions
 
@@ -286,7 +292,7 @@ Responsibilities:
 - calculate indicators on demand
 - return raw values and derived evidence
 - avoid global indicator interpretation before the path is chosen
-- keep Crossover, Divergence, and Momentum evidence independent
+- keep Crossover, Divergence, and Setup evidence independent
 
 V2 additions such as EMA200, lifetime high, EMA lifetime-high percentage, one-month candles, volume confirmation, and sector context belong here when they are evidence for a selected path. They do not belong at the base level as universal gates.
 
@@ -304,13 +310,15 @@ Responsibilities:
 
 WeightedScore belongs in L4 as a confidence/detailing layer after route and path eligibility are known. It must not be used as a global promotion gate or as a substitute for path-specific classification.
 
-For example, in Momentum Setup:
+For example, in Setup:
 
 - current RSI may contribute to quality/headroom
 - current price distance versus lifetime high may contribute to headroom
 - price distance versus EMA200 or EMA lifetime-high style datapoints may contribute to risk/headroom
 - these values can improve or reduce confidence score
 - these values must not change the path into Crossover or Divergence
+
+WeightedScore applies only after stage qualification. It is an individual candidate score derived from multiple values inside the selected stage and its active matrix rows. It must not be used before stage qualification and must not be used as a substitute for stage selection.
 
 ### L5 Output, Audit, And Backtest
 
@@ -328,7 +336,7 @@ Responsibilities:
 
 The engine must use a provider abstraction rather than letting provider behavior leak into strategy logic.
 
-Current implementation work has used a Yahoo/yfinance-style provider wrapper in the repository. That is an implementation detail, not the product identity of V3.
+Current implementation work has used a Yahoo/yfinance-style provider wrapper in the repository. That is an implementation detail, not the product identity of `V3_Charter`.
 
 The required method is API-based. For any calculation, the engine must request the required data from the configured market-data API/provider for the supplied CSV symbols.
 
@@ -346,7 +354,7 @@ The provider contract is calculation-specific:
 - cache or reuse behavior that does not change analysis semantics
 - rate-limit and provider-error reporting
 
-V3 must not assume OHLCV as the universal input contract. V2's MACD/Momentum baseline required a Close price series; Volume was optional confirmation, and OHLC fields were not required for that baseline. V3 should request only the fields needed by the selected path and requested evidence modules.
+`V3_Charter` must not assume OHLCV as the universal input contract. V2's MACD/Setup baseline required a Close price series; Volume was optional confirmation, and OHLC fields were not required for that baseline. `V3_Charter` should request only the fields needed by the selected path and requested evidence modules.
 
 If a future TradingView API or another market-data API is used, it must be integrated behind this provider contract. The analysis engine should not be rewritten around the provider.
 
@@ -368,7 +376,7 @@ The following items may be carried forward because they are processing capabilit
 - sector information as bounded context for the supplied stock/CSV when the user asks for it.
 - one-month candle behavior as bounded path evidence.
 - lifetime high/low, EMA lifetime-high percentage, and major-boundary checks as bounded path evidence.
-- future AI/sentiment analysis as an optional evidence module, only after the core three-path engine is stable.
+- future AI/sentiment analysis as an optional evidence module, only as another matrix-owned row after the core three-path engine is stable.
 
 These components must stay subordinate to the core workflow:
 
@@ -402,7 +410,7 @@ Reuse:
 - stage-family indicator/evidence matrix with rows as evidence and columns as stage-family meanings
 - editable working matrix for adding, subtracting, and modifying individual V2/V3 indicator rows before coding
 
-### Momentum / MACD Baseline
+### Setup / MACD Baseline
 
 Source:
 
@@ -411,12 +419,12 @@ Source:
 
 Reuse:
 
-- Momentum-specific MACD baseline is based on Close series
-- default Momentum MACD reference: `MACD(8,21,5)`
+- Setup-specific MACD baseline is based on Close series
+- default Setup MACD reference: `MACD(8,21,5)`
 - compare current MACD phase against stock-specific history where applicable
 - Volume is optional confirmation, not part of the baseline MACD calculation
 - OHLC fields are not required for the MACD baseline
-- Momentum methodology applies only to Momentum Trading; it must not change Crossover or Divergence rules
+- Setup methodology applies only to Setup; it must not change Crossover or Divergence rules
 
 ### Crossover Boundaries
 
@@ -468,7 +476,7 @@ The following should not drive engine construction:
 
 - broad sector-folder validation as product direction
 - cross-sector calibration reports as base rules
-- current V3 market/sector/regime calibration artifacts as accepted scope
+- current market/sector/regime calibration artifacts as accepted scope
 - old WeightedScore as a promotion gate
 - any rule that was created from one isolated slice without path-specific validation
 
@@ -484,7 +492,7 @@ This matrix consolidates the individual V2 intents that must be preserved in V3.
 |---|---|---|---|---|
 | User supplies the universe through CSV/manual symbols. | `archive_unified_stock_scanner_engine_design.md` lines 7, 63-71; `archive_unified_engine_recap_and_action_plan_2026-05-24.md` lines 13, 27 | L0 | CSV/manual input defines the universe. | Do not expand to pan-USA, sector folders, or broad markets unless user supplied that universe. |
 | User selects stage families. | design lines 65, 108-116, 232; recap lines 77-85, 128 | L0/L2 | Only selected paths are eligible. | If user selects Crossover, Divergence or Momentum must not produce final candidates. |
-| `STATUS_QUO` is output, not a user path. | design lines 116, 727-745; recap lines 237-249 | L5 | Use `STATUS_QUO` when selected paths do not qualify. | Do not expose `STATUS_QUO` as an analysis option or score it as a candidate family. |
+| Rejected/non-qualifying rows are processing outputs, not user-facing candidate classes. | design lines 116, 727-745; recap lines 237-249 | L5 | Non-qualifying selected-path rows should be logged with rejection reasons and relevant values. | Do not expose a non-candidate state as a user-facing analysis option or score it as a candidate family. |
 | Defaults and thresholds live outside decision code. | design lines 120-157; recap lines 253-269 | Config/L0 | Parameters are configurable per run/profile. | Do not bury market/sector/stock-sensitive thresholds inside evaluator code. |
 
 ### Hierarchical Engine Flow
@@ -530,15 +538,15 @@ This matrix consolidates the individual V2 intents that must be preserved in V3.
 | Divergence uses swing/histogram comparison. | design lines 506-537; recap lines 189-194 | L3 | Compare price swing and histogram swing. | Do not apply generic `histogram > 0.5` strength gate. |
 | Divergence scoring stays separate. | design lines 498, 543-557; divergence contract lines 7, 217-219 | L4/L5 | Emit direction/type/confirmation/reason fields. | Do not import Crossover hard gates or Momentum continuation gates. |
 
-### Momentum Setup / Bull Extension Intent
+### Setup Intent
 
 | V2 intent | Source pointer | V3 level | Carry-forward rule | Anti-regression guardrail |
 |---|---|---|---|---|
-| Momentum replaces old generic `Setup`. | design lines 559-567; recap lines 198-202 | L2/L4 | Momentum is its own selected path. | It must not modify Crossover or Divergence rules. |
-| Momentum uses stock-specific historical MACD behavior. | design lines 571-599; recap lines 204-222 | L3/L4 | Compare current momentum with the stock's own history. | Do not use universal histogram strength as primary definition. |
-| Default Momentum MACD reference is `MACD(8,21,5)`. | design lines 582-585; recap lines 207-210 | L3 | Use configurable Momentum MACD parameters. | Keep parameters in config, not buried in code. |
-| Momentum phases are histogram episodes. | design lines 593-617; recap lines 214-222 | L3 | Split bull/bear phases and consecutive episodes. | Positive bars alone are not equivalent to phase episodes. |
-| Momentum strength is percentile/history based. | design lines 619-665 | L3/L4 | Compare current histogram to stock-specific averages/percentiles. | Do not use a global `0.5` threshold as primary strength. |
+| Setup replaces the old generic `Setup` label and is the selected path for continuation, re-entry, and extension behavior. | design lines 559-567; recap lines 198-202 | L2/L4 | Setup is its own selected path. | It must not modify Crossover or Divergence rules. |
+| Setup uses stock-specific historical MACD behavior. | design lines 571-599; recap lines 204-222 | L3/L4 | Compare current setup momentum with the stock's own history. | Do not use universal histogram strength as primary definition. |
+| Default Setup MACD reference is `MACD(8,21,5)`. | design lines 582-585; recap lines 207-210 | L3 | Use configurable Setup MACD parameters. | Keep parameters in config, not buried in code. |
+| Setup phases are histogram episodes. | design lines 593-617; recap lines 214-222 | L3 | Split bull/bear phases and consecutive episodes. | Positive bars alone are not equivalent to phase episodes. |
+| Setup strength is percentile/history based. | design lines 619-665 | L3/L4 | Compare current histogram to stock-specific averages/percentiles. | Do not use a global `0.5` threshold as primary strength. |
 | Phase maturity is confidence context. | design lines 671-687; recap lines 224-233 | L4 | Early/developing/mature/extended affects confidence and chase risk. | Maturity must not override path routing. |
 | RSI, ADX, volume, liquidity, extension risk need scoped decisions. | design lines 712-720; recap lines 224-230 | L3/L4 | Use as bounded quality/confidence inputs after route. | Do not let them become global gates. |
 
@@ -556,18 +564,18 @@ This matrix consolidates the individual V2 intents that must be preserved in V3.
 
 | V2 intent | Source pointer | V3 level | Carry-forward rule | Anti-regression guardrail |
 |---|---|---|---|---|
-| Historical replay/backtesting is required for validation. | gap analysis lines 296-302, 451-485; design lines 907-908 | L5 | Same production engine should run against D-date slices. | Do not tune from isolated live examples. |
+| Historical replay/backtesting is required for validation. | gap analysis lines 296-302, 451-485; design lines 907-908 | L5 | Same production engine should run against D-date slices. | No stage is complete until historical D and D+X validation proves the engine is correctly identifying genuine candidates. |
 | D-date processing must avoid lookahead. | canonical rule plus backtesting utility intent | L0/L5 | Classify with data through D, validate later with D+X. | D+X data must never enter initial classification. |
-| Backtesting uses same selected path as live analysis. | working matrix Backtesting column | L5 | User supplies D-date, provider fetches historical data, engine runs selected Crossover/Divergence/Momentum path as of D, then D+X validates price movement. | Backtesting must not introduce a fourth path or alternate evaluator. |
+| Backtesting uses same selected path as live analysis. | working matrix Backtesting column | L5 | User supplies D-date, provider fetches historical data, engine runs selected Crossover/Divergence/Setup path as of D, then D+X validates price movement. | Backtesting must not introduce a fourth path or alternate evaluator. |
 | Preserve input metadata for audit. | design lines 87, 835-862; gap analysis lines 268-284, 412 | L0/L5 | Keep source metadata like sector/industry/volume when supplied. | Do not use current profile facts as historical truth without tagging. |
 | One symbol failure must not fail the run. | design lines 818-831; recap lines 377-381 | L0/L5 | Record per-symbol provider/data errors. | Only input/output layer failures should stop the whole run. |
 | Performance cannot break trading logic. | design lines 792-813, 922 | Whole engine | Batch and optimize after correctness. | A faster path is unacceptable if classification correctness is reduced. |
 
-## V3 Validation Requirement From The Matrix
+## V3_Charter Validation Requirement From The Matrix
 
 Before implementing or carrying forward any V2 item, create or identify a validation check for:
 
-1. correct V3 hierarchy placement;
+1. correct `V3_Charter` hierarchy placement;
 2. selected-path restriction;
 3. no override of the other two paths;
 4. no global gate unless explicitly defined as a base gate;
@@ -618,7 +626,7 @@ The output should preserve V2-compatible visibility where useful, including reas
 
 ## Explicit Non-Goals
 
-The following are not part of the core V3 intent:
+The following are not part of the core `V3_Charter` intent:
 
 - default pan-USA market scanning
 - default sector-by-sector calibration
@@ -637,7 +645,7 @@ These may be separate future projects or optional features only if the user expl
 
 ## Regression Risks To Eliminate
 
-The central V3 risk is logical regression from mixed path behavior.
+The central `V3_Charter` risk is logical regression from mixed path behavior.
 
 Known failure pattern:
 
@@ -645,7 +653,7 @@ Known failure pattern:
 - stock is already in bullish continuation
 - engine incorrectly labels it as `PRE_BULL_CROSSOVER`
 
-V3 must prevent this class of error through L1 baseline facts, L2 path routing, path-specific L3 evidence, and rejection rules in L4.
+`V3_Charter` must prevent this class of error through L1 baseline facts, L2 path routing, path-specific L3 evidence, and rejection rules in L4.
 
 Other risks:
 
@@ -682,7 +690,7 @@ Every future session must follow these rules:
 1. Read this document first.
 2. Check local and remote git state before editing.
 3. State the exact code or documentation step before making changes.
-4. Keep work scoped to the CSV-driven V3 engine unless the user explicitly asks for a separate feature.
+4. Keep work scoped to the CSV-driven `V3_Charter` engine unless the user explicitly asks for a separate feature.
 5. Update documentation at the end of each completed step.
 6. Commit locally at the end of each completed step when changes are valid.
 7. Push to GitHub at the end of each completed step when network/authentication permits.
@@ -691,11 +699,11 @@ Every future session must follow these rules:
 
 ## Current Drift To Treat Carefully
 
-Recent repository history includes sector, regime, and broad calibration work. Those artifacts should not be treated as V3's core product direction.
+Recent repository history includes sector, regime, and broad calibration work. Those artifacts should not be treated as `V3_Charter` core product direction.
 
 Do not delete or revert that history without explicit user approval. Treat it as historical context only.
 
-Do not carry forward the current drift version of V3's market-regime, sector, and cross-sector calibration work as accepted product direction. Only extract confirmed processing pieces that fit the canonical CSV-driven engine, such as bounded market-regime context, EMA200 evidence, backtesting utility, and D/D+X date handling.
+Do not carry forward the current drift version of market-regime, sector, and cross-sector calibration work as accepted product direction. Only extract confirmed processing pieces that fit the canonical CSV-driven engine, such as bounded market-regime context, EMA200 evidence, backtesting utility, and D/D+X date handling.
 
 The forward direction is this canonical intent:
 
@@ -710,7 +718,7 @@ User CSV + user-selected path + V2 path-first levels + D-date processing + D+X s
 - add this canonical document
 - update README and handover pointers
 - audit `web_app_v3.py` and `src/stock_screener_v3` against this document
-- list logic that belongs to V3 core versus drift artifacts
+- list logic that belongs to `V3_Charter` core versus drift artifacts
 
 ### Phase 2: Input And UI Contract
 
@@ -732,7 +740,7 @@ User CSV + user-selected path + V2 path-first levels + D-date processing + D+X s
 
 - recover and map V2 Crossover rules
 - recover and map V2 Divergence rules
-- recover and map V2 Momentum Setup / Bull Extension rules
+- recover and map V2 Setup rules
 - write path-specific parity tests before changing behavior
 
 ### Phase 5: Self-Backtesting
