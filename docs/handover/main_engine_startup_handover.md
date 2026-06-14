@@ -44,6 +44,7 @@ Nightly handover and restart notes must point to these branch-resident documents
 - The branch starts from `main`, not from `v3-engine-rebuild-from-charter`.
 - The charter, plan, and handover are now expected to move together on this branch.
 - The working-plan document now only restates the carried-forward June 12/13 direction and does not introduce a new phased methodology.
+- Individually working V2 calculations are part of the active reference baseline for this branch and must be evaluated as reusable calculation inputs under V3 path ownership rules.
 
 ## Preferred Next Restart Point
 

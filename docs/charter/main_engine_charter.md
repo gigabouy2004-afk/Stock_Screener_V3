@@ -65,6 +65,30 @@ The June 12/13 documentation intent is that the charter work starts from the roo
 
 It must be built as one coherent hierarchy, not as stitched legacy paths and not as a continuation of the `v3-engine-rebuild-from-charter` branch.
 
+## V2 Reference Rule
+
+`V3_charter` must explicitly use V2 as a calculation reference baseline.
+
+The reason is simple: many V2 calculations worked individually, even when later combined behavior drifted or became logically mixed.
+
+Therefore:
+
+- individually working V2 calculations are valid reference inputs for `V3_charter`;
+- they may be reused, rechecked, or reimplemented as calculation-level building blocks;
+- they must not be copied forward as uncontrolled route logic or cross-path overrides.
+
+The active rule is:
+
+```text
+V2 calculations may be referenced because they worked individually.
+V3_charter must then place them at the correct ownership level inside the path-first engine.
+```
+
+This means a V2 calculation must be evaluated in two separate ways:
+
+1. Did the calculation itself work correctly in isolation?
+2. Does its placement inside V3 obey the selected-path, matrix-owned, anti-leakage contract?
+
 The engine flow remains:
 
 ```text

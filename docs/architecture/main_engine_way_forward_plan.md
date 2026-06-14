@@ -51,6 +51,12 @@ The active engine direction carried forward from the June 12/13 documents is:
 - it must preserve path-first design;
 - it must prevent one path's evidence from leaking into another path's route logic.
 
+The branch also carries this explicit V2 baseline rule:
+
+- individually working V2 calculations are reference material for `V3_charter`;
+- they should be treated as reusable calculation candidates, not automatic final engine behavior;
+- each reused V2 calculation must still be placed at the correct V3 ownership level.
+
 The engine flow remains:
 
 ```text
@@ -92,6 +98,10 @@ No indicator, evidence item, or context aid should be treated as globally meanin
 
 If an item is used, its path ownership and meaning should be explicit in the matrix.
 
+This applies directly to V2 calculations that previously worked in isolation.
+
+Their prior usefulness is a reason to reference them, not a reason to bypass matrix ownership.
+
 ## What This Branch Is Doing
 
 This branch is carrying the June 12/13 charter set forward from `main` root.
@@ -115,6 +125,7 @@ That means:
 - preserve the exact path-first contract;
 - preserve the exact three-path user model;
 - preserve the L0-L5 hierarchy;
+- baseline individually working V2 calculations as reference inputs for `V3_charter`;
 - preserve D-date and D+X validation rules;
 - preserve the matrix ownership rule;
 - preserve the local/GitHub sync rule;
