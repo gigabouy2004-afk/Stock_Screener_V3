@@ -18,10 +18,6 @@ For the next session, do not rediscover the intent from older branch-wrapper or 
 
 Start exactly here:
 
-Single-folder restart pack:
-
-- [docs/restart](/D:/Tools/Stock_Screener_V3/docs/restart)
-
 1. Read [v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_original_intent_and_handover.md).
 2. Read this handover file.
 3. Verify sync:

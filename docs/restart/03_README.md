@@ -33,10 +33,6 @@ The engine is not intended to perform automated trading, position sizing, capita
 
 For any new session, start in this order:
 
-Single-folder restart pack:
-
-- [docs/restart](/D:/Tools/Stock_Screener_V3/docs/restart)
-
 1. [docs/charter/v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_original_intent_and_handover.md)
 2. [docs/handover/current_session_handover.md](/D:/Tools/Stock_Screener_V3/docs/handover/current_session_handover.md)
 3. Verify local/GitHub sync:
