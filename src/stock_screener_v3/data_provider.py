@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Protocol
 
 import pandas as pd
 import yfinance as yf
 
 
 REQUIRED_PRICE_COLUMNS = ("Open", "High", "Low", "Close", "Volume")
+
+
+class PriceProvider(Protocol):
+    def daily(self, symbol: str) -> pd.DataFrame:
+        """Return daily historical data for the symbol from the active provider."""
 
 
 def normalize_price_columns(frame: pd.DataFrame) -> pd.DataFrame:
@@ -25,7 +31,7 @@ def normalize_price_columns(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 @dataclass(frozen=True)
-class YahooPriceProvider:
+class YahooFinancePriceProvider:
     start: str | None = None
     end: str | None = None
     period: str | None = "2y"
@@ -51,3 +57,6 @@ class YahooPriceProvider:
             raise ValueError(f"No daily data for {symbol}.")
         return normalized
 
+
+# Backward-compatible alias while the codebase migrates toward provider-neutral naming.
+YahooPriceProvider = YahooFinancePriceProvider

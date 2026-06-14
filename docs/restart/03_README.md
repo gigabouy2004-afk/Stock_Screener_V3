@@ -16,6 +16,8 @@ At the core, `V3_Charter` is a CSV-based, user-directed stock analysis engine wi
 
 The engine must preserve the V2 path-first architecture, including baseline analysis, path routing, path-specific evidence, date processing, and D+X self-backtesting.
 
+All indicator processing is API/provider-driven. The current default backend is Yahoo Finance through `yfinance`, but the engine must remain behind a swappable provider abstraction so another free backend can replace it later without changing matrix logic or evaluator meaning.
+
 Broader context work below is historical/background unless explicitly requested by the user for a specific step.
 
 Previous broad rebuild language:
@@ -32,6 +34,10 @@ The engine is not intended to perform automated trading, position sizing, capita
 ## Restart First
 
 For any new session, start in this order:
+
+Single-folder restart pack:
+
+- [docs/restart](/D:/Tools/Stock_Screener_V3/docs/restart)
 
 1. [docs/charter/v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_original_intent_and_handover.md)
 2. [docs/handover/current_session_handover.md](/D:/Tools/Stock_Screener_V3/docs/handover/current_session_handover.md)
@@ -209,6 +215,8 @@ The current coding direction on `V3_Charter` is:
 
 - keep the June 13 charter as the only seed/source-of-truth
 - preserve per-ticker, category-specific scoring grouped by stage family
+- keep indicator processing API-driven behind a provider abstraction
+- represent the working matrix at the indicator-family row level with explicit condition logic inside each stage-family cell
 - remove hardcoded evaluator thresholds and score weights from inline logic
 - move scoring/interpretation defaults into explicit config or matrix-owned structures without changing current behavior unless approved
 

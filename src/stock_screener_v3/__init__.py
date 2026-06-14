@@ -1,7 +1,7 @@
 """Stock Screener V3 core package."""
 
 from stock_screener_v3.backtest_engine import BacktestEngine, InMemoryPriceProvider
-from stock_screener_v3.data_provider import YahooPriceProvider
+from stock_screener_v3.data_provider import PriceProvider, YahooFinancePriceProvider, YahooPriceProvider
 from stock_screener_v3.evaluators import CrossoverEvaluator, DivergenceEvaluator
 from stock_screener_v3.models import (
     BacktestResult,
@@ -24,10 +24,12 @@ __all__ = [
     "DivergenceEvaluator",
     "EvidencePack",
     "InMemoryPriceProvider",
+    "PriceProvider",
     "PriceDataBundle",
     "ReviewPriority",
     "ScoreResult",
     "StageEvaluation",
     "UniverseRecord",
+    "YahooFinancePriceProvider",
     "YahooPriceProvider",
 ]

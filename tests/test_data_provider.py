@@ -4,10 +4,13 @@ import unittest
 
 import pandas as pd
 
-from stock_screener_v3.data_provider import normalize_price_columns
+from stock_screener_v3.data_provider import YahooFinancePriceProvider, YahooPriceProvider, normalize_price_columns
 
 
 class DataProviderTests(unittest.TestCase):
+    def test_yahoo_price_provider_alias_remains_available(self) -> None:
+        self.assertIs(YahooPriceProvider, YahooFinancePriceProvider)
+
     def test_normalize_price_columns_flattens_multiindex(self) -> None:
         frame = pd.DataFrame(
             [[1, 2, 0.5, 1.5, 1000, 99]],
@@ -38,4 +41,3 @@ class DataProviderTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

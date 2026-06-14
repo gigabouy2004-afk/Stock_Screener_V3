@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 from stock_screener_v3.backtest_engine import BacktestEngine, PriceProvider, StageEvaluator
-from stock_screener_v3.data_provider import YahooPriceProvider
+from stock_screener_v3.data_provider import YahooFinancePriceProvider
 from stock_screener_v3.evaluators import StageFamilyEvaluator
 from stock_screener_v3.models import BacktestResult, BacktestRunConfig
 from stock_screener_v3.regime_config import RegimeBenchmarkConfig
@@ -87,7 +87,7 @@ def run_backtest(
             random_seed=random_seed,
         )
         engine = BacktestEngine(
-            price_provider=price_provider or YahooPriceProvider(period="5y"),
+            price_provider=price_provider or YahooFinancePriceProvider(period="5y"),
             evaluator=evaluator or StageFamilyEvaluator(stage_families=stage_families),
             regime_config=regime_config,
         )
@@ -132,7 +132,7 @@ def run_backtest_pack(
     if not d_dates:
         raise ValueError("At least one D date is required for a backtest pack.")
     root = resolve_workspace_root(workspace_root)
-    shared_provider = price_provider or YahooPriceProvider(period="5y")
+    shared_provider = price_provider or YahooFinancePriceProvider(period="5y")
     runs: list[EngineRunResult] = []
     for d_date in d_dates:
         runs.append(

@@ -18,6 +18,10 @@ For the next session, do not rediscover the intent from older branch-wrapper or 
 
 Start exactly here:
 
+Single-folder restart pack:
+
+- [docs/restart](/D:/Tools/Stock_Screener_V3/docs/restart)
+
 1. Read [v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_original_intent_and_handover.md).
 2. Read this handover file.
 3. Verify sync:
@@ -47,6 +51,14 @@ Current scoring baseline:
 - equal scores across families are valid
 - results should be grouped/displayed by stage family, not flattened into one global score list by default
 
+Current matrix/provider baseline:
+
+- indicator processing is API/provider-driven, not hardcoded/static-data-driven
+- current default free backend is Yahoo Finance through `yfinance`
+- provider choice must stay behind a swappable abstraction
+- matrix rows should be indicator families such as `MACD`, `RSI`, `EMA Stack`
+- stage-family cells should contain the exact condition logic or processing function, not vague indicator labels like `MACD(1D)` alone
+
 Current code baseline:
 
 - `src/stock_screener_v3/scoring_config.py` exists and holds the first extracted stage scoring defaults
@@ -55,6 +67,7 @@ Current code baseline:
 
 Current next coding step:
 
+- keep the provider contract explicit while preserving the current free Yahoo-backed implementation
 - continue moving hardcoded route/context/component thresholds out of `evaluators.py`
 - keep scoring and selection behavior unchanged unless explicitly approved
 - keep local and GitHub synchronized at the end of each completed step

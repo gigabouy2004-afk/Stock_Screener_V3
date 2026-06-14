@@ -4,7 +4,7 @@ Last updated: 2026-06-13
 
 Repo: `D:\Tools\Stock_Screener_V3`
 
-Branch: `main`
+Branch: `V3_Charter`
 
 ## Document Authority
 
@@ -92,9 +92,9 @@ These documents are grounded in the V2 route/indicator hierarchy and must be reu
 The required matrix shape for construction is:
 
 ```text
-Rows    = Technical Analysis indicators, evidence modules, gates, or context aids
+Rows    = Indicator families or evidence families
 Columns = selected stage families / stage gates / candidate trajectories
-Cells   = whether the item is Route, Timing, Quality, Context, Audit, or Not Used
+Cells   = the exact processing condition/function used by that indicator family inside that path
 ```
 
 Allowed stage-family columns:
@@ -110,7 +110,7 @@ Each matrix row must define:
 - calculation level: L1, L2, L3, L4, or L5
 - input fields
 - output fields
-- path-specific meaning
+- path-specific processing function or condition set
 - whether it can affect route, timing, quality, confidence score, risk, audit, or backtest only
 - anti-leakage rule proving it cannot override another path
 
@@ -118,16 +118,20 @@ Examples:
 
 | Indicator / evidence | Crossover | Divergence | Setup |
 |---|---|---|---|
-| MACD 1D | Route/timing for transition. | Context or swing comparison input. | Context/quality for existing bull phase. |
-| MACD 4H / 1H | Timing/confirmation only when Crossover path requests it. | Not default; only if divergence design later requires it. | Not default; only if Momentum confirmation later requires it. |
-| MACD histogram history | Crossover readiness/probability aid. | Swing comparison for divergence. | Stock-specific phase strength and maturity. |
-| RSI | Quality/context, not hard route. | Momentum disagreement input or confirmation. | Quality/headroom scoring. |
-| RSI upper boundary 80 | Usually not route. | Usually context only. | Upper-bound/headroom aid: distance from current RSI to 80 can contribute to WeightedScore/confidence, not route. |
-| EMA200 | Risk/headroom context. | Support/resistance context. | Quality/risk/headroom aid. |
-| Lifetime high / EMA lifetime-high percentage | Not base route. | Context if relevant to resistance/support. | Headroom/extension scoring aid. |
-| Sector / market context | Bounded context only when requested. | Bounded context only when requested. | Bounded context only when requested. |
+| MACD | Example: `MACD(1D) < Signal(1D)` and `Histogram(1D)` near zero for near-bull transition, with 4H/1H alignment only if the path requests it. | Example: price swing versus MACD/histogram swing disagreement plus confirmation turn. | Example: MACD already positive / above signal, using Setup-specific baseline and bull-phase continuation logic. |
+| RSI | Quality/readiness condition only after route is known. | Disagreement/exhaustion support condition. | Headroom / pullback-quality / continuation-strength condition. |
+| EMA stack | Reclaim / break / transition context. | Support / resistance context. | Pullback / re-entry / continuation / extension context. |
+| Volume | Participation confirmation after route is known. | Participation confirmation after route is known. | Pullback / continuation participation and abnormal-risk checks. |
+| Market / sector context | Bounded context only when requested. | Bounded context only when requested. | Bounded context only when requested. |
 
 This matrix is the main mechanism that prevents isolated implementation from breaking the engine. No indicator should be added directly to code until its row/cell meaning is documented.
+
+Important precision rule:
+
+```text
+Do not write loose matrix rows such as "MACD(1D)" when the real logic depends on a relation or condition.
+Use the indicator family as the row name, such as "MACD", and write the exact condition or processing function inside each stage-family cell.
+```
 
 The working matrix also contains a `Backtesting / D+X` column. That column records how each item is validated when the user supplies a historical D-date and a D+X horizon/date. Backtesting runs the same selected path logic on D-date data first, then loads D+X price data only for validation.
 
@@ -346,6 +350,8 @@ Responsibilities:
 The engine must use a provider abstraction rather than letting provider behavior leak into strategy logic.
 
 Current implementation work has used a Yahoo/yfinance-style provider wrapper in the repository. That is an implementation detail, not the product identity of `V3_Charter`.
+
+The current default free backend is Yahoo Finance through `yfinance`, but the engine must keep a swappable provider abstraction so another free backend can replace it later without changing matrix logic, evaluator meaning, or output contracts.
 
 The required method is API-based. For any calculation, the engine must request the required data from the configured market-data API/provider for the supplied CSV symbols.
 

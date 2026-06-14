@@ -2,7 +2,7 @@
 
 Last updated: 2026-06-13
 
-Purpose: working table for constructing the V3 engine from V2 design intents without re-discovery. This is the editable matrix where indicators, gates, evidence modules, inputs, outputs, and path-specific meanings can be added, removed, or modified before coding.
+Purpose: working table for constructing the V3 engine from V2 design intents without re-discovery. This is the editable matrix where indicator families, gates, evidence modules, inputs, outputs, and path-specific processing functions can be added, removed, or modified before coding.
 
 Canonical scope: `docs/charter/v3_original_intent_and_handover.md`
 
@@ -24,8 +24,27 @@ Each row must answer:
 - which V3 level owns the calculation;
 - whether the item is route, timing, quality, context, scoring, audit, or validation;
 - which path can use it;
-- what outputs it should produce;
+- what exact processing function or condition set it should produce inside each stage-family cell;
 - what it must not override.
+
+## Matrix Representation Rule
+
+Rows must be written as indicator families or evidence families, not as vague single values.
+
+Examples:
+
+- good row name: `MACD`
+- weak row name: `MACD(1D)`
+
+The cell under each stage family must contain the exact path-specific condition logic or processing function for that indicator family.
+
+Examples:
+
+- `CROSSOVER`: `MACD(1D) < Signal(1D)` and `Histogram(1D)` near zero, with optional same-analysis-point 4H/1H confirmation if requested.
+- `DIVERGENCE`: price swing versus histogram swing disagreement plus confirmation turn.
+- `SETUP`: `MACD(1D) > Signal(1D)` and bull-phase continuation/re-entry logic using the Setup baseline where applicable.
+
+All indicator processing remains API/provider-driven. The matrix should describe the data needed from the provider, not assume hardcoded/static inputs inside evaluator logic.
 
 Legend:
 
@@ -41,7 +60,7 @@ Legend:
 
 ## Core Path Matrix
 
-| Evidence / Indicator | API data required | V3 level | Crossover | Divergence | Momentum Setup / Bull Extension | Backtesting / D+X | Primary outputs | Guardrail |
+| Indicator Family / Evidence | API data required | V3 level | CROSSOVER | DIVERGENCE | SETUP | Backtesting / D+X | Primary outputs | Guardrail |
 |---|---|---:|---|---|---|---|---|---|
 | User CSV symbol | CSV row | L0 | R | R | R | Use same supplied CSV universe for historical run. | `Symbol`, `YahooSymbol`, source metadata | Supplied CSV is the universe; no hidden expansion. |
 | User selected path | UI/input config | L0/L2 | R | R | R | Execute the same selected path on D-date data. | `StageFamily`, selected family list | Only selected paths can produce final candidates. |
@@ -52,17 +71,10 @@ Legend:
 | D+X close price | API forward price | L5 | V | V | V | Simple forward close comparison versus D. | `DPlus{N}ReturnPct` | Forward price is loaded after classification. |
 | D+X high/low path | API forward high/low when available | L5 | V | V | V | Optional best-high/worst-low validation. | `DPlus{N}WorstLowReturnPct`, `DPlus{N}BestHighReturnPct` | Path validation is separate from simple endpoint check. |
 | Close series | API historical price | L1/L3 | R/T | R/C | R/Q | Use only rows <= D for indicator values. | close-derived indicators | Fetch through API per calculation; not a CSV requirement. |
-| MACD 1D line/signal | Close series | L3/L4 | R/T for transition | C, swing support | Q/C for existing bull phase | Recompute as-of D and compare result with D+X price movement. | `MACD_1D_Value`, `MACD_1D_Signal`, `MACD_1D_State` | Meaning differs by path; no global MACD rule. |
-| MACD 1D crossover state | Close series | L3/L4 | R for bull/bear transition | C/A | C for bull phase already above signal | Validate whether D crossover classification led to expected D+X price direction. | `MACD_1D_CrossoverState` | Above-zero bull continuation belongs to Momentum, not `PRE_BULL_CROSSOVER`. |
-| MACD 1D crossover distance | Close series | L3/L4 | T for near transition | C/A | A/C | Track whether near-transition matured by D+X. | `MACD_1D_CrossoverDistance` | Nearness cannot override path boundary. |
-| MACD 1D histogram | Close series | L3/L4 | T/Q, real/non-flat cross | R when compared to price swing | Q for expansion/continuation | Validate whether D histogram condition matched D+X movement. | `MACD_1D_Histogram`, `MACD_1D_PreviousHistogram` | No universal `histogram > 0.5` gate. |
-| MACD histogram improving/deteriorating | Close series | L3/L4 | T for near bull/bear transition | R/C for confirmation turn | Q for improving momentum | Compare D signal direction with D+X price response. | `MACDHistogramImproving`, reason codes | Cannot promote developing divergence as confirmed without path rules. |
-| MACD 4H state/crossover | API lower timeframe when requested | L3/L4 | T/Q confirmation only | N by default | N/TBD | Backtest only if the path requested 4H evidence on D. | `MACD_4H_State`, `MACD_4H_CrossoverState` | Fetch only when Crossover path requests lower-timeframe confirmation. |
-| MACD 1H state/crossover | API lower timeframe when requested | L3/L4 | T/Q confirmation only | N by default | N/TBD | Backtest only if the path requested 1H evidence on D. | `MACD_1H_State`, `MACD_1H_CrossoverState` | Must not override 1D route. |
-| Bars since MACD/signal cross | Close series | L3/L4/L5 | T freshness/staleness | A/C | A/C | Compare fresh versus stale D signals by D+X outcome. | `MACD_4H_BullCrossBarsAgo`, `MACD_1H_BullCrossBarsAgo`, related fields | Stale crosses remain auditable, not silently hidden. |
-| Bars since zero-line cross | Close series | L3/L4/L5 | C/T | C/A | C/A | Compare zero-line context with D+X outcome. | TBD output fields | Zero-line context is separate from crossover detection. |
-| Historical MACD phase episodes | Close series, V2-style lookback | L3/L4 | S/C for crossover probability/readiness | C/A | R/Q for stock-specific momentum phase | Validate whether D phase maturity/strength predicted D+X move. | `Momentum_Phase`, `Momentum_Strength`, maturity outputs TBD | Use inside selected path only; not a global route engine. |
-| Momentum MACD baseline `8,21,5` | Close series | L3/L4 | N/C | N/C | R/Q | Momentum-only D-date baseline; validate against D+X. | baseline MACD fields | Applies to Momentum methodology only unless user changes matrix. |
+| MACD | Close series for 1D baseline; lower-timeframe API data only when requested | L3/L4 | `MACD(1D) < Signal(1D)` with `Histogram(1D)` near zero for near-bull transition; `MACD(1D) > Signal(1D)` with bear-side inverse for near-bear transition; optional same-analysis-point `4H` and `1H` confirmation only when requested. | Price swing versus histogram swing disagreement; confirmation requires the expected histogram turn, not MACD alone. | `MACD(1D) > Signal(1D)` / bull-phase continuation or re-entry logic; Setup-specific MACD baseline and historical phase behavior may refine quality. | Recompute the same MACD condition stack as of D and validate against D+X movement. | `MACD_1D_*`, optional `MACD_4H_*`, `MACD_1H_*`, phase outputs | `MACD` is an indicator family row; path cells must hold exact relations, not vague labels. |
+| MACD crossover distance / freshness | Close series; lower-timeframe API data only when requested | L3/L4/L5 | Distance and bars-since-cross decide near-transition readiness and freshness. | Audit/context only unless a specific divergence rule later uses freshness. | Audit/context only unless Setup maturity later uses it. | Compare fresh versus stale D conditions by D+X outcome. | `MACD_1D_CrossoverDistance`, bars-since-cross fields | Distance/freshness cannot override path boundary by itself. |
+| MACD zero-line context | Close series | L3/L4/L5 | Zero-line side and nearness are context for transition quality; not the crossover itself. | Context only by default. | Context only by default. | Compare D zero-line context buckets with D+X outcome. | zero-line context outputs TBD | Zero-line context is separate from crossover detection. |
+| Historical MACD phase episodes / Setup baseline | Close series, V2-style lookback | L3/L4 | Probability/readiness aid only if explicitly approved. | Context/audit only by default. | Stock-specific bull/bear phase episodes, `MACD(8,21,5)` baseline where approved, maturity and percentile/history logic. | Validate whether D phase maturity/strength predicted D+X move. | `Momentum_Phase`, `Momentum_Strength`, maturity outputs TBD | Use only inside SETUP unless another path explicitly signs it off. |
 | RSI 1D | Close series | L3/L4 | Q/C recovery/weakening | R/Q for momentum disagreement | Q/S headroom | Store D RSI and compare outcome buckets by D+X. | `RSI_1D`, `RSIScore` | RSI is not a global hard gate. |
 | RSI upper boundary 80 | RSI 1D | L4 | N/C | C | S/Q | Validate Momentum headroom buckets against D+X. | `RSIHeadroomTo80`, `RSIScore` TBD | Distance from current RSI to 80 can affect confidence, not route. |
 | ADX 1D | API price series as required | L3/L4 | Q/C expansion support | C | Q/S trend confidence | Validate ADX bucket contribution by D+X. | `ADX_1D`, `ADX_State`, `ADXScore` | Low ADX should not automatically suppress early valid setups. |

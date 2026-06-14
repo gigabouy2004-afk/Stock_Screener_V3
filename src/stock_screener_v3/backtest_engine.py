@@ -8,6 +8,7 @@ from typing import Protocol
 import pandas as pd
 
 from stock_screener_v3.backtesting import forward_best_high_return, forward_return, forward_worst_low_return, slice_as_of
+from stock_screener_v3.data_provider import PriceProvider
 from stock_screener_v3.models import (
     BacktestResult,
     BacktestRunConfig,
@@ -18,11 +19,6 @@ from stock_screener_v3.models import (
 )
 from stock_screener_v3.regime_config import RegimeBenchmarkConfig
 from stock_screener_v3.universe import deterministic_sample, filter_records
-
-
-class PriceProvider(Protocol):
-    def daily(self, symbol: str) -> pd.DataFrame:
-        """Return daily OHLCV data for the symbol."""
 
 
 class StageEvaluator(Protocol):
