@@ -16,7 +16,7 @@ This is the startup and restart handover for the charter branch created from `ma
 
 Every new session on this branch must read:
 
-1. `docs/charter/main_engine_charter.md`
+1. `docs/charter/engine_program_charter_fresh_2026-06-01.md`
 2. `docs/charter/v3_original_intent_and_handover.md`
 3. `docs/architecture/main_engine_way_forward_plan.md`
 4. `docs/handover/current_session_handover.md`
@@ -49,7 +49,7 @@ Nightly handover and restart notes must point to these branch-resident documents
 ## Preferred Next Restart Point
 
 1. Verify branch and sync state.
-2. Re-read the new charter.
+2. Re-read the original charter files.
 3. Re-read the working plan.
 4. Continue detailing or implementing only from the carried-forward June 12/13 direction.
 

@@ -12,7 +12,8 @@ This branch is the root-start branch from `main` for the June 12/13 charter docu
 
 The new canonical entry points for active work are:
 
-- [docs/charter/main_engine_charter.md](docs/charter/main_engine_charter.md)
+- [docs/charter/engine_program_charter_fresh_2026-06-01.md](docs/charter/engine_program_charter_fresh_2026-06-01.md)
+- [docs/charter/v3_original_intent_and_handover.md](docs/charter/v3_original_intent_and_handover.md)
 - [docs/architecture/main_engine_way_forward_plan.md](docs/architecture/main_engine_way_forward_plan.md)
 - [docs/handover/main_engine_startup_handover.md](docs/handover/main_engine_startup_handover.md)
 

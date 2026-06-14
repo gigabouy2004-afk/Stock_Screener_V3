@@ -12,7 +12,7 @@ Its purpose is only to restate, in one place, the active working direction alrea
 
 The active document chain for this branch is:
 
-1. `docs/charter/main_engine_charter.md`
+1. `docs/charter/engine_program_charter_fresh_2026-06-01.md`
 2. `docs/charter/v3_original_intent_and_handover.md`
 3. `docs/handover/current_session_handover.md`
 4. `docs/handover/v3_engine_rebuild_startup.md`
