@@ -320,6 +320,15 @@ For example, in Setup:
 
 WeightedScore applies only after stage qualification. It is an individual candidate score derived from multiple values inside the selected stage and its active matrix rows. It must not be used before stage qualification and must not be used as a substitute for stage selection.
 
+WeightedScore is computed per ticker, not once per stage family. The selected stage family determines the scoring formula, active matrix rows, and interpretation rules for that ticker.
+
+This means two tickers can both score `81` while still belonging to different qualified stage families. For example:
+
+- ticker `T1` may qualify as `PRE_BULL_CROSSOVER` with score `81`
+- ticker `T2` may qualify as `SETUP` with score `81`
+
+Those scores are valid inside their own category logic. They must be displayed under their respective stage-family groups rather than treated as a single flat ranking pool by default.
+
 ### L5 Output, Audit, And Backtest
 
 L5 writes user-facing and developer-facing evidence.
@@ -506,6 +515,7 @@ This matrix consolidates the individual V2 intents that must be preserved in V3.
 | L3 functions calculate only evidence required by L2. | design lines 234-277; recap lines 130-149, 346-356 | L3 | Indicator functions are compute-only and on-demand. | No classification inside raw indicator calculation. |
 | Baseline must not erase transition versus established regime. | design lines 302-318; evidence matrix lines 47, 152 | L1/L2 | Separate transition, continuation, divergence, and fallback. | Above-zero bull continuation must not become `PRE_BULL_CROSSOVER`. |
 | Stage-family scores are not equivalent across paths. | design line 347 | L4/L5 | Score inside each path and compare only through an explicit ranking contract. | Do not treat Crossover 80 as equivalent to Divergence 80 without ranking rules. |
+| WeightedScore is per ticker inside the selected family, then grouped for display by family. | V2-compatible UI/export contract plus clarified scoring intent | L4/L5/UI | Compute each ticker's score from its own indicator/evidence values under the selected family formula, then display results grouped by stage family. | Do not collapse all qualified rows into one flat score pool by default. |
 
 ### Data And API Method
 
