@@ -6,7 +6,17 @@ It exists to keep the new program charter, architecture analysis, backtesting pl
 
 ## Intent
 
-Canonical V3 intent is recorded in [docs/charter/v3_original_intent_and_handover.md](docs/charter/v3_original_intent_and_handover.md). That document is the first source of truth for all future work.
+The active forward branch is now `main-engine-sync-reset`.
+
+V3 is retained as historical material, but it is no longer the default branch direction for new work.
+
+The new canonical entry points for active work are:
+
+- [docs/charter/main_engine_charter.md](docs/charter/main_engine_charter.md)
+- [docs/architecture/main_engine_way_forward_plan.md](docs/architecture/main_engine_way_forward_plan.md)
+- [docs/handover/main_engine_startup_handover.md](docs/handover/main_engine_startup_handover.md)
+
+Older V3 documents remain in the repo as historical references.
 
 At the core, V3 is a CSV-based, user-directed stock analysis engine with exactly three user-facing analysis paths:
 
