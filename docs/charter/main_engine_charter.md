@@ -1,24 +1,22 @@
-# Main Engine Charter
+# V3 Charter Branch Charter
 
 Date: 2026-06-15
 
-Status: Active replacement charter after V3 retirement.
+Status: Active root charter branch for the June 12/13 documentation direction.
 
 Repo: `D:\Tools\Stock_Screener_V3`
 
 GitHub: `https://github.com/gigabouy2004-afk/Stock_Screener_V3.git`
 
-Branch: `main-engine-sync-reset`
+Branch: `V3_charter`
 
 ## Purpose
 
-V3 is old and is being retired as the active forward path.
-
-This document is the canonical source of truth for the new engine branch that starts clean from `main` and carries the new charter, the new implementation plan, and the active handover documents together in one branch tree.
+This document is the canonical source of truth for the charter branch that starts from `main` and carries the June 12/13 charter direction, the active implementation plan, and the active handover documents together in one branch tree.
 
 ## Branch Root Rule
 
-All new product-direction work must start from a branch/tree rooted from `main`.
+All charter-led product-direction work must start from a branch/tree rooted from `main`.
 
 The active branch must contain, together:
 
@@ -61,9 +59,11 @@ Nightly handover notes must point to these in-repo branch documents as the prima
 
 ## Product Intent
 
-The new engine remains a user-directed stock analysis engine.
+The engine remains a user-directed stock analysis engine.
 
-It must be built as one coherent hierarchy, not as stitched legacy paths and not as a continuation of the V3 rebuild branch.
+The June 12/13 documentation intent is that the charter work starts from the root only, as the `V3_charter` branch from `main`.
+
+It must be built as one coherent hierarchy, not as stitched legacy paths and not as a continuation of the `v3-engine-rebuild-from-charter` branch.
 
 The engine flow remains:
 
@@ -79,14 +79,17 @@ CSV input
 -> L5 output and D+X validation
 ```
 
-Allowed user-facing paths for the new engine must be explicitly documented in this branch before implementation expands.
+Allowed user-facing paths must be explicitly documented in this branch before implementation expands.
 
 ## Documentation Authority
 
 Every new session on this branch must read these documents in this order:
 
 1. `docs/charter/main_engine_charter.md`
-2. `docs/architecture/main_engine_way_forward_plan.md`
-3. `docs/handover/main_engine_startup_handover.md`
+2. `docs/charter/v3_original_intent_and_handover.md`
+3. `docs/architecture/main_engine_way_forward_plan.md`
+4. `docs/handover/current_session_handover.md`
+5. `docs/handover/v3_engine_rebuild_startup.md`
+6. `docs/handover/main_engine_startup_handover.md`
 
-Older V3 documents may be used only as historical reference material. They are not the controlling direction for this branch.
+The June 12/13 charter and handover documents must be carried forward on `V3_charter` as part of the active branch document set, not left outside the root charter branch.

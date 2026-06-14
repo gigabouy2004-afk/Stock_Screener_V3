@@ -6,9 +6,9 @@ It exists to keep the new program charter, architecture analysis, backtesting pl
 
 ## Intent
 
-The active forward branch is now `main-engine-sync-reset`.
+The active charter branch is now `V3_charter`.
 
-V3 is retained as historical material, but it is no longer the default branch direction for new work.
+This branch is the root-start branch from `main` for the June 12/13 charter documentation direction.
 
 The new canonical entry points for active work are:
 

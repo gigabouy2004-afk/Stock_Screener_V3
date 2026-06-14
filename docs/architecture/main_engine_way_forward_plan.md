@@ -2,13 +2,13 @@
 
 Date: 2026-06-15
 
-Branch: `main-engine-sync-reset`
+Branch: `V3_charter`
 
-This plan is the execution contract for the new post-V3 branch.
+This plan is the execution contract for the root-start charter branch.
 
 ## Phase 1: Branch Baseline
 
-Goal: establish the new branch from `main` as the only active forward path.
+Goal: establish the charter branch from `main` as the active root documentation path.
 
 Deliverables:
 
@@ -17,6 +17,7 @@ Deliverables:
 - New handover committed on this branch.
 - README updated to point to the new branch-resident documents.
 - Local and GitHub sync rule documented explicitly.
+- June 12/13 documentation intent restated as root-start branch direction.
 
 Rules:
 
@@ -24,19 +25,19 @@ Rules:
 - The charter, plan, and handover must live together on this branch.
 - No completed step may update only one of local or GitHub.
 
-## Phase 2: Retirement Boundary
+## Phase 2: Root Charter Boundary
 
-Goal: separate historical V3 material from the new working direction.
+Goal: separate the `V3_Charter` root branch from the older rebuild branch.
 
 Deliverables:
 
-- Explicit statement that V3 is retired as the active forward path.
-- Clear rule that V3 documents are historical reference only unless explicitly re-adopted.
+- Explicit statement that June 12/13 charter work starts from `main` root as `V3_charter`.
+- Clear rule that `v3-engine-rebuild-from-charter` is not the root for the charter-led track.
 - Branch startup order that points to the new documents first.
 
 ## Phase 3: New Engine Definition
 
-Goal: define the new engine scope before code direction changes.
+Goal: define the charter-led engine scope before code direction changes.
 
 Deliverables:
 
