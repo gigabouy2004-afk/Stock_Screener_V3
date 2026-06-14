@@ -1,4 +1,4 @@
-# Stock Screener V3 Handover
+# Stock Screener V3_Charter Handover
 
 Last updated: 2026-06-13
 
@@ -6,11 +6,58 @@ Repo: `D:\Tools\Stock_Screener_V3`
 
 GitHub: `https://github.com/gigabouy2004-afk/Stock_Screener_V3.git`
 
-Branch: `main`
+Branch: `V3_Charter`
 
-Latest confirmed local and pushed code baseline: current `main` after the canonical V3 original-intent documentation checkpoint.
+Latest confirmed local and pushed code baseline: `V3_Charter` after the charter-scoring clarification and initial scoring-config extraction.
 
-Local `main` and `origin/main` should be verified in sync at restart with `git status --short --branch`.
+Local `V3_Charter` and `origin/V3_Charter` should be verified in sync at restart with `git status --short --branch`.
+
+## Immediate Restart Start Point
+
+For the next session, do not rediscover the intent from older branch-wrapper or June 1 documents.
+
+Start exactly here:
+
+1. Read [v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_original_intent_and_handover.md).
+2. Read this handover file.
+3. Verify sync:
+
+```powershell
+cd D:\Tools\Stock_Screener_V3
+git status --short --branch
+git log --oneline --decorate -8
+```
+
+Expected branch state:
+
+```text
+## V3_Charter...origin/V3_Charter
+```
+
+Latest relevant commits:
+
+- `f62421b Extract stage scoring config defaults`
+- `6bd0daf Clarify per-ticker grouped scoring intent`
+- `9fde1b7 Align V3_Charter seed documentation`
+
+Current scoring baseline:
+
+- score is per ticker
+- scoring formula is category/stage-family specific
+- equal scores across families are valid
+- results should be grouped/displayed by stage family, not flattened into one global score list by default
+
+Current code baseline:
+
+- `src/stock_screener_v3/scoring_config.py` exists and holds the first extracted stage scoring defaults
+- `src/stock_screener_v3/evaluators.py` now reads selected/watch score cutoffs and score-weight labels from scoring config
+- behavior is intentionally unchanged from the prior evaluator output
+
+Current next coding step:
+
+- continue moving hardcoded route/context/component thresholds out of `evaluators.py`
+- keep scoring and selection behavior unchanged unless explicitly approved
+- keep local and GitHub synchronized at the end of each completed step
 
 ## Canonical Immutable Scope
 
@@ -69,7 +116,7 @@ git log --oneline --decorate -8
 Expected status at this handover:
 
 ```text
-## main...origin/main
+## V3_Charter...origin/V3_Charter
 ```
 
 ## Test Status Warning

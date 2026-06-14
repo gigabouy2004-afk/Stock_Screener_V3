@@ -1,6 +1,6 @@
-# Stock Screener Engine Rebuild 2026
+# Stock Screener V3_Charter
 
-This repository is the clean reset workspace for the stock screener engine.
+This repository is the active `V3_Charter` workspace for the stock screener engine.
 
 It exists to keep the new program charter, architecture analysis, backtesting plan, implementation work, and validation evidence in one Git-tracked folder.
 
@@ -28,6 +28,32 @@ Previous broad rebuild language:
 - Backtest the same production engine as of historical dates.
 
 The engine is not intended to perform automated trading, position sizing, capital allocation, or order execution.
+
+## Restart First
+
+For any new session, start in this order:
+
+1. [docs/charter/v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_original_intent_and_handover.md)
+2. [docs/handover/current_session_handover.md](/D:/Tools/Stock_Screener_V3/docs/handover/current_session_handover.md)
+3. Verify local/GitHub sync:
+
+```powershell
+cd D:\Tools\Stock_Screener_V3
+git status --short --branch
+git log --oneline --decorate -8
+```
+
+Expected active branch:
+
+```text
+## V3_Charter...origin/V3_Charter
+```
+
+Latest restart-relevant commits:
+
+- `f62421b Extract stage scoring config defaults`
+- `6bd0daf Clarify per-ticker grouped scoring intent`
+- `9fde1b7 Align V3_Charter seed documentation`
 
 ## Source Documents
 
@@ -179,16 +205,21 @@ The UI opens at `http://127.0.0.1:8010`.
 
 ## Current Next Plan
 
-The Crossover, Divergence, and Momentum Setup stage families are V1 complete and tested for the current engine scope.
+The current coding direction on `V3_Charter` is:
 
-Integrated holistic validation now has a repeatable report command and baseline artifact:
+- keep the June 13 charter as the only seed/source-of-truth
+- preserve per-ticker, category-specific scoring grouped by stage family
+- remove hardcoded evaluator thresholds and score weights from inline logic
+- move scoring/interpretation defaults into explicit config or matrix-owned structures without changing current behavior unless approved
 
-- `python -m stock_screener_v3.cli integrated-report ...`
-- `validation/runs/v3_integrated_holistic_calibration_20260611.md`
+Completed recent steps:
 
-The next focus is review-priority and collision-slice calibration:
+- `9fde1b7` aligned `V3_Charter` seed documentation
+- `6bd0daf` clarified the charter scoring rule: per-ticker score, grouped display by stage family
+- `f62421b` started code extraction of stage scoring defaults into `src/stock_screener_v3/scoring_config.py`
 
-- inspect weak ranking buckets `MOMENTUM_SETUP` and `DIVERGENCE+MOMENTUM_SETUP`;
-- review `NEEDS_MANUAL_REVIEW` and `BELOW_EMA200` calibration across sectors and D dates;
-- decide whether a sector/date/context urgency layer is warranted before threshold changes;
-- keep enriched universe metadata/filtering as the parallel data-quality track.
+The next coding focus is:
+
+- continue moving hardcoded route/context/component thresholds out of `src/stock_screener_v3/evaluators.py`
+- preserve current output behavior while externalizing defaults
+- keep local `D:\Tools\Stock_Screener_V3` and `origin/V3_Charter` synchronized after each completed step
