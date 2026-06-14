@@ -13,6 +13,7 @@ from stock_screener_v3.evaluators import (
     rank_stage_evaluations,
 )
 from stock_screener_v3.models import CandidateClass, EvidencePack, PriceDataBundle, ReviewPriority, ScoreResult, StageEvaluation, UniverseRecord
+from stock_screener_v3.scoring_config import CROSSOVER_SCORING, DIVERGENCE_SCORING, SETUP_SCORING
 
 
 def make_price_frame(values: list[float]) -> pd.DataFrame:
@@ -47,6 +48,7 @@ class CrossoverEvaluatorTests(unittest.TestCase):
         self.assertIn("MACD_1D_CrossoverState", evaluation.diagnostics)
         self.assertIn("CrossoverOpportunityType", evaluation.diagnostics)
         self.assertIn("CrossoverQualityComponents", evaluation.diagnostics)
+        self.assertEqual(evaluation.diagnostics["ScoreWeights"], CROSSOVER_SCORING.weights.as_label())
 
     def test_crossover_evaluator_returns_status_quo_without_route(self) -> None:
         values = [100 - index * 0.4 for index in range(100)]
@@ -69,6 +71,7 @@ class CrossoverEvaluatorTests(unittest.TestCase):
         self.assertEqual(evaluation.candidate_state, "BULL_PULLBACK_REENTRY")
         self.assertEqual(evaluation.diagnostics["MomentumSetupOpportunityType"], "BULLISH_PULLBACK_REENTRY")
         self.assertIn("BULL_PULLBACK_REENTRY_ROUTE", evaluation.reason_codes)
+        self.assertEqual(evaluation.diagnostics["ScoreWeights"], SETUP_SCORING.weights.as_label())
 
     def test_momentum_pullback_reentry_below_ema200_is_rejected(self) -> None:
         evidence = make_evidence(
@@ -188,6 +191,7 @@ class CrossoverEvaluatorTests(unittest.TestCase):
         self.assertEqual(evaluation.diagnostics["DivergenceType"], "REGULAR")
         self.assertEqual(evaluation.diagnostics["DivergenceOpportunityType"], "BULLISH_REGULAR_DIVERGENCE")
         self.assertIn(evaluation.candidate_class, {CandidateClass.SELECTED, CandidateClass.WATCH})
+        self.assertEqual(evaluation.diagnostics["ScoreWeights"], DIVERGENCE_SCORING.weights.as_label())
 
     def test_divergence_rejects_raw_bullish_divergence_below_ema200(self) -> None:
         evidence = make_divergence_evidence("BULLISH_DIVERGENCE")

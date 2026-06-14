@@ -13,6 +13,7 @@ from stock_screener_v3.models import (
     StageEvaluation,
     UniverseRecord,
 )
+from stock_screener_v3.scoring_config import CROSSOVER_SCORING, DIVERGENCE_SCORING, SETUP_SCORING
 
 
 @dataclass(frozen=True)
@@ -119,6 +120,7 @@ class StageFamilyEvaluator:
 
 
 def evaluate_crossover(evidence: EvidencePack) -> StageEvaluation:
+    scoring = CROSSOVER_SCORING
     diagnostics = evidence_to_diagnostics(evidence)
     momentum = evidence.momentum
     trend = evidence.trend
@@ -198,12 +200,12 @@ def evaluate_crossover(evidence: EvidencePack) -> StageEvaluation:
         candidate_class = CandidateClass.STATUS_QUO
         priority = ReviewPriority.NONE
         confidence = "LOW"
-    elif total >= 72 and not risk_tags:
+    elif total >= scoring.thresholds.selected_min and not risk_tags:
         candidate_state = route.candidate_state
         candidate_class = CandidateClass.SELECTED
         priority = ReviewPriority.A
         confidence = "HIGH"
-    elif total >= 58:
+    elif total >= scoring.thresholds.watch_min:
         candidate_state = route.candidate_state
         candidate_class = CandidateClass.WATCH
         priority = ReviewPriority.B if not risk_tags else ReviewPriority.NEEDS_MANUAL_REVIEW
@@ -221,7 +223,7 @@ def evaluate_crossover(evidence: EvidencePack) -> StageEvaluation:
             "MACDScore": route_score + timing_score,
             "RSIScore": _rsi_score(rsi),
             "ADXScore": _adx_score(_number(trend.get("ADX_1D"))),
-            "ScoreWeights": "route=30,structure=20,participation=15,acceptance=15,context=10,risk=10",
+            "ScoreWeights": scoring.weights.as_label(),
             "ConfirmationScore": round(timing_score + structure_score + participation_score, 2),
             "QualityContextScore": round(context_score + risk_score, 2),
             "CrossoverInternalState": crossover_state,
@@ -370,6 +372,7 @@ def _macd_pair_is_below_zero_line(macd_value: float | None, macd_signal: float |
 
 
 def evaluate_momentum_setup(evidence: EvidencePack) -> StageEvaluation:
+    scoring = SETUP_SCORING
     diagnostics = evidence_to_diagnostics(evidence)
     momentum = evidence.momentum
     trend = evidence.trend
@@ -444,12 +447,12 @@ def evaluate_momentum_setup(evidence: EvidencePack) -> StageEvaluation:
         candidate_class = CandidateClass.REJECTED
         priority = ReviewPriority.C
         confidence = "LOW"
-    elif total >= 72 and not risk_tags:
+    elif total >= scoring.thresholds.selected_min and not risk_tags:
         candidate_state = route.candidate_state
         candidate_class = CandidateClass.SELECTED
         priority = ReviewPriority.A
         confidence = "HIGH"
-    elif total >= 58:
+    elif total >= scoring.thresholds.watch_min:
         candidate_state = route.candidate_state
         candidate_class = CandidateClass.WATCH
         priority = ReviewPriority.B if not risk_tags else ReviewPriority.NEEDS_MANUAL_REVIEW
@@ -467,7 +470,7 @@ def evaluate_momentum_setup(evidence: EvidencePack) -> StageEvaluation:
             "MACDScore": route_score + timing_score,
             "RSIScore": _rsi_score(rsi),
             "ADXScore": _adx_score(_number(trend.get("ADX_1D"))),
-            "ScoreWeights": "route=30,structure=20,participation=15,acceptance=15,context=10,risk=10",
+            "ScoreWeights": scoring.weights.as_label(),
             "ConfirmationScore": round(timing_score + structure_score + participation_score, 2),
             "QualityContextScore": round(context_score + risk_score, 2),
             "MomentumSetupOpportunityType": route.opportunity_type,
@@ -510,6 +513,7 @@ def evaluate_momentum_setup(evidence: EvidencePack) -> StageEvaluation:
 
 
 def evaluate_divergence(evidence: EvidencePack) -> StageEvaluation:
+    scoring = DIVERGENCE_SCORING
     diagnostics = evidence_to_diagnostics(evidence)
     structure = evidence.structure
     trend = evidence.trend
@@ -576,12 +580,12 @@ def evaluate_divergence(evidence: EvidencePack) -> StageEvaluation:
         candidate_class = CandidateClass.STATUS_QUO
         priority = ReviewPriority.NONE
         confidence = "LOW"
-    elif total >= 72 and not risk_tags and confirmation_state == "CONFIRMED":
+    elif total >= scoring.thresholds.selected_min and not risk_tags and confirmation_state == "CONFIRMED":
         candidate_state = route.candidate_state
         candidate_class = CandidateClass.SELECTED
         priority = ReviewPriority.A
         confidence = "HIGH"
-    elif total >= 56 and not raw_bullish_below_ema200:
+    elif total >= scoring.thresholds.watch_min and not raw_bullish_below_ema200:
         candidate_state = route.candidate_state
         candidate_class = CandidateClass.WATCH
         priority = ReviewPriority.B if not risk_tags else ReviewPriority.NEEDS_MANUAL_REVIEW
@@ -599,7 +603,7 @@ def evaluate_divergence(evidence: EvidencePack) -> StageEvaluation:
             "MACDScore": route_score + timing_score,
             "RSIScore": _rsi_score(rsi),
             "ADXScore": _adx_score(_number(trend.get("ADX_1D"))),
-            "ScoreWeights": "route=30,timing=20,structure=15,participation=10,context=15,risk=10",
+            "ScoreWeights": scoring.weights.as_label(),
             "ConfirmationScore": round(timing_score + structure_score + participation_score, 2),
             "QualityContextScore": round(context_score + risk_score, 2),
             "DivergenceDirection": route.direction,
