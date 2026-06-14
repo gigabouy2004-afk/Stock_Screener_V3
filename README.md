@@ -6,18 +6,7 @@ It exists to keep the new program charter, architecture analysis, backtesting pl
 
 ## Intent
 
-The active charter branch is now `V3_charter`.
-
-This branch is the root-start branch from `main` for the June 12/13 charter documentation direction.
-
-The new canonical entry points for active work are:
-
-- [docs/charter/engine_program_charter_fresh_2026-06-01.md](docs/charter/engine_program_charter_fresh_2026-06-01.md)
-- [docs/charter/v3_original_intent_and_handover.md](docs/charter/v3_original_intent_and_handover.md)
-- [docs/architecture/main_engine_way_forward_plan.md](docs/architecture/main_engine_way_forward_plan.md)
-- [docs/handover/main_engine_startup_handover.md](docs/handover/main_engine_startup_handover.md)
-
-Older V3 documents remain in the repo as historical references.
+Canonical V3 intent is recorded in [docs/charter/v3_original_intent_and_handover.md](docs/charter/v3_original_intent_and_handover.md). That document is the first source of truth for all future work.
 
 At the core, V3 is a CSV-based, user-directed stock analysis engine with exactly three user-facing analysis paths:
 
