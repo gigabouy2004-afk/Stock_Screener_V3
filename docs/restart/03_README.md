@@ -6,7 +6,7 @@ It exists to keep the new program charter, architecture analysis, backtesting pl
 
 ## Intent
 
-Canonical `V3_Charter` intent is recorded in [docs/charter/v3_original_intent_and_handover.md](docs/charter/v3_original_intent_and_handover.md). That document is the only seed/source-of-truth charter for future work.
+Canonical `V3_Charter` intent is recorded in [docs/charter/v3_original_intent_and_handover.md](docs/charter/v3_original_intent_and_handover.md). The standalone consolidated charter is [docs/charter/v3_charter_consolidated_engine_design.md](docs/charter/v3_charter_consolidated_engine_design.md) and should be used as the primary restart/reference document for full engine intent.
 
 At the core, `V3_Charter` is a CSV-based, user-directed stock analysis engine with exactly three user-facing analysis paths:
 
@@ -47,8 +47,9 @@ Single-folder restart pack:
 - [docs/restart](/D:/Tools/Stock_Screener_V3/docs/restart)
 
 1. [docs/charter/v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_original_intent_and_handover.md)
-2. [docs/handover/current_session_handover.md](/D:/Tools/Stock_Screener_V3/docs/handover/current_session_handover.md)
-3. Verify local/GitHub sync:
+2. [docs/charter/v3_charter_consolidated_engine_design.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_charter_consolidated_engine_design.md)
+3. [docs/handover/current_session_handover.md](/D:/Tools/Stock_Screener_V3/docs/handover/current_session_handover.md)
+4. Verify local/GitHub sync:
 
 ```powershell
 cd D:\Tools\Stock_Screener_V3
@@ -76,6 +77,7 @@ Current restart reading note:
 ## Source Documents
 
 - Canonical V3 original intent and handover: [docs/charter/v3_original_intent_and_handover.md](docs/charter/v3_original_intent_and_handover.md)
+- Standalone consolidated charter: [docs/charter/v3_charter_consolidated_engine_design.md](docs/charter/v3_charter_consolidated_engine_design.md)
 - Current engine gap analysis: [docs/analysis/current_engine_gap_analysis_against_fresh_charter_2026-06-01.md](docs/analysis/current_engine_gap_analysis_against_fresh_charter_2026-06-01.md)
 - V2 operational parity contract: [docs/architecture/v2_operational_parity_contract.md](docs/architecture/v2_operational_parity_contract.md)
 - V3 evidence-stage matrix: [docs/architecture/v3_evidence_stage_matrix.md](docs/architecture/v3_evidence_stage_matrix.md)

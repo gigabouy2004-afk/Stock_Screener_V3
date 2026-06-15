@@ -11,8 +11,9 @@ D:\Tools\Stock_Screener_V3\docs\restart
 Read in this order:
 
 1. [01_v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/restart/01_v3_original_intent_and_handover.md)
-2. [02_current_session_handover.md](/D:/Tools/Stock_Screener_V3/docs/restart/02_current_session_handover.md)
-3. [03_README.md](/D:/Tools/Stock_Screener_V3/docs/restart/03_README.md)
+2. [04_v3_charter_consolidated_engine_design.md](/D:/Tools/Stock_Screener_V3/docs/restart/04_v3_charter_consolidated_engine_design.md)
+3. [02_current_session_handover.md](/D:/Tools/Stock_Screener_V3/docs/restart/02_current_session_handover.md)
+4. [03_README.md](/D:/Tools/Stock_Screener_V3/docs/restart/03_README.md)
 
 Then verify branch state:
 

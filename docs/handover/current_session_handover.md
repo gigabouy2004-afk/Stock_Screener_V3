@@ -23,8 +23,9 @@ Single-folder restart pack:
 - [docs/restart](/D:/Tools/Stock_Screener_V3/docs/restart)
 
 1. Read [v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_original_intent_and_handover.md).
-2. Read this handover file.
-3. Verify sync:
+2. Read [v3_charter_consolidated_engine_design.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_charter_consolidated_engine_design.md).
+3. Read this handover file.
+4. Verify sync:
 
 ```powershell
 cd D:\Tools\Stock_Screener_V3
@@ -89,6 +90,12 @@ Read this document first in every future session:
 
 ```text
 docs/charter/v3_original_intent_and_handover.md
+```
+
+Then read the standalone consolidated charter:
+
+```text
+docs/charter/v3_charter_consolidated_engine_design.md
 ```
 
 It is the authoritative source for `V3_Charter` intent: user CSV input, exactly three analysis paths (`CROSSOVER`, `DIVERGENCE`, `SETUP`), V2 L0/L1/L2/L3-style path-first architecture, D-date processing, D+X self-backtesting, and the rule that local documentation and GitHub must be updated before ending a completed step.
