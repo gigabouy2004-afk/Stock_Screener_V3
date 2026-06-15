@@ -241,6 +241,12 @@ Responsibilities:
 - fetch data through the configured provider;
 - isolate per-symbol provider/data failures.
 
+Strict historical slicing rule:
+
+- for historical D-date analysis, the provider wrapper must explicitly slice and truncate the active computation dataframe at index `D` before passing data into any indicator library, evidence builder, or evaluator;
+- forward bars beyond `D` must be stored in a separate isolated forward-validation container;
+- that forward-validation container belongs only to L5 and must not be visible to L1, L2, L3, or L4.
+
 ### L1: Baseline
 
 L1 establishes neutral technical facts.
@@ -265,11 +271,20 @@ L2 decides which family or families are legitimately eligible, based on:
 
 L2 is where path leakage must be prevented.
 
+Route-isolate lock rule:
+
+- L2 must operate with mutual-exclusion route locks;
+- if only `CROSSOVER` is selected, `SETUP` and `DIVERGENCE` must be completely locked out and ignored as evaluators;
+- if only `SETUP` is selected, `CROSSOVER` and `DIVERGENCE` must be completely locked out and ignored;
+- if only `DIVERGENCE` is selected, `CROSSOVER` and `SETUP` must be completely locked out and ignored;
+- if multiple stage families are selected, only those explicitly selected families may enter the evaluable set.
+
 Examples of prohibited leakage:
 
 - a continuation state classified as a fresh crossover;
 - divergence inferred because crossover failed;
 - setup logic used as fallback after crossover failure.
+- failure to qualify for one route must never cascade into accidental fallback evaluation by another unselected route.
 
 ### L3: Evidence
 
@@ -283,6 +298,13 @@ Responsibilities:
 - evidence packaging for L4.
 
 L3 must not perform broad global interpretation before path selection.
+
+Lower-timeframe synchronization rule:
+
+- lower-timeframe layers such as `4H` and `1H` cannot act as independent entry gates;
+- they are nested validation parameters within L3 evidence;
+- they may be evaluated only after a valid daily (`1D`) macro route has already been established;
+- they may refine timing, freshness, and confirmation quality, but they must not manufacture a route that the daily baseline did not authorize.
 
 ### L4: Classification And Scoring
 
@@ -320,6 +342,14 @@ The provider contract is:
 - support per-symbol failure isolation;
 - support forward D+X validation retrieval;
 - avoid changing engine semantics through provider-specific quirks.
+
+Historical replay isolation rule:
+
+- historical runs must expose two distinct data zones:
+  - active computation data through `D`
+  - isolated forward validation data after `D`
+- only the active computation zone may be used for indicator calculation;
+- the forward validation zone must remain inaccessible until L5 validation.
 
 The engine must not assume universal OHLCV input.
 
@@ -439,6 +469,29 @@ timing_score + structure_score + participation_score
 ```text
 context_score + risk_score
 ```
+
+### External Scoring Manifest Direction
+
+The required long-term direction is that scoring behavior be owned by an external declarative manifest instead of hidden in evaluator code.
+
+That includes:
+
+- component weights;
+- selected/watch thresholds;
+- conditional point awards;
+- conditional point deductions;
+- scoring bands tied to indicator states;
+- route-specific or family-specific modifier rules.
+
+Examples that should ultimately move out of hardcoded evaluator logic:
+
+- `volume_vs_20 >= 100` yielding participation points;
+- RSI band scoring;
+- ADX band scoring;
+- MACD near-transition distance thresholds;
+- family-specific selected/watch cutoffs.
+
+The filename `scoring_manifest.json` is a valid example, but the governing rule is declarative external ownership, not the exact filename or file extension.
 
 ### Current Formal Stage Scoring Defaults
 
@@ -582,6 +635,16 @@ Outputs:
 
 - `STATUS_QUO`
 - `Reason = BULL_CROSS_ABOVE_ZERO_LINE_CONTINUATION`
+
+Technical clarification:
+
+- the problematic edge case is not strictly "both above zero";
+- the real blind spot is any mixed zero-line bull-cross state where the MACD line and signal line are no longer both `<= 0`, but the pair is not yet cleanly treated by a signed-off rule.
+
+Required charter rule:
+
+- a mixed zero-line bull-cross case, such as `MACD line > 0` while `Signal line <= 0`, must not be left as an undefined fallback;
+- it must be handled by an explicit matrix/config-owned rule instead of silently defaulting into generic `STATUS_QUO`.
 
 #### Fresh Bear Cross
 
@@ -799,6 +862,12 @@ Special context outputs:
 - `MomentumSetupContextRule = PULLBACK_REENTRY_BELOW_EMA200`
 - `MomentumSetupContextAction = REJECT`
 
+Forced-rejection output rule:
+
+- the engine must still complete the normal score computation and diagnostic trail for the row;
+- the row must keep its computed `WeightedScore`, component scores, reason codes, and supporting diagnostics;
+- the candidate is then emitted as a priority `C` rejection rather than collapsed into an empty-scored record.
+
 ### Setup Reason And Risk Interpretation
 
 Reasons may include:
@@ -998,11 +1067,31 @@ Examples:
 - `BELOW_EMA200` forced-reject logic in certain bullish paths
 - family-specific route details that are not yet matrix/config owned
 
+Long-boundary math that is still not formally defined enough:
+
+- `EMA52High`
+- `EMA200High`
+- associated boundary-distance percentages
+- associated breach-count logic
+
 This matters because the long-term charter direction is:
 
 - matrix-owned meaning
 - config-owned tunable values
 - no hidden interpretation drift inside evaluator code
+
+## Long-Boundary Formula Requirement
+
+Before full implementation signoff, the following must be formally defined in math terms:
+
+- whether `EMA52High` means an EMA applied to periodic highs;
+- whether it means a smoothed trailing high-channel construct over a 52-period lookback;
+- whether `EMA200High` means an EMA on highs, a trailing-extrema construct, or another bounded high-series definition;
+- how each distance-to-boundary percentage is calculated;
+- how each breach count is calculated;
+- which lookback window, smoothing rule, and denominator are used.
+
+Until those formulas are explicitly written and approved, those rows remain conceptually approved but computationally unresolved.
 
 ## D-Date And D+X Validation
 
@@ -1197,6 +1286,7 @@ These are still open for signoff before hardcoding behavior:
 - whether sector/market context contributes to score or remains audit/context only;
 - whether `4H` and `1H` MACD stay Crossover-only initially;
 - whether `PriceBand` remains a future placeholder or becomes a signed-off matrix row.
+- exact declarative manifest schema and file location for external scoring ownership.
 
 ## Restart Instruction
 
