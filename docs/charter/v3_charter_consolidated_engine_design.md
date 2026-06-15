@@ -21,7 +21,7 @@ Rules:
 
 | Version | Date | Commit | Change |
 |---|---|---|---|
-| `V1.4` | 2026-06-16 | `pending` | Established the D-vs-D+X engine as a permanent regression suite, added regression-gate and drift-tolerance rules, tightened deep-copy slicing and lower-timeframe truncation, clarified mixed zero-line and Setup forced-rejection handling, and added manifest-version/test-matrix requirements. |
+| `V1.4` | 2026-06-16 | `0f49e7c` | Established the D-vs-D+X engine as a permanent regression suite, added regression-gate and drift-tolerance rules, tightened deep-copy slicing and lower-timeframe truncation, clarified mixed zero-line and Setup forced-rejection handling, and added manifest-version/test-matrix requirements. |
 | `V1.3` | 2026-06-16 | `075eabc` | Added in-document revision control and explicit versioning. |
 | `V1.2` | 2026-06-16 | `ded6099` | Added explicit route-isolate locks, strict D-vs-D+X slicing isolation, lower-timeframe nesting rule, scoring-manifest direction, forced-rejection output rule, and long-boundary formula requirements. |
 | `V1.1` | 2026-06-16 | `409bd91` | Absorbed scoring and interpretation extraction into the consolidated charter so it can serve as the single offline master document. |
