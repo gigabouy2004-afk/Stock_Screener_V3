@@ -6,7 +6,7 @@ Repo: `D:\Tools\Stock_Screener_V3`
 
 Branch: `V3_Charter`
 
-Document version: `V1.5`
+Document version: `V1.6`
 
 ## Revision Control
 
@@ -21,7 +21,9 @@ Rules:
 
 | Version | Date | Commit | Change |
 |---|---|---|---|
-| `V1.5` | 2026-06-16 | `be20679` | Locked long-boundary math definitions, established the versioned scoring-manifest schema, and declared the regression dataset/test-matrix repository layout and approval workflow. |`r`n| `V1.4` | 2026-06-16 | `0f49e7c` | Established the D-vs-D+X engine as a permanent regression suite, added regression-gate and drift-tolerance rules, tightened deep-copy slicing and lower-timeframe truncation, clarified mixed zero-line and Setup forced-rejection handling, and added manifest-version/test-matrix requirements. |
+| `V1.6` | 2026-06-16 | `pending` | Locked RSI upper-bound manifest shape, set the SETUP path to a monthly default with optional override, fixed sector and market context to zero-weight audit rows, restricted 4H and 1H MACD to CROSSOVER initially, and promoted PriceBand into a signed-off matrix row. |
+| `V1.5` | 2026-06-16 | `be20679` | Locked long-boundary math definitions, established the versioned scoring-manifest schema, and declared the regression dataset/test-matrix repository layout and approval workflow. |
+| `V1.4` | 2026-06-16 | `0f49e7c` | Established the D-vs-D+X engine as a permanent regression suite, added regression-gate and drift-tolerance rules, tightened deep-copy slicing and lower-timeframe truncation, clarified mixed zero-line and Setup forced-rejection handling, and added manifest-version/test-matrix requirements. |
 | `V1.3` | 2026-06-16 | `075eabc` | Added in-document revision control and explicit versioning. |
 | `V1.2` | 2026-06-16 | `ded6099` | Added explicit route-isolate locks, strict D-vs-D+X slicing isolation, lower-timeframe nesting rule, scoring-manifest direction, forced-rejection output rule, and long-boundary formula requirements. |
 | `V1.1` | 2026-06-16 | `409bd91` | Absorbed scoring and interpretation extraction into the consolidated charter so it can serve as the single offline master document. |
@@ -329,6 +331,12 @@ Lower-timeframe synchronization rule:
 - they may refine timing, freshness, and confirmation quality, but they must not manufacture a route that the daily baseline did not authorize;
 - their API pulls must also truncate at the final matching market minute that still belongs to trading day `D`.
 
+Initial release scope rule:
+
+- lower-timeframe MACD confirmation using `4H` and `1H` is approved only for the `CROSSOVER` family in the initial release;
+- `SETUP` remains anchored to its higher-timeframe structural baseline and must not use `4H` or `1H` MACD as an initial route, filter, or scoring gate;
+- `DIVERGENCE` does not use lower-timeframe MACD by default in the initial release unless a later charter revision signs it off explicitly.
+
 ### L4: Classification And Scoring
 
 L4 converts routed evidence into:
@@ -523,6 +531,22 @@ Examples that should ultimately move out of hardcoded evaluator logic:
 - family-specific selected/watch cutoffs.
 
 The filename `scoring_manifest.json` is a valid example, but the governing rule is declarative external ownership, not the exact filename or file extension.
+
+Approved RSI upper-bound schema rule:
+
+```json
+"rsi_upper_bound": {
+  "default": 80.0,
+  "sector_overrides_enabled": false
+}
+```
+
+Meaning:
+
+- `80.0` is the current global baseline upper bound for RSI scoring;
+- the threshold must live inside an object, not a raw integer or float field;
+- this preserves forward compatibility for later sector-specific, market-specific, or fundamental-factor overlays such as EPS momentum without breaking the manifest shape;
+- until future overrides are explicitly approved, `sector_overrides_enabled` remains `false`.
 
 ### Current Formal Stage Scoring Defaults
 
@@ -1392,6 +1416,20 @@ the real meaning usually depends on a relation or condition, not on one naked va
 - `DIVERGENCE` validates whether an opportunity may be developing.
 - `SETUP` is a more tactical pure-play market-based entry path supported by TA confidence.
 
+### SETUP Timeframe Default
+
+`SETUP` uses a one-month candle baseline by default.
+
+Reason:
+
+- the `SETUP` family is intended for long-term equity accumulation and structural entry review;
+- the monthly horizon reduces intra-week noise and minor corrective churn that would otherwise pollute higher-level setup interpretation.
+
+Execution rule:
+
+- the engine default for `SETUP` is a `1M` candle evaluation baseline;
+- the pipeline may accept an explicit user override for controlled alternate validation sweeps, such as `1W`, but the default chartered behavior remains monthly.
+
 ## Consolidated Matrix
 
 | Indicator Family / Evidence | API data required | V3 level | CROSSOVER | DIVERGENCE | SETUP | Backtesting / D+X | Primary outputs | Guardrail |
@@ -1405,12 +1443,12 @@ the real meaning usually depends on a relation or condition, not on one naked va
 | D+X close price | API forward price | L5 | Validation-only forward close price. | Validation-only forward close price. | Validation-only forward close price. | Simple forward close comparison versus D. | `DPlus{N}ReturnPct` | Forward price is loaded after classification. |
 | D+X high/low path | API forward high/low when available | L5 | Validation-only forward path extremes. | Validation-only forward path extremes. | Validation-only forward path extremes. | Optional best-high/worst-low validation. | `DPlus{N}WorstLowReturnPct`, `DPlus{N}BestHighReturnPct` | Path validation is separate from simple endpoint check. |
 | Close series | API historical price | L1/L3 | Route and timing input for close-derived calculations. | Route and context input for close-derived calculations. | Route and quality input for close-derived calculations. | Use only rows <= D for indicator values. | close-derived indicators | Fetch through API per calculation; not a CSV requirement. |
-| MACD | Close series for 1D baseline; lower-timeframe API data only when requested | L3/L4 | `MACD(1D) < Signal(1D)` with `Histogram(1D)` near zero for near-bull transition; `MACD(1D) > Signal(1D)` with bear-side inverse for near-bear transition; optional same-analysis-point `4H` and `1H` confirmation only when requested. | Price swing versus histogram swing disagreement; confirmation requires the expected histogram turn, not MACD alone. | `MACD(1D) > Signal(1D)` / bull-phase continuation or re-entry logic; Setup-specific MACD baseline and historical phase behavior may refine quality. | Recompute the same MACD condition stack as of D and validate against D+X movement. | `MACD_1D_*`, optional `MACD_4H_*`, `MACD_1H_*`, phase outputs | `MACD` is an indicator family row; path cells must hold exact relations, not vague labels. |
+| MACD | Close series for 1D baseline; lower-timeframe API data only when requested | L3/L4 | `MACD(1D) < Signal(1D)` with `Histogram(1D)` near zero for near-bull transition; `MACD(1D) > Signal(1D)` with bear-side inverse for near-bear transition; optional same-analysis-point `4H` and `1H` confirmation is approved here for the initial release only. | Price swing versus histogram swing disagreement; confirmation requires the expected histogram turn, not MACD alone; no default `4H`/`1H` layer in the initial release. | `MACD(1D) > Signal(1D)` / bull-phase continuation or re-entry logic; Setup-specific MACD baseline and historical phase behavior may refine quality; no default `4H`/`1H` layer in the initial release. | Recompute the same MACD condition stack as of D and validate against D+X movement. | `MACD_1D_*`, optional `MACD_4H_*`, `MACD_1H_*`, phase outputs | `MACD` is an indicator family row; path cells must hold exact relations, not vague labels. |
 | MACD crossover distance / freshness | Close series; lower-timeframe API data only when requested | L3/L4/L5 | Distance and bars-since-cross decide near-transition readiness and freshness. | Audit/context only unless a specific divergence rule later uses freshness. | Audit/context only unless Setup maturity later uses it. | Compare fresh versus stale D conditions by D+X outcome. | `MACD_1D_CrossoverDistance`, bars-since-cross fields | Distance/freshness cannot override path boundary by itself. |
 | MACD zero-line context | Close series | L3/L4/L5 | Zero-line side and nearness are context for transition quality; not the crossover itself. | Context only by default. | Context only by default. | Compare D zero-line context buckets with D+X outcome. | zero-line context outputs | Zero-line context is separate from crossover detection. |
 | Historical MACD phase episodes / Setup baseline | Close series, V2-style lookback | L3/L4 | Probability/readiness aid only if explicitly approved. | Context/audit only by default. | Stock-specific bull/bear phase episodes, `MACD(8,21,5)` baseline where approved, maturity and percentile/history logic. | Validate whether D phase maturity/strength predicted D+X move. | `Momentum_Phase`, `Momentum_Strength`, maturity outputs | Use only inside SETUP unless another path explicitly signs it off. |
 | RSI 1D | Close series | L3/L4 | Quality and context for recovery or weakening after crossover conditions are already known. | Route support plus quality for momentum disagreement. | Quality and scoring input for setup headroom. | Store D RSI and compare outcome buckets by D+X. | `RSI_1D`, `RSIScore` | RSI is not a global hard gate. |
-| RSI upper boundary | RSI 1D | L4 | Not used by default; optional context only if specifically approved. | Context only by default. | Scoring and quality input for remaining headroom below the configured upper boundary. | Validate headroom buckets against D+X. | `RSIHeadroom`, `RSIScore` | Distance to the upper boundary can affect confidence, not route. |
+| RSI upper boundary | RSI 1D plus manifest-owned threshold object | L4 | Not used by default; optional context only if specifically approved. | Context only by default. | Scoring and quality input for remaining headroom below the configured upper boundary; baseline `default = 80.0` from manifest object, with future override hooks preserved but disabled by default. | Validate headroom buckets against D+X. | `RSIHeadroom`, `RSIScore` | Distance to the upper boundary can affect confidence, not route. |
 | ADX 1D | API price series as required | L3/L4 | Quality and context for trend expansion support. | Context for whether divergence has enough trend strength to matter. | Quality and scoring input for setup trend confidence. | Validate ADX bucket contribution by D+X. | `ADX_1D`, `ADX_State`, `ADXScore` | Low ADX should not automatically suppress early valid setups. |
 | PlusDI / MinusDI | API price series as required | L3/L4 | Quality input for buyer versus seller participation after crossover conditions are known. | Context for directional participation around divergence. | Quality input for participation strength during continuation or re-entry. | Validate D directional participation against D+X. | `PlusDI_1D`, `MinusDI_1D` | Directional participation only after path route is known. |
 | EMA20 | Close series | L3/L4 | Timing and quality input for reclaim, hold, or loss around transition. | Context for short-structure support or resistance. | Route and quality input for pullback re-entry or continuation. | Validate D EMA20 relation against D+X. | `EMA20`, `EMA20_Above`, `EMA20_Below` | EMA20 meaning is path-specific. |
@@ -1448,9 +1486,9 @@ the real meaning usually depends on a relation or condition, not on one naked va
 | Average daily volume metadata | CSV metadata/API profile cache | L0/L4 | Context input for liquidity suitability. | Context input for liquidity suitability. | Context input for liquidity suitability. | Validate liquidity risk buckets by D+X when metadata is available. | `AvgDailyVolume` | Metadata/context; do not require live profile calls in hot path. |
 | Average monthly volume metadata | CSV metadata/API profile cache | L0/L4 | Context input for liquidity suitability. | Context input for liquidity suitability. | Context input for liquidity suitability. | Validate liquidity risk buckets by D+X when metadata is available. | `AvgMonthlyVolume` | Preserve if supplied. |
 | Low liquidity tag | volume/profile metadata | L4/L5 | Context and risk flag for low tradability. | Context and risk flag for low tradability. | Context and risk flag for low tradability. | Validate low-liquidity rows by D+X separately. | `LowLiquidity`, risk tags | Risk/review priority, not hidden rejection unless scoped. |
-| PriceBand module | API price series | L3/L4 | TBD pending exact path-specific meaning. | TBD pending exact path-specific meaning. | TBD pending exact path-specific meaning. | No backtest until row/cell meaning is defined. | TBD | Define row/cell before use. |
-| Market regime | API benchmark data when requested/configured | L3/L4 | Context only as bounded market background. | Context only as bounded market background. | Context only as bounded market background. | Validate as bounded context split, not base route. | `MarketRegime` | Bounded context only; no universe expansion. |
-| Sector context/regime | CSV sector + API benchmark only when requested/configured | L3/L4 | Context only as bounded sector background. | Context only as bounded sector background. | Context only as bounded sector background. | Validate as bounded context split for supplied CSV only. | `SectorRegime` | No sector calibration project by default. |
+| PriceBand | API price series and long-term moving-average boundary context | L3/L4 | Context and scoring aid for whether price is already too stretched for a fresh pre-bull entry or has materially broken support for a pre-bear review. | Context only by default unless a later divergence rule signs off a stronger use. | Quality and scoring aid for whether the candidate is entering too far above its long-term support bands for a prudent fresh entry. | Validate PriceBand buckets against D+X after the same long-term boundary logic is applied on D. | `PriceBandState`, band-distance fields, score deductions where approved | PriceBand is a long-term support and extension verifier, not a swing-target or sell-trigger module. |
+| Market regime | API benchmark data when requested/configured | L5 | Audit/context metadata only with `Weight = 0` in the active scoring pipeline. | Audit/context metadata only with `Weight = 0` in the active scoring pipeline. | Audit/context metadata only with `Weight = 0` in the active scoring pipeline. | Validate as bounded audit metadata, not base route. | `MarketRegime` | Bounded context only; no universe expansion and no default score contribution. |
+| Sector context/regime | CSV sector + API benchmark only when requested/configured | L5 | Audit/context metadata only with `Weight = 0` in the active scoring pipeline. | Audit/context metadata only with `Weight = 0` in the active scoring pipeline. | Audit/context metadata only with `Weight = 0` in the active scoring pipeline. | Validate as bounded audit metadata for supplied CSV only. | `SectorRegime` | No sector calibration project by default and no default score contribution. |
 | Sector relative strength | API benchmark and symbol data | L3/L4 | TBD, with context-only use if later approved. | TBD, with context-only use if later approved. | Quality and context input when explicitly requested and defined. | No backtest until exact formula is defined. | TBD | Future bounded evidence, not broad scan. |
 | AI / sentiment (`GetAI`) | External API/future provider | L3/L4 | TBD future context row only after provider, timestamp, and no-lookahead rules are defined. | TBD future context row only after provider, timestamp, and no-lookahead rules are defined. | TBD future context row only after provider, timestamp, and no-lookahead rules are defined. | No backtest until provider, timestamp, and no-lookahead rules are defined. | TBD | Future optional evidence only after core engine is stable. |
 | Reason codes | evaluator output | L4/L5 | Audit output for why the ticker passed or failed Crossover. | Audit output for why the ticker passed or failed Divergence. | Audit output for why the ticker passed or failed Setup. | Required to explain D classification before D+X validation. | `ReasonCodes`, path reason fields | No failed check disappears silently. |
@@ -1471,11 +1509,7 @@ From the current approved design:
 
 These are still open for signoff before hardcoding behavior:
 
-- exact `RSI` upper-bound scoring rule;
-- whether one-month candle behavior is default for `SETUP` or only user-requested;
-- whether sector/market context contributes to score or remains audit/context only;
-- whether `4H` and `1H` MACD stay Crossover-only initially;
-- whether `PriceBand` remains a future placeholder or becomes a signed-off matrix row;
+- exact future sector-override and EPS-factor expansion rules for the `rsi_upper_bound` object once overrides are enabled;
 
 ## Restart Instruction
 
