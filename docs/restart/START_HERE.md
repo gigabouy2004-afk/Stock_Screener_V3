@@ -10,10 +10,11 @@ D:\Tools\Stock_Screener_V3\docs\restart
 
 Read in this order:
 
-1. [01_v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/restart/01_v3_original_intent_and_handover.md)
+1. [05_v3_charter_restart_signoff_20260616.md](/D:/Tools/Stock_Screener_V3/docs/restart/05_v3_charter_restart_signoff_20260616.md)
 2. [04_v3_charter_consolidated_engine_design.md](/D:/Tools/Stock_Screener_V3/docs/restart/04_v3_charter_consolidated_engine_design.md)
-3. [02_current_session_handover.md](/D:/Tools/Stock_Screener_V3/docs/restart/02_current_session_handover.md)
+3. [01_v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/restart/01_v3_original_intent_and_handover.md)
 4. [03_README.md](/D:/Tools/Stock_Screener_V3/docs/restart/03_README.md)
+5. [02_current_session_handover.md](/D:/Tools/Stock_Screener_V3/docs/restart/02_current_session_handover.md)
 
 Then verify branch state:
 
@@ -31,17 +32,17 @@ Expected branch state:
 
 Current restart-relevant commits:
 
-- `66c381f Refresh V3_Charter restart documentation`
-- `f62421b Extract stage scoring config defaults`
-- `6bd0daf Clarify per-ticker grouped scoring intent`
+- `bb50871 Record V1.6 charter revision hash`
+- `9c11379 Advance master charter to V1.6`
+- `5e8180a Record V1.5 charter revision hash`
 
 Current restart baseline:
 
 - `V3_Charter` is the only working branch baseline.
-- June 13 charter is the only seed/source-of-truth charter.
-- Score is per ticker, category-specific, and grouped by stage family for display.
-- The working matrix to review/edit is [v3_stage_family_indicator_working_matrix.md](/D:/Tools/Stock_Screener_V3/docs/architecture/v3_stage_family_indicator_working_matrix.md), and it should be read in plain English rather than shorthand role codes.
-- Current coding focus is continued extraction of hardcoded evaluator thresholds into explicit config/matrix-owned structures.
+- `V1.6` of the consolidated charter is the current offline master document.
+- The 2026-06-16 restart signoff is the low-token first-read document.
+- `Stock_Engine3_Pythoncode.py` is accepted only as a seed scaffold, not a drop-in engine replacement.
+- Current coding focus is integration of accepted manifest/slicing/EMA-high logic into the package and web app path.
 
 These files are restart copies collected into one folder for convenience. If they ever drift, the canonical sources remain:
 

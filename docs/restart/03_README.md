@@ -46,9 +46,10 @@ Single-folder restart pack:
 
 - [docs/restart](/D:/Tools/Stock_Screener_V3/docs/restart)
 
-1. [docs/charter/v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_original_intent_and_handover.md)
+1. [docs/handover/v3_charter_restart_signoff_20260616.md](/D:/Tools/Stock_Screener_V3/docs/handover/v3_charter_restart_signoff_20260616.md)
 2. [docs/charter/v3_charter_consolidated_engine_design.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_charter_consolidated_engine_design.md)
-3. [docs/handover/current_session_handover.md](/D:/Tools/Stock_Screener_V3/docs/handover/current_session_handover.md)
+3. [docs/charter/v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_original_intent_and_handover.md)
+4. [docs/handover/current_session_handover.md](/D:/Tools/Stock_Screener_V3/docs/handover/current_session_handover.md)
 4. Verify local/GitHub sync:
 
 ```powershell
@@ -65,14 +66,15 @@ Expected active branch:
 
 Latest restart-relevant commits:
 
-- `f62421b Extract stage scoring config defaults`
-- `6bd0daf Clarify per-ticker grouped scoring intent`
-- `9fde1b7 Align V3_Charter seed documentation`
+- `bb50871 Record V1.6 charter revision hash`
+- `9c11379 Advance master charter to V1.6`
+- `5e8180a Record V1.5 charter revision hash`
 
 Current restart reading note:
 
 - use [docs/architecture/v3_stage_family_indicator_working_matrix.md](/D:/Tools/Stock_Screener_V3/docs/architecture/v3_stage_family_indicator_working_matrix.md) as the editable matrix
 - read it as a plain-English signoff table, not as shorthand role codes
+- use [C:\Users\dell\OneDrive\Desktop\Stock_Engine3_Pythoncode.py](/C:/Users/dell/OneDrive/Desktop/Stock_Engine3_Pythoncode.py) only as a reviewed seed scaffold, not as the active engine file
 
 ## Source Documents
 

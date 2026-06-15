@@ -1,6 +1,6 @@
-# Stock Screener V3_Charter Handover
+# Stock Screener V3_Charter Current Session Handover
 
-Last updated: 2026-06-13
+Last updated: 2026-06-16
 
 Repo: `D:\Tools\Stock_Screener_V3`
 
@@ -8,24 +8,37 @@ GitHub: `https://github.com/gigabouy2004-afk/Stock_Screener_V3.git`
 
 Branch: `V3_Charter`
 
-Latest confirmed local and pushed code baseline: `V3_Charter` after the charter-scoring clarification and initial scoring-config extraction.
+## Current Restart Source
 
-Local `V3_Charter` and `origin/V3_Charter` should be verified in sync at restart with `git status --short --branch`.
+Use this file only as a compact pointer.
 
-## Immediate Restart Start Point
+Primary restart/signoff document:
 
-For the next session, do not rediscover the intent from older branch-wrapper or June 1 documents.
+- [v3_charter_restart_signoff_20260616.md](/D:/Tools/Stock_Screener_V3/docs/handover/v3_charter_restart_signoff_20260616.md)
 
-Start exactly here:
+Primary offline master charter:
 
-Single-folder restart pack:
+- [v3_charter_consolidated_engine_design.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_charter_consolidated_engine_design.md)
 
-- [docs/restart](/D:/Tools/Stock_Screener_V3/docs/restart)
+Original seed charter:
 
-1. Read [v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_original_intent_and_handover.md).
-2. Read [v3_charter_consolidated_engine_design.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_charter_consolidated_engine_design.md). This is now the single offline master document for engine intent, matrix, interpretation, and scoring.
-3. Read this handover file.
-4. Verify sync:
+- [v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_original_intent_and_handover.md)
+
+## Current Status
+
+- Current charter version: `V1.6`
+- Local and GitHub should match on `V3_Charter`
+- Reviewed seed code file:
+  - [C:\Users\dell\OneDrive\Desktop\Stock_Engine3_Pythoncode.py](/C:/Users/dell/OneDrive/Desktop/Stock_Engine3_Pythoncode.py)
+- That external file is accepted as a seed scaffold only, not as the active engine script
+
+## Current Next Step
+
+- integrate accepted manifest, slicing, and EMA-high logic from the reviewed seed file into the package under `src/stock_screener_v3`
+- keep `web_app_v3.py` as the active UI surface
+- do not create a parallel desktop-engine path
+
+## Sync Check
 
 ```powershell
 cd D:\Tools\Stock_Screener_V3
@@ -33,61 +46,11 @@ git status --short --branch
 git log --oneline --decorate -8
 ```
 
-Expected branch state:
+Expected state:
 
 ```text
 ## V3_Charter...origin/V3_Charter
 ```
-
-Latest relevant commits:
-
-- `f62421b Extract stage scoring config defaults`
-- `6bd0daf Clarify per-ticker grouped scoring intent`
-- `9fde1b7 Align V3_Charter seed documentation`
-
-Current scoring baseline:
-
-- score is per ticker
-- scoring formula is category/stage-family specific
-- equal scores across families are valid
-- results should be grouped/displayed by stage family, not flattened into one global score list by default
-
-Current stage-family meaning baseline:
-
-- `PRE_BULL_CROSSOVER` means early-entry screening to capture the natural bull phase.
-- `PRE_BEAR_CROSSOVER` means capital-preservation screening for existing long-held equities, not stop-loss trading logic.
-- `DIVERGENCE` means validating whether an investment opportunity may be developing.
-- `SETUP` means a pure-play market-based entry path where TA provides confidence for an entry that may be shorter-lived than a full Pre-Bull phase capture.
-
-Current matrix/provider baseline:
-
-- indicator processing is API/provider-driven, not hardcoded/static-data-driven
-- current default free backend is Yahoo Finance through `yfinance`
-- provider choice must stay behind a swappable abstraction
-- matrix rows should be indicator families such as `MACD`, `RSI`, `EMA Stack`
-- stage-family cells should contain the exact condition logic or processing function, not vague indicator labels like `MACD(1D)` alone
-- `docs/architecture/v3_stage_family_indicator_working_matrix.md` is now being rewritten as a plain-English signoff matrix; do not rely on shorthand role codes as the primary review surface
-- the legend should be read in full words: `Route`, `Timing`, `Quality`, `Context`, `Scoring`, `Audit`, `Validation`, `Not used by default`, `TBD`
-- newly added V2-backed matrix rows now include `CMF`, `OBV`, `Efficiency ratio`, `Relative strength / benchmark relative performance`, `Down volume pressure`, and `Failed high / ceiling structure`
-- `StopLoss` is out of scope because this engine screens long-term equities; it does not manage trading stops or portfolio automation
-
-Current scoring-reference baseline:
-
-- the consolidated charter now absorbs the current V2-style scoring computation, helper interpretations, thresholds, route-score logic, and emitted score diagnostics
-- [v2_scoring_logic_and_interpretation_extraction.md](/D:/Tools/Stock_Screener_V3/docs/architecture/v2_scoring_logic_and_interpretation_extraction.md) remains as a supporting extraction/reference file
-
-Current code baseline:
-
-- `src/stock_screener_v3/scoring_config.py` exists and holds the first extracted stage scoring defaults
-- `src/stock_screener_v3/evaluators.py` now reads selected/watch score cutoffs and score-weight labels from scoring config
-- behavior is intentionally unchanged from the prior evaluator output
-
-Current next coding step:
-
-- keep the provider contract explicit while preserving the current free Yahoo-backed implementation
-- continue moving hardcoded route/context/component thresholds out of `evaluators.py`
-- keep scoring and selection behavior unchanged unless explicitly approved
-- keep local and GitHub synchronized at the end of each completed step
 
 ## Canonical Immutable Scope
 
