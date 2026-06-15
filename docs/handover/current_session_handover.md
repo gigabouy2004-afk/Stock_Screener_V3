@@ -58,6 +58,8 @@ Current matrix/provider baseline:
 - provider choice must stay behind a swappable abstraction
 - matrix rows should be indicator families such as `MACD`, `RSI`, `EMA Stack`
 - stage-family cells should contain the exact condition logic or processing function, not vague indicator labels like `MACD(1D)` alone
+- `docs/architecture/v3_stage_family_indicator_working_matrix.md` is now being rewritten as a plain-English signoff matrix; do not rely on shorthand role codes as the primary review surface
+- the legend should be read in full words: `Route`, `Timing`, `Quality`, `Context`, `Scoring`, `Audit`, `Validation`, `Not used by default`, `TBD`
 
 Current code baseline:
 

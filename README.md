@@ -61,6 +61,11 @@ Latest restart-relevant commits:
 - `6bd0daf Clarify per-ticker grouped scoring intent`
 - `9fde1b7 Align V3_Charter seed documentation`
 
+Current restart reading note:
+
+- use [docs/architecture/v3_stage_family_indicator_working_matrix.md](/D:/Tools/Stock_Screener_V3/docs/architecture/v3_stage_family_indicator_working_matrix.md) as the editable matrix
+- read it as a plain-English signoff table, not as shorthand role codes
+
 ## Source Documents
 
 - Canonical V3 original intent and handover: [docs/charter/v3_original_intent_and_handover.md](docs/charter/v3_original_intent_and_handover.md)

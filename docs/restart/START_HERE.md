@@ -39,6 +39,7 @@ Current restart baseline:
 - `V3_Charter` is the only working branch baseline.
 - June 13 charter is the only seed/source-of-truth charter.
 - Score is per ticker, category-specific, and grouped by stage family for display.
+- The working matrix to review/edit is [v3_stage_family_indicator_working_matrix.md](/D:/Tools/Stock_Screener_V3/docs/architecture/v3_stage_family_indicator_working_matrix.md), and it should be read in plain English rather than shorthand role codes.
 - Current coding focus is continued extraction of hardcoded evaluator thresholds into explicit config/matrix-owned structures.
 
 These files are restart copies collected into one folder for convenience. If they ever drift, the canonical sources remain:
