@@ -21,7 +21,7 @@ Rules:
 
 | Version | Date | Commit | Change |
 |---|---|---|---|
-| `V1.6` | 2026-06-16 | `pending` | Locked RSI upper-bound manifest shape, set the SETUP path to a monthly default with optional override, fixed sector and market context to zero-weight audit rows, restricted 4H and 1H MACD to CROSSOVER initially, and promoted PriceBand into a signed-off matrix row. |
+| `V1.6` | 2026-06-16 | `9c11379` | Locked RSI upper-bound manifest shape, set the SETUP path to a monthly default with optional override, fixed sector and market context to zero-weight audit rows, restricted 4H and 1H MACD to CROSSOVER initially, and promoted PriceBand into a signed-off matrix row. |
 | `V1.5` | 2026-06-16 | `be20679` | Locked long-boundary math definitions, established the versioned scoring-manifest schema, and declared the regression dataset/test-matrix repository layout and approval workflow. |
 | `V1.4` | 2026-06-16 | `0f49e7c` | Established the D-vs-D+X engine as a permanent regression suite, added regression-gate and drift-tolerance rules, tightened deep-copy slicing and lower-timeframe truncation, clarified mixed zero-line and Setup forced-rejection handling, and added manifest-version/test-matrix requirements. |
 | `V1.3` | 2026-06-16 | `075eabc` | Added in-document revision control and explicit versioning. |
