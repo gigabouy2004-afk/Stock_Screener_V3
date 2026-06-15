@@ -6,7 +6,7 @@ Repo: `D:\Tools\Stock_Screener_V3`
 
 Branch: `V3_Charter`
 
-Document version: `V1.4`
+Document version: `V1.5`
 
 ## Revision Control
 
@@ -21,7 +21,7 @@ Rules:
 
 | Version | Date | Commit | Change |
 |---|---|---|---|
-| `V1.4` | 2026-06-16 | `0f49e7c` | Established the D-vs-D+X engine as a permanent regression suite, added regression-gate and drift-tolerance rules, tightened deep-copy slicing and lower-timeframe truncation, clarified mixed zero-line and Setup forced-rejection handling, and added manifest-version/test-matrix requirements. |
+| `V1.5` | 2026-06-16 | `pending` | Locked long-boundary math definitions, established the versioned scoring-manifest schema, and declared the regression dataset/test-matrix repository layout and approval workflow. |`r`n| `V1.4` | 2026-06-16 | `0f49e7c` | Established the D-vs-D+X engine as a permanent regression suite, added regression-gate and drift-tolerance rules, tightened deep-copy slicing and lower-timeframe truncation, clarified mixed zero-line and Setup forced-rejection handling, and added manifest-version/test-matrix requirements. |
 | `V1.3` | 2026-06-16 | `075eabc` | Added in-document revision control and explicit versioning. |
 | `V1.2` | 2026-06-16 | `ded6099` | Added explicit route-isolate locks, strict D-vs-D+X slicing isolation, lower-timeframe nesting rule, scoring-manifest direction, forced-rejection output rule, and long-boundary formula requirements. |
 | `V1.1` | 2026-06-16 | `409bd91` | Absorbed scoring and interpretation extraction into the consolidated charter so it can serve as the single offline master document. |
@@ -1126,7 +1126,109 @@ Before full implementation signoff, the following must be formally defined in ma
 
 These definitions must eventually resolve into explicit formulas, not descriptive labels only.
 
-Until those formulas are explicitly written and approved, those rows remain conceptually approved but computationally unresolved.
+Approved long-boundary definitions:
+
+- `EMA52High[t]` = exponential moving average applied directly to the daily `High` series using a span/lookback of `52`;
+- `EMA200High[t]` = exponential moving average applied directly to the daily `High` series using a span/lookback of `200`;
+- the source array for both is the provider-supplied historical `High` series truncated at `D`;
+- no trailing-local-extrema substitution is allowed unless a future charter revision explicitly introduces a separate boundary family row for that purpose;
+- `DistanceToEMA52HighPct[t] = ((Close[t] - EMA52High[t]) / EMA52High[t]) * 100`;
+- `DistanceToEMA200HighPct[t] = ((Close[t] - EMA200High[t]) / EMA200High[t]) * 100`;
+- breach logic must be evaluated on the same truncated `High`/`Close` history used for the current run;
+- any breach-count field must state its exact lookback window in the field name or manifest entry.
+
+Current baseline implementation rule:
+
+- use the provider-truncated daily `High` series;
+- use the same EMA convention as the rest of the engine's EMA family;
+- do not reinterpret these fields as high-channel maxima or rolling local-peak trackers.
+
+These rows are now approved for implementation on that basis.
+
+## Scoring Manifest Schema
+
+The scoring configuration must be externalized into a versioned declarative manifest.
+
+Approved baseline filename:
+
+```text
+config/scoring_manifest.json
+```
+
+Approved required top-level schema:
+
+```json
+{
+  "matrix_version": "V1.0",
+  "manifest_version": "V1.0",
+  "engine_version": "V3_Charter",
+  "paths": {},
+  "global_defaults": {},
+  "indicator_rules": {},
+  "classification_thresholds": {},
+  "forced_rejections": {},
+  "diagnostics": {},
+  "metadata": {}
+}
+```
+
+Approved schema intent:
+
+- `matrix_version`: binds scoring behavior to the approved matrix revision;
+- `manifest_version`: version of the manifest schema/content itself;
+- `engine_version`: target charter/engine line this manifest belongs to;
+- `paths`: per-path scoring blocks for `CROSSOVER`, `DIVERGENCE`, and `SETUP`;
+- `global_defaults`: shared defaults such as rounding, tolerance, or generic fallback weights where explicitly approved;
+- `indicator_rules`: indicator-level score rules, thresholds, bucket logic, and contextual overrides;
+- `classification_thresholds`: `SELECTED`, `WATCH`, `REJECTED`, and any future signed-off class thresholds;
+- `forced_rejections`: explicit path-specific hard-boundary rules such as `BULL_PULLBACK_REENTRY + BELOW_EMA200`;
+- `diagnostics`: reason-code, score-component, and audit-output requirements;
+- `metadata`: author/date/notes/approval state.
+
+Approved schema rules:
+
+- no scoring magic numbers may remain hidden in evaluator code once externalized here;
+- sector/market/context overrides must appear declaratively here when approved;
+- future schema changes must increment `manifest_version`;
+- behaviorally material row/score changes must increment `matrix_version`;
+- historical replay must load the manifest version explicitly requested by the regression run.
+
+## Regression Dataset And Test-Matrix Repository
+
+The permanent regression suite must use file-based, reviewable historical datasets and matching expectation maps.
+
+Approved baseline storage root:
+
+```text
+tests/regression/
+```
+
+Approved baseline folder layout:
+
+```text
+tests/regression/
+  datasets/
+  manifests/
+  matrices/
+  snapshots/
+  approvals/
+```
+
+Approved folder meanings:
+
+- `datasets/`: historical ticker universes, date inputs, and reference run definitions;
+- `manifests/`: version-pinned scoring manifests used by each regression run;
+- `matrices/`: test-matrix mapping files that declare expected route/classification/score assertions;
+- `snapshots/`: frozen third-party context payloads required for deterministic historical replay;
+- `approvals/`: signoff notes, dataset ownership records, and approved baseline run summaries.
+
+Approved approval workflow:
+
+- any new regression dataset or matrix file must be added as a named artifact under `tests/regression/`;
+- the artifact must declare its owner, purpose, covered paths, manifest version, and D/D+X horizon;
+- changes to approved regression artifacts require explicit review before they replace an existing baseline;
+- production engine changes must run against the approved regression set before merge;
+- if a new dataset is exploratory only, it must not overwrite an approved baseline artifact until signed off.
 
 ## D-Date And D+X Validation
 
@@ -1370,13 +1472,10 @@ From the current approved design:
 These are still open for signoff before hardcoding behavior:
 
 - exact `RSI` upper-bound scoring rule;
-- exact meaning of `EMA52High`, `EMA200High`, and related long-boundary datapoints;
 - whether one-month candle behavior is default for `SETUP` or only user-requested;
 - whether sector/market context contributes to score or remains audit/context only;
 - whether `4H` and `1H` MACD stay Crossover-only initially;
 - whether `PriceBand` remains a future placeholder or becomes a signed-off matrix row;
-- exact declarative manifest schema and file location for external scoring ownership;
-- exact regression-dataset ownership, storage location, and approval workflow for the test-matrix mapping file.
 
 ## Restart Instruction
 
