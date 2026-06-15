@@ -6,6 +6,8 @@ Repo: `D:\Tools\Stock_Screener_V3`
 
 Branch: `V3_Charter`
 
+Document version: `V1.3`
+
 ## Revision Control
 
 This document must maintain its own in-document revision log in addition to Git history.
@@ -17,11 +19,12 @@ Rules:
 - Git history is not a substitute for this in-document revision record
 - future sessions must preserve this table instead of overwriting it
 
-| Date | Commit | Change |
-|---|---|---|
-| 2026-06-16 | `ded6099` | Added explicit route-isolate locks, strict D-vs-D+X slicing isolation, lower-timeframe nesting rule, scoring-manifest direction, forced-rejection output rule, and long-boundary formula requirements. |
-| 2026-06-16 | `409bd91` | Absorbed scoring and interpretation extraction into the consolidated charter so it can serve as the single offline master document. |
-| 2026-06-16 | `59b9cc7` | Created the standalone consolidated charter and wired restart documents to use it. |
+| Version | Date | Commit | Change |
+|---|---|---|---|
+| `V1.3` | 2026-06-16 | `075eabc` | Added in-document revision control and explicit versioning. |
+| `V1.2` | 2026-06-16 | `ded6099` | Added explicit route-isolate locks, strict D-vs-D+X slicing isolation, lower-timeframe nesting rule, scoring-manifest direction, forced-rejection output rule, and long-boundary formula requirements. |
+| `V1.1` | 2026-06-16 | `409bd91` | Absorbed scoring and interpretation extraction into the consolidated charter so it can serve as the single offline master document. |
+| `V1.0` | 2026-06-16 | `59b9cc7` | Created the standalone consolidated charter and wired restart documents to use it. |
 
 ## Document Role
 
