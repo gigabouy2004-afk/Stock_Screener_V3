@@ -377,6 +377,633 @@ Score is not route.
 Score is not filter qualification.
 Score is not a substitute for classification.
 
+## Comprehensive Scoring And Interpretation
+
+This section absorbs the current V2-style computational scoring logic into the consolidated charter so this document can serve as a true standalone offline reference.
+
+### Formal Score Object
+
+All three stage families currently build a score with these components:
+
+- `total_score`
+- `route_score`
+- `timing_score`
+- `structure_score`
+- `participation_score`
+- `context_score`
+- `risk_score`
+- `labels`
+
+The common diagnostic outputs derived from those components are:
+
+- `WeightedScore`
+- `MACDScore`
+- `RSIScore`
+- `ADXScore`
+- `ScoreWeights`
+- `ConfirmationScore`
+- `QualityContextScore`
+
+### Meaning Of Common Score Fields
+
+`WeightedScore`
+
+- final per-ticker family-specific score shown to the user
+- total of route, timing, structure, participation, context, and risk components
+- emitted only when the row is not `STATUS_QUO`
+
+`MACDScore`
+
+- currently interpreted as `route_score + timing_score`
+
+`RSIScore`
+
+- diagnostic RSI quality score derived from current helper logic
+
+`ADXScore`
+
+- diagnostic ADX quality score derived from current helper logic
+
+`ConfirmationScore`
+
+- currently:
+
+```text
+timing_score + structure_score + participation_score
+```
+
+`QualityContextScore`
+
+- currently:
+
+```text
+context_score + risk_score
+```
+
+### Current Formal Stage Scoring Defaults
+
+Current extracted defaults from implementation are:
+
+#### Crossover
+
+Weights:
+
+- `route = 30`
+- `timing = 20`
+- `structure = 20`
+- `participation = 15`
+- `context = 10`
+- `risk = 10`
+
+Thresholds:
+
+- `selected_min = 72`
+- `watch_min = 58`
+
+#### Setup
+
+Weights:
+
+- `route = 30`
+- `timing = 20`
+- `structure = 20`
+- `participation = 15`
+- `context = 10`
+- `risk = 10`
+
+Thresholds:
+
+- `selected_min = 72`
+- `watch_min = 58`
+
+#### Divergence
+
+Weights:
+
+- `route = 30`
+- `timing = 20`
+- `structure = 15`
+- `participation = 10`
+- `context = 15`
+- `risk = 10`
+
+Thresholds:
+
+- `selected_min = 72`
+- `watch_min = 56`
+
+### Shared Interpretation Helpers
+
+#### Shared Risk Score
+
+Current risk logic:
+
+- starts from `10`
+- subtract `5` for `LOW_LIQUIDITY`
+- subtract `5` if direction is bullish and ticker is `BELOW_EMA200`
+- minimum result is `0`
+
+Interpretation:
+
+- low liquidity is always negative
+- `BELOW_EMA200` is currently a bullish-side risk penalty only
+
+#### Shared RSI Diagnostic Score
+
+Current helper behavior:
+
+- `10` if `50 <= RSI <= 65`
+- `6` if `45 <= RSI < 50` or `65 < RSI <= 72`
+- `2` otherwise
+
+#### Shared ADX Diagnostic Score
+
+Current helper behavior:
+
+- `10` if `ADX >= 25`
+- `6` if `ADX >= 18`
+- `2` otherwise
+
+#### Shared Participation Score
+
+Current helper behavior:
+
+- `+8` if `volume_vs_20 >= 100`
+- bullish: `+7` if `PlusDI >= MinusDI`
+- bearish: `+7` if `MinusDI >= PlusDI`
+
+#### Shared Context Score
+
+Bullish:
+
+- `+5` if `45 <= RSI <= 70`
+- `+5` if `DailyCloseLocationPct >= 60`
+
+Bearish:
+
+- `+5` if `30 <= RSI <= 55`
+- `+5` if `DailyCloseLocationPct <= 40`
+
+## Crossover Computational Interpretation
+
+### Route Logic
+
+#### Fresh Bull Cross
+
+Condition:
+
+- `MACD_1D_CrossoverState == BULL_CROSS`
+- `MACD value <= 0`
+- `MACD signal <= 0`
+
+Interpretation:
+
+- real early bull transition candidate
+
+Outputs:
+
+- `CandidateState = PRE_BULL_CROSSOVER`
+- `Direction = BULLISH`
+- `RouteScore = 30`
+- `Reason = DAILY_MACD_BULL_CROSS`
+- `TimingProfile = fresh`
+
+#### Bull Cross Above Zero
+
+Condition:
+
+- bull cross occurs but MACD pair is not fully below zero line
+
+Interpretation:
+
+- continuation, not early crossover transition
+
+Outputs:
+
+- `STATUS_QUO`
+- `Reason = BULL_CROSS_ABOVE_ZERO_LINE_CONTINUATION`
+
+#### Fresh Bear Cross
+
+Condition:
+
+- `MACD_1D_CrossoverState == BEAR_CROSS`
+
+Interpretation:
+
+- valid early bear transition / capital-preservation review candidate
+
+Outputs:
+
+- `CandidateState = PRE_BEAR_CROSSOVER`
+- `Direction = BEARISH`
+- `RouteScore = 30`
+- `Reason = DAILY_MACD_BEAR_CROSS`
+- `TimingProfile = fresh`
+
+#### Near Bear Transition
+
+Condition:
+
+- above signal
+- histogram deteriorating
+- `MACD distance < 0.15`
+- `Histogram < 0.15`
+- and one of:
+  - `EMA20_Below`
+  - `LowerHigh_5D`
+  - bearish DI support
+
+Outputs:
+
+- `PRE_BEAR_CROSSOVER`
+- `RouteScore = 18`
+- `Reason = DAILY_MACD_NEAR_BEAR_TRANSITION`
+- `TimingProfile = early`
+
+#### Bearish Below-Signal Deterioration
+
+Condition:
+
+- below signal
+- histogram deteriorating
+- and `EMA20_Below` or `LowerHigh_5D`
+
+Outputs:
+
+- `PRE_BEAR_CROSSOVER`
+- `RouteScore = 20`
+- `Reason = DAILY_MACD_BELOW_SIGNAL_DETERIORATING`
+- `TimingProfile = developing`
+
+#### Near Bull Transition
+
+Condition:
+
+- below signal
+- histogram improving
+- `MACD distance > -0.15`
+- `Histogram > -0.15`
+- MACD pair below zero line
+
+Outputs:
+
+- `PRE_BULL_CROSSOVER`
+- `RouteScore = 18`
+- `Reason = DAILY_MACD_NEAR_BULL_TRANSITION`
+- `TimingProfile = early`
+
+#### Otherwise
+
+- `STATUS_QUO`
+
+### Timing Score
+
+Current timing logic:
+
+- bullish fresh bull cross: `+10`
+- bullish histogram improving: `+10`
+- bearish fresh bear cross: `+10`
+- bearish histogram deteriorating: `+10`
+- capped at `20`
+
+### Structure Score
+
+Bullish:
+
+- `+8` if `price >= EMA20`
+- `+7` if `price >= EMA200`
+- `+5` if `HigherLow_5D`
+
+Bearish:
+
+- `+8` if `price <= EMA20`
+- `+7` if `price <= EMA200`
+- `+5` if `LowerHigh_5D`
+
+### Participation And Context
+
+Uses shared participation and context helpers described earlier.
+
+### Candidate-Class Logic
+
+- invalid route -> `STATUS_QUO`
+- `total >= 72` and no risk tags -> `SELECTED`
+- `total >= 58` -> `WATCH`
+- otherwise -> `REJECTED`
+
+Priority:
+
+- `A` for selected
+- `B` for watch without risk tags
+- `NEEDS_MANUAL_REVIEW` for watch with risk tags
+- `C` for rejected
+
+### Crossover Reason And Risk Interpretation
+
+Extra reasons may include:
+
+- `CONSTRUCTIVE_PRICE_STRUCTURE`
+- `BEARISH_PRICE_STRUCTURE`
+- `PARTICIPATION_SUPPORT`
+- `SELLER_PARTICIPATION_SUPPORT`
+- `ACCEPTANCE_SUPPORT`
+- `BEARISH_ACCEPTANCE_SUPPORT`
+
+Risk tags may include:
+
+- `LOW_LIQUIDITY`
+- `BELOW_EMA200` on bullish cases
+
+## Setup Computational Interpretation
+
+### Route Logic
+
+#### Pullback Re-entry
+
+Condition:
+
+- MACD crossover state `ABOVE_SIGNAL`
+- `LatestPrice >= EMA20`
+- and `EMA20_Reclaim` or `HigherLow_5D`
+
+Outputs:
+
+- `BULL_PULLBACK_REENTRY`
+- `RouteScore = 28`
+- `Reason = BULL_PULLBACK_REENTRY_ROUTE`
+- `TimingProfile = reentry`
+
+#### Continuation Momentum
+
+Condition:
+
+- bull phase
+- `PriceLadder_Passed`
+- `EMA20 >= EMA50`
+- bullish DI support
+
+Outputs:
+
+- `BULL_CONTINUATION_MOMENTUM`
+- `RouteScore = 26`
+- `Reason = BULL_CONTINUATION_ROUTE`
+- `TimingProfile = continuation`
+
+#### Momentum Expansion
+
+Condition:
+
+- bull phase
+- histogram improving
+- histogram positive
+
+Outputs:
+
+- `BULL_CONTINUATION_MOMENTUM`
+- `RouteScore = 22`
+- `Reason = BULL_MOMENTUM_EXPANSION_ROUTE`
+- `TimingProfile = expansion`
+
+#### Otherwise
+
+- `STATUS_QUO`
+
+### Timing Score
+
+- `+8` if histogram positive
+- `+7` if histogram improving
+- `+5` if `EMA20_Reclaim`
+- capped at `20`
+
+### Structure Score
+
+- `+5` if `price >= EMA20`
+- `+5` if `EMA20 >= EMA50`
+- `+5` if `price >= EMA200`
+- `+3` if `HigherLow_5D`
+- `+2` if `PriceLadder_Passed`
+
+### Candidate-Class Logic
+
+- invalid route -> `STATUS_QUO`
+- special hard rule:
+  - `BULL_PULLBACK_REENTRY` plus `BELOW_EMA200` -> forced `REJECTED`
+- otherwise:
+  - `total >= 72` and no risk tags -> `SELECTED`
+  - `total >= 58` -> `WATCH`
+  - else -> `REJECTED`
+
+Special context outputs:
+
+- `MomentumSetupContextRule = PULLBACK_REENTRY_BELOW_EMA200`
+- `MomentumSetupContextAction = REJECT`
+
+### Setup Reason And Risk Interpretation
+
+Reasons may include:
+
+- `BULL_PHASE_STRUCTURE_SUPPORT`
+- `PARTICIPATION_SUPPORT`
+- `ACCEPTANCE_SUPPORT`
+- `PULLBACK_REENTRY_BELOW_EMA200`
+
+Risk tags may include:
+
+- `LOW_LIQUIDITY`
+- `BELOW_EMA200`
+
+## Divergence Computational Interpretation
+
+### Route Logic
+
+#### Regular Bullish Divergence
+
+- `CandidateState = BULLISH_DIVERGENCE`
+- `RouteScore = 30`
+- `Reason = BULLISH_REGULAR_DIVERGENCE_ROUTE`
+- `TimingProfile = reversal_watch`
+
+#### Regular Bearish Divergence
+
+- `CandidateState = BEARISH_DIVERGENCE`
+- `RouteScore = 30`
+- `Reason = BEARISH_REGULAR_DIVERGENCE_ROUTE`
+- `TimingProfile = exit_watch`
+
+#### Hidden Bullish Divergence
+
+- `CandidateState = HIDDEN_BULLISH_DIVERGENCE`
+- `RouteScore = 28`
+- `Reason = HIDDEN_BULLISH_DIVERGENCE_ROUTE`
+- `TimingProfile = continuation`
+
+#### Hidden Bearish Divergence
+
+- `CandidateState = HIDDEN_BEARISH_DIVERGENCE`
+- `RouteScore = 28`
+- `Reason = HIDDEN_BEARISH_DIVERGENCE_ROUTE`
+- `TimingProfile = failed_recovery`
+
+#### Otherwise
+
+- `STATUS_QUO`
+
+### Timing Score
+
+- `+10` if confirmation state is `CONFIRMED`
+- `+4` if confirmation state is `RAW`
+- `+10` if divergence bars ago `<= 5`
+- `+6` if divergence bars ago `<= 12`
+- capped at `20`
+
+### Structure Score
+
+Bullish:
+
+- `+5` if hidden bullish and `HigherLow_5D`
+- `+4` if `EMA20_Reclaim`
+- `+4` if `price >= EMA200`
+- `+3` if `price >= EMA20`
+
+Bearish:
+
+- `+5` if hidden bearish and `LowerHigh_5D`
+- `+4` if `EMA20_Below`
+- `+4` if `price <= EMA20`
+- `+3` if `price <= EMA200`
+
+Cap:
+
+- `15`
+
+### Participation Score
+
+- `+4` if `volume_vs_20 >= 100`
+- bullish: `+6` if `PlusDI >= MinusDI`
+- bearish: `+6` if `MinusDI >= PlusDI`
+- capped at `10`
+
+### Context Score
+
+Bullish:
+
+- `+8` if `35 <= RSI <= 60`
+- `+4` if `30 <= RSI < 35` or `60 < RSI <= 68`
+- `+7` if `close_location >= 45`
+
+Bearish:
+
+- `+8` if `45 <= RSI <= 75`
+- `+4` if `38 <= RSI < 45` or `75 < RSI <= 82`
+- `+7` if `close_location <= 55`
+
+Cap:
+
+- `15`
+
+### Candidate-Class Logic
+
+- invalid route -> `STATUS_QUO`
+- `total >= 72`, no risk tags, and `CONFIRMED` -> `SELECTED`
+- `total >= 56` and not raw-bullish-below-EMA200 -> `WATCH`
+- otherwise -> `REJECTED`
+
+Special hard rule:
+
+- raw bullish divergence below `EMA200` is not promoted into normal watch logic
+
+### Divergence Reason And Risk Interpretation
+
+Reasons may include:
+
+- `DIVERGENCE_CONFIRMED`
+- `RECENT_DIVERGENCE`
+- `DIVERGENCE_STRUCTURE_SUPPORT`
+- `DIVERGENCE_PARTICIPATION_CONTEXT`
+- `DIVERGENCE_ACCEPTANCE_CONTEXT`
+- `RAW_BULLISH_DIVERGENCE_BELOW_EMA200`
+
+Risk tags may include:
+
+- `LOW_LIQUIDITY`
+- `BELOW_EMA200` for bullish cases
+
+## Family-Specific Diagnostic Outputs
+
+Common score-oriented outputs include:
+
+- `WeightedScore`
+- `MACDScore`
+- `RSIScore`
+- `ADXScore`
+- `ScoreWeights`
+- `ConfirmationScore`
+- `QualityContextScore`
+
+Crossover-specific outputs include:
+
+- `CrossoverConfidence`
+- `CrossoverQualityScore`
+- `CrossoverQualityComponents`
+- `CrossoverTimingProfile`
+- `CrossoverReason`
+- `CrossoverReasonCodes`
+
+Setup-specific outputs include:
+
+- `MomentumSetupConfidence`
+- `MomentumSetupQualityScore`
+- `MomentumSetupQualityComponents`
+- `MomentumSetupContextRule`
+- `MomentumSetupContextAction`
+- `MomentumSetupTimingProfile`
+- `MomentumSetupReason`
+- `MomentumSetupReasonCodes`
+
+Divergence-specific outputs include:
+
+- `DivergenceDirection`
+- `DivergenceType`
+- `DivergenceOpportunityType`
+- `DivergenceConfirmationState`
+- `DivergenceQualityScore`
+- `DivergenceQualityComponents`
+- `DivergenceTimingProfile`
+- `DivergenceReason`
+- `DivergenceReasonCodes`
+
+Backtest-oriented outputs include:
+
+- `Confidence`
+- `TotalScore`
+- `RouteScore`
+- `TimingScore`
+- `StructureScore`
+- `ParticipationScore`
+- `ContextScore`
+- `RiskScore`
+- `ReasonCodes`
+
+## Remaining Hardcoded Interpretation
+
+Even after the first scoring-config extraction, this consolidated charter must record that some important logic is still hardcoded in evaluator code.
+
+Examples:
+
+- exact route transitions and their route scores
+- MACD near-zero / distance thresholds such as `0.15`
+- RSI and ADX scoring bands
+- divergence confirmation gating
+- `BELOW_EMA200` forced-reject logic in certain bullish paths
+- family-specific route details that are not yet matrix/config owned
+
+This matters because the long-term charter direction is:
+
+- matrix-owned meaning
+- config-owned tunable values
+- no hidden interpretation drift inside evaluator code
+
 ## D-Date And D+X Validation
 
 Historical replay is a mandatory correctness tool.

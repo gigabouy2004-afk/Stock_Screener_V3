@@ -23,7 +23,7 @@ Single-folder restart pack:
 - [docs/restart](/D:/Tools/Stock_Screener_V3/docs/restart)
 
 1. Read [v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_original_intent_and_handover.md).
-2. Read [v3_charter_consolidated_engine_design.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_charter_consolidated_engine_design.md).
+2. Read [v3_charter_consolidated_engine_design.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_charter_consolidated_engine_design.md). This is now the single offline master document for engine intent, matrix, interpretation, and scoring.
 3. Read this handover file.
 4. Verify sync:
 
@@ -73,7 +73,8 @@ Current matrix/provider baseline:
 
 Current scoring-reference baseline:
 
-- [v2_scoring_logic_and_interpretation_extraction.md](/D:/Tools/Stock_Screener_V3/docs/architecture/v2_scoring_logic_and_interpretation_extraction.md) now captures the current V2-style scoring computation, helper interpretations, thresholds, route-score logic, and emitted score diagnostics from code
+- the consolidated charter now absorbs the current V2-style scoring computation, helper interpretations, thresholds, route-score logic, and emitted score diagnostics
+- [v2_scoring_logic_and_interpretation_extraction.md](/D:/Tools/Stock_Screener_V3/docs/architecture/v2_scoring_logic_and_interpretation_extraction.md) remains as a supporting extraction/reference file
 
 Current code baseline:
 

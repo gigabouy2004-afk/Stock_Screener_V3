@@ -6,7 +6,7 @@ It exists to keep the new program charter, architecture analysis, backtesting pl
 
 ## Intent
 
-Canonical `V3_Charter` intent is recorded in [docs/charter/v3_original_intent_and_handover.md](docs/charter/v3_original_intent_and_handover.md). The standalone consolidated charter is [docs/charter/v3_charter_consolidated_engine_design.md](docs/charter/v3_charter_consolidated_engine_design.md) and should be used as the primary restart/reference document for full engine intent.
+Canonical `V3_Charter` intent is recorded in [docs/charter/v3_original_intent_and_handover.md](docs/charter/v3_original_intent_and_handover.md). The standalone consolidated charter is [docs/charter/v3_charter_consolidated_engine_design.md](docs/charter/v3_charter_consolidated_engine_design.md) and should be used as the single offline master document for full engine intent, matrix, interpretation, and scoring behavior.
 
 At the core, `V3_Charter` is a CSV-based, user-directed stock analysis engine with exactly three user-facing analysis paths:
 
