@@ -80,6 +80,7 @@ Current restart reading note:
 - Standalone consolidated charter: [docs/charter/v3_charter_consolidated_engine_design.md](docs/charter/v3_charter_consolidated_engine_design.md)
 - Current engine gap analysis: [docs/analysis/current_engine_gap_analysis_against_fresh_charter_2026-06-01.md](docs/analysis/current_engine_gap_analysis_against_fresh_charter_2026-06-01.md)
 - V2 operational parity contract: [docs/architecture/v2_operational_parity_contract.md](docs/architecture/v2_operational_parity_contract.md)
+- V2 scoring logic extraction: [docs/architecture/v2_scoring_logic_and_interpretation_extraction.md](docs/architecture/v2_scoring_logic_and_interpretation_extraction.md)
 - V3 evidence-stage matrix: [docs/architecture/v3_evidence_stage_matrix.md](docs/architecture/v3_evidence_stage_matrix.md)
 - V3 baseline decision tree: [docs/architecture/v3_baseline_decision_tree.md](docs/architecture/v3_baseline_decision_tree.md)
 - Current handover: [docs/handover/current_session_handover.md](docs/handover/current_session_handover.md)

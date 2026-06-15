@@ -71,6 +71,10 @@ Current matrix/provider baseline:
 - newly added V2-backed matrix rows now include `CMF`, `OBV`, `Efficiency ratio`, `Relative strength / benchmark relative performance`, `Down volume pressure`, and `Failed high / ceiling structure`
 - `StopLoss` is out of scope because this engine screens long-term equities; it does not manage trading stops or portfolio automation
 
+Current scoring-reference baseline:
+
+- [v2_scoring_logic_and_interpretation_extraction.md](/D:/Tools/Stock_Screener_V3/docs/architecture/v2_scoring_logic_and_interpretation_extraction.md) now captures the current V2-style scoring computation, helper interpretations, thresholds, route-score logic, and emitted score diagnostics from code
+
 Current code baseline:
 
 - `src/stock_screener_v3/scoring_config.py` exists and holds the first extracted stage scoring defaults
