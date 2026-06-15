@@ -6,7 +6,7 @@ Repo: `D:\Tools\Stock_Screener_V3`
 
 Branch: `V3_Charter`
 
-Document version: `V1.3`
+Document version: `V1.4`
 
 ## Revision Control
 
@@ -21,6 +21,7 @@ Rules:
 
 | Version | Date | Commit | Change |
 |---|---|---|---|
+| `V1.4` | 2026-06-16 | `pending` | Established the D-vs-D+X engine as a permanent regression suite, added regression-gate and drift-tolerance rules, tightened deep-copy slicing and lower-timeframe truncation, clarified mixed zero-line and Setup forced-rejection handling, and added manifest-version/test-matrix requirements. |
 | `V1.3` | 2026-06-16 | `075eabc` | Added in-document revision control and explicit versioning. |
 | `V1.2` | 2026-06-16 | `ded6099` | Added explicit route-isolate locks, strict D-vs-D+X slicing isolation, lower-timeframe nesting rule, scoring-manifest direction, forced-rejection output rule, and long-boundary formula requirements. |
 | `V1.1` | 2026-06-16 | `409bd91` | Absorbed scoring and interpretation extraction into the consolidated charter so it can serve as the single offline master document. |
@@ -264,6 +265,7 @@ Responsibilities:
 Strict historical slicing rule:
 
 - for historical D-date analysis, the provider wrapper must explicitly slice and truncate the active computation dataframe at index `D` before passing data into any indicator library, evidence builder, or evaluator;
+- the active computation dataframe must be isolated with `.copy(deep=True)` or equivalent full-memory isolation so no forward-view references survive the slice;
 - forward bars beyond `D` must be stored in a separate isolated forward-validation container;
 - that forward-validation container belongs only to L5 and must not be visible to L1, L2, L3, or L4.
 
@@ -324,7 +326,8 @@ Lower-timeframe synchronization rule:
 - lower-timeframe layers such as `4H` and `1H` cannot act as independent entry gates;
 - they are nested validation parameters within L3 evidence;
 - they may be evaluated only after a valid daily (`1D`) macro route has already been established;
-- they may refine timing, freshness, and confirmation quality, but they must not manufacture a route that the daily baseline did not authorize.
+- they may refine timing, freshness, and confirmation quality, but they must not manufacture a route that the daily baseline did not authorize;
+- their API pulls must also truncate at the final matching market minute that still belongs to trading day `D`.
 
 ### L4: Classification And Scoring
 
@@ -361,7 +364,9 @@ The provider contract is:
 - preserve deterministic D-date slicing;
 - support per-symbol failure isolation;
 - support forward D+X validation retrieval;
-- avoid changing engine semantics through provider-specific quirks.
+- avoid changing engine semantics through provider-specific quirks;
+- force every new feed, context row, or external evidence source to obey the same no-bleed D-date slicing contract before its values are exposed to L1-L4;
+- provide a snapshot or cache interface for unstable third-party rows so historical replay can load the exact state known on day `D`.
 
 Historical replay isolation rule:
 
@@ -370,6 +375,12 @@ Historical replay isolation rule:
   - isolated forward validation data after `D`
 - only the active computation zone may be used for indicator calculation;
 - the forward validation zone must remain inaccessible until L5 validation.
+
+Deterministic snapshot rule:
+
+- if a future row depends on volatile third-party web state, sentiment, or external point-in-time context that cannot be replayed reliably from a live API;
+- the engine must read that row from a file-backed or cache-backed historical snapshot for the requested day `D`;
+- historical replay must not rely on a live retrospective query that can drift after the fact.
 
 The engine must not assume universal OHLCV input.
 
@@ -664,7 +675,8 @@ Technical clarification:
 Required charter rule:
 
 - a mixed zero-line bull-cross case, such as `MACD line > 0` while `Signal line <= 0`, must not be left as an undefined fallback;
-- it must be handled by an explicit matrix/config-owned rule instead of silently defaulting into generic `STATUS_QUO`.
+- it must be handled by an explicit matrix/config-owned rule instead of silently defaulting into generic `STATUS_QUO`;
+- it is an authorized transition-context modifier, not a banned state by default.
 
 #### Fresh Bear Cross
 
@@ -886,7 +898,8 @@ Forced-rejection output rule:
 
 - the engine must still complete the normal score computation and diagnostic trail for the row;
 - the row must keep its computed `WeightedScore`, component scores, reason codes, and supporting diagnostics;
-- the candidate is then emitted as a priority `C` rejection rather than collapsed into an empty-scored record.
+- the candidate is then emitted as a priority `C` rejection rather than collapsed into an empty-scored record;
+- the execution path must not short-circuit into a blank-score halt once the forced-rejection boundary is triggered.
 
 ### Setup Reason And Risk Interpretation
 
@@ -1111,6 +1124,8 @@ Before full implementation signoff, the following must be formally defined in ma
 - how each breach count is calculated;
 - which lookback window, smoothing rule, and denominator are used.
 
+These definitions must eventually resolve into explicit formulas, not descriptive labels only.
+
 Until those formulas are explicitly written and approved, those rows remain conceptually approved but computationally unresolved.
 
 ## D-Date And D+X Validation
@@ -1135,7 +1150,61 @@ This supports:
 - regression checking;
 - matrix-change validation.
 
-Backtesting is not a fourth strategy path. It is a validation layer.
+Backtesting is not a fourth strategy path. It is a permanent validation and regression module.
+
+## Permanent Regression Suite
+
+The `D` vs `D+X` engine is a permanent first-class automation suite.
+
+It must not be treated as temporary scaffolding or a module to be decommissioned after launch.
+
+Its job is to:
+
+- validate new matrix rows before promotion;
+- detect path drift after engine changes;
+- confirm that historical classifications remain stable under approved logic;
+- protect the charter from silent regression caused by score, threshold, or evidence rewiring.
+
+## Regression Gate
+
+No new indicator row, scoring rule, route rule, or path-selection logic may be merged into production until it passes the automated `D` vs `D+X` regression suite.
+
+The gate condition is:
+
+- zero unexpected drift in historical path classification on the approved regression dataset;
+- zero route leakage into unselected families;
+- zero lookahead contamination at `D`;
+- only approved score-only tolerance drift where classification remains unchanged.
+
+## Drift Tolerance
+
+The regression suite must distinguish warning-level numeric drift from hard-failure behavioral drift.
+
+Approved default interpretation:
+
+- a small numeric `WeightedScore` deviation of `<= +/- 0.05` with no classification or priority change may be logged as a warning;
+- any change that alters final classification, route, or forced-rejection status on day `D` must be treated as a hard regression failure;
+- any change that introduces route leakage, D+X contamination, or different rejection reasons without signed-off intent must be treated as a hard regression failure.
+
+## Test Matrix Mapping
+
+The regression suite must read a separate file-based test mapping in addition to production logic.
+
+Purpose:
+
+- decouple regression assertions from active production code;
+- allow new rows to be tested under development without rewriting live engine behavior;
+- preserve stable historical expectation sets for approved engine versions.
+
+## Manifest Version Compatibility
+
+The scoring manifest and any future matrix-owned declarative schema must be versioned.
+
+Requirements:
+
+- the declarative score/matrix schema must carry a version attribute such as `matrix_version`;
+- historical replay must be able to bind to the version of the manifest intended for that regression run;
+- schema evolution must not silently reinterpret historical results under newer rules.
 
 ## Non-Goals
 
@@ -1305,8 +1374,9 @@ These are still open for signoff before hardcoding behavior:
 - whether one-month candle behavior is default for `SETUP` or only user-requested;
 - whether sector/market context contributes to score or remains audit/context only;
 - whether `4H` and `1H` MACD stay Crossover-only initially;
-- whether `PriceBand` remains a future placeholder or becomes a signed-off matrix row.
-- exact declarative manifest schema and file location for external scoring ownership.
+- whether `PriceBand` remains a future placeholder or becomes a signed-off matrix row;
+- exact declarative manifest schema and file location for external scoring ownership;
+- exact regression-dataset ownership, storage location, and approval workflow for the test-matrix mapping file.
 
 ## Restart Instruction
 
