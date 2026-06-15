@@ -64,6 +64,10 @@ Path note:
 
 - `CROSSOVER` in this matrix includes both `PRE_BULL_CROSSOVER` and `PRE_BEAR_CROSSOVER`.
 - The cell text under `CROSSOVER` should therefore describe how the row supports bull-transition review, bear-transition review, or both.
+- `PRE_BULL_CROSSOVER` is for entering early enough to maximize the natural bull phase.
+- `PRE_BEAR_CROSSOVER` is for capital-preservation review on existing long-held equities, not stop-loss trading logic.
+- `DIVERGENCE` is for validating whether an investment opportunity may be developing.
+- `SETUP` is a pure-play market-based entry path where technical-analysis indicators provide confidence for a potentially shorter-lived entry than a full Pre-Bull phase capture.
 
 | Indicator Family / Evidence | API data required | V3 level | CROSSOVER | DIVERGENCE | SETUP | Backtesting / D+X | Primary outputs | Guardrail |
 |---|---|---:|---|---|---|---|---|---|
@@ -120,7 +124,6 @@ Path note:
 | Average monthly volume metadata | CSV metadata/API profile cache | L0/L4 | Context input for liquidity suitability. | Context input for liquidity suitability. | Context input for liquidity suitability. | Validate liquidity risk buckets by D+X when metadata is available. | `AvgMonthlyVolume` | Preserve if supplied. |
 | Low liquidity tag | volume/profile metadata | L4/L5 | Context and risk flag for low tradability. | Context and risk flag for low tradability. | Context and risk flag for low tradability. | Validate low-liquidity rows by D+X separately. | `LowLiquidity`, risk tags | Risk/review priority, not hidden rejection unless scoped. |
 | PriceBand module | API price series | L3/L4 | TBD pending exact path-specific meaning. | TBD pending exact path-specific meaning. | TBD pending exact path-specific meaning. | No backtest until row/cell meaning is defined. | TBD | V2 listed module; define row/cell before use. |
-| StopLoss module | API price series | L3/L4/L5 | TBD pending exact path-specific meaning. | TBD pending exact path-specific meaning. | TBD pending exact path-specific meaning. | If used, validate as path-risk review only. | TBD | Not automated trading; if used, review/risk aid only. |
 | Market regime | API benchmark data when requested/configured | L3/L4 | Context only as bounded market background. | Context only as bounded market background. | Context only as bounded market background. | Validate as bounded context split, not base route. | `MarketRegime` | Bounded context only; no universe expansion. |
 | Sector context/regime | CSV sector + API benchmark only when requested/configured | L3/L4 | Context only as bounded sector background. | Context only as bounded sector background. | Context only as bounded sector background. | Validate as bounded context split for supplied CSV only. | `SectorRegime` | No sector calibration project by default. |
 | Sector relative strength | API benchmark and symbol data | L3/L4 | TBD, with context-only use if later approved. | TBD, with context-only use if later approved. | Quality and context input when explicitly requested and defined. | No backtest until exact formula is defined. | TBD | Future bounded evidence, not broad scan. |
@@ -181,7 +184,7 @@ These rows need user review before coding:
 - Whether one-month candle behavior is a default Momentum aid or only user-requested.
 - Whether sector/market context is shown as a score component or only as audit/context.
 - Whether 4H/1H MACD belongs only to Crossover initially.
-- Whether `PriceBand`, `StopLoss`, and `GetAI` remain future placeholders.
+- Whether `PriceBand` and `GetAI` remain future placeholders.
 
 ## Update Discipline
 

@@ -174,6 +174,11 @@ Tickers that do not satisfy the selected stage or filters are not user-facing ca
 
 Crossover is for phase-transition analysis. It identifies setup conditions around bullish or bearish crossover events.
 
+Functional meaning:
+
+- `PRE_BULL_CROSSOVER`: identify an entry early enough to maximize the natural bull phase of the stock.
+- `PRE_BEAR_CROSSOVER`: identify weakening early enough to support capital preservation and avoid future notional loss on an existing long-held equity.
+
 Valid examples:
 
 - `PRE_BULL_CROSSOVER`
@@ -201,6 +206,10 @@ These aids can support Crossover confidence or readiness. They must not become a
 
 Divergence is for price-versus-indicator disagreement.
 
+Functional meaning:
+
+- validate whether a credible investment opportunity may be developing through technical disagreement between price behavior and momentum behavior.
+
 It must remain independent from Crossover and Setup logic. A divergence candidate must be identified through divergence-specific evidence, not through side effects of crossover or setup rules.
 
 The divergence path must preserve the V2 intent of finding meaningful bullish or bearish disagreement and then validating whether the signal had forward price behavior.
@@ -208,6 +217,11 @@ The divergence path must preserve the V2 intent of finding meaningful bullish or
 ### Setup
 
 Setup is for bull-phase continuation, re-entry, pullback recovery, and extension behavior.
+
+Functional meaning:
+
+- a pure-play market-based entry path where technical-analysis indicators provide the confidence/support for entering a new position;
+- the resulting position may be more temporary than a Pre-Bull entry because the current bull phase may later peak and rotate toward bear-side pressure.
 
 This path handles stocks where the trend or MACD structure is already in a bullish continuation state. It is not the same as a fresh bullish crossover transition.
 
@@ -651,6 +665,7 @@ The following are not part of the core `V3_Charter` intent:
 - ETF portfolio mapping
 - automated trading
 - order execution
+- stop-loss trading logic
 - position sizing
 - portfolio allocation
 - hidden strategy expansion beyond the three allowed paths

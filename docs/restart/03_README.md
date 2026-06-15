@@ -14,6 +14,12 @@ At the core, `V3_Charter` is a CSV-based, user-directed stock analysis engine wi
 - `DIVERGENCE`
 - `SETUP`
 
+Path intent:
+
+- `CROSSOVER` includes both `PRE_BULL_CROSSOVER` for early bull-phase entry and `PRE_BEAR_CROSSOVER` for capital-preservation review on existing long-held equities.
+- `DIVERGENCE` validates whether an investment opportunity may be developing.
+- `SETUP` is a pure-play market-based entry path where technical-analysis indicators provide confidence for entries that may be shorter-lived than full Pre-Bull phase capture.
+
 The engine must preserve the V2 path-first architecture, including baseline analysis, path routing, path-specific evidence, date processing, and D+X self-backtesting.
 
 All indicator processing is API/provider-driven. The current default backend is Yahoo Finance through `yfinance`, but the engine must remain behind a swappable provider abstraction so another free backend can replace it later without changing matrix logic or evaluator meaning.
@@ -30,6 +36,7 @@ Previous broad rebuild language:
 - Backtest the same production engine as of historical dates.
 
 The engine is not intended to perform automated trading, position sizing, capital allocation, or order execution.
+It also does not implement stop-loss trading logic or portfolio-management automation.
 
 ## Restart First
 

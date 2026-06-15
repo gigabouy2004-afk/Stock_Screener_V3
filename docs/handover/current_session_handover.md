@@ -51,6 +51,13 @@ Current scoring baseline:
 - equal scores across families are valid
 - results should be grouped/displayed by stage family, not flattened into one global score list by default
 
+Current stage-family meaning baseline:
+
+- `PRE_BULL_CROSSOVER` means early-entry screening to capture the natural bull phase.
+- `PRE_BEAR_CROSSOVER` means capital-preservation screening for existing long-held equities, not stop-loss trading logic.
+- `DIVERGENCE` means validating whether an investment opportunity may be developing.
+- `SETUP` means a pure-play market-based entry path where TA provides confidence for an entry that may be shorter-lived than a full Pre-Bull phase capture.
+
 Current matrix/provider baseline:
 
 - indicator processing is API/provider-driven, not hardcoded/static-data-driven
@@ -61,6 +68,7 @@ Current matrix/provider baseline:
 - `docs/architecture/v3_stage_family_indicator_working_matrix.md` is now being rewritten as a plain-English signoff matrix; do not rely on shorthand role codes as the primary review surface
 - the legend should be read in full words: `Route`, `Timing`, `Quality`, `Context`, `Scoring`, `Audit`, `Validation`, `Not used by default`, `TBD`
 - newly added V2-backed matrix rows now include `CMF`, `OBV`, `Efficiency ratio`, `Relative strength / benchmark relative performance`, `Down volume pressure`, and `Failed high / ceiling structure`
+- `StopLoss` is out of scope because this engine screens long-term equities; it does not manage trading stops or portfolio automation
 
 Current code baseline:
 
