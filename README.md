@@ -8,6 +8,8 @@ It exists to keep the new program charter, architecture analysis, backtesting pl
 
 Canonical `V3_Charter` intent is recorded in [docs/charter/v3_original_intent_and_handover.md](docs/charter/v3_original_intent_and_handover.md). The standalone consolidated charter is [docs/charter/v3_charter_consolidated_engine_design.md](docs/charter/v3_charter_consolidated_engine_design.md) and should be used as the single offline master document for full engine intent, matrix, interpretation, and scoring behavior.
 
+The working execution plan is [docs/charter/v3_charter_execution_plan.md](docs/charter/v3_charter_execution_plan.md). Use it at the start of every implementation session to review the original plan, achieved state, remaining deliverables, execution process, filtering logic, computation phases, and current next step before changing code.
+
 At the core, `V3_Charter` is a CSV-based, user-directed stock analysis engine with exactly three user-facing analysis paths:
 
 - `CROSSOVER`
@@ -46,11 +48,12 @@ Single-folder restart pack:
 
 - [docs/restart](/D:/Tools/Stock_Screener_V3/docs/restart)
 
-1. [docs/handover/v3_charter_restart_signoff_20260616.md](/D:/Tools/Stock_Screener_V3/docs/handover/v3_charter_restart_signoff_20260616.md)
-2. [docs/charter/v3_charter_consolidated_engine_design.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_charter_consolidated_engine_design.md)
-3. [docs/charter/v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_original_intent_and_handover.md)
-4. [docs/handover/current_session_handover.md](/D:/Tools/Stock_Screener_V3/docs/handover/current_session_handover.md)
-4. Verify local/GitHub sync:
+1. [docs/charter/v3_charter_execution_plan.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_charter_execution_plan.md)
+2. [docs/handover/v3_charter_restart_signoff_20260616.md](/D:/Tools/Stock_Screener_V3/docs/handover/v3_charter_restart_signoff_20260616.md)
+3. [docs/charter/v3_charter_consolidated_engine_design.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_charter_consolidated_engine_design.md)
+4. [docs/charter/v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_original_intent_and_handover.md)
+5. [docs/handover/current_session_handover.md](/D:/Tools/Stock_Screener_V3/docs/handover/current_session_handover.md)
+6. Verify local/GitHub sync:
 
 ```powershell
 cd D:\Tools\Stock_Screener_V3
@@ -78,6 +81,7 @@ Current restart reading note:
 
 ## Source Documents
 
+- Working V3 execution plan: [docs/charter/v3_charter_execution_plan.md](docs/charter/v3_charter_execution_plan.md)
 - Canonical V3 original intent and handover: [docs/charter/v3_original_intent_and_handover.md](docs/charter/v3_original_intent_and_handover.md)
 - Standalone consolidated charter: [docs/charter/v3_charter_consolidated_engine_design.md](docs/charter/v3_charter_consolidated_engine_design.md)
 - Current engine gap analysis: [docs/analysis/current_engine_gap_analysis_against_fresh_charter_2026-06-01.md](docs/analysis/current_engine_gap_analysis_against_fresh_charter_2026-06-01.md)
@@ -230,6 +234,7 @@ The UI opens at `http://127.0.0.1:8010`.
 
 The current coding direction on `V3_Charter` is:
 
+- start every implementation pass from [docs/charter/v3_charter_execution_plan.md](docs/charter/v3_charter_execution_plan.md)
 - keep the June 13 charter as the only seed/source-of-truth
 - preserve per-ticker, category-specific scoring grouped by stage family
 - keep indicator processing API-driven behind a provider abstraction
@@ -242,9 +247,10 @@ Completed recent steps:
 - `9fde1b7` aligned `V3_Charter` seed documentation
 - `6bd0daf` clarified the charter scoring rule: per-ticker score, grouped display by stage family
 - `f62421b` started code extraction of stage scoring defaults into `src/stock_screener_v3/scoring_config.py`
+- local 2026-06-19 pass created the charter execution plan and moved additional evaluator scoring constants into `src/stock_screener_v3/scoring_config.py`
 
 The next coding focus is:
 
-- continue moving hardcoded route/context/component thresholds out of `src/stock_screener_v3/evaluators.py`
-- preserve current output behavior while externalizing defaults
+- produce a charter-to-code gap table before additional engine behavior changes
+- classify each module as implemented, partial, missing, naming-misaligned, validation-needed, or not yet manifest/config-owned
 - keep local `D:\Tools\Stock_Screener_V3` and `origin/V3_Charter` synchronized after each completed step

@@ -12,6 +12,10 @@ Branch: `V3_Charter`
 
 Use this file only as a compact pointer.
 
+Working execution plan:
+
+- [v3_charter_execution_plan.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_charter_execution_plan.md)
+
 Primary restart/signoff document:
 
 - [v3_charter_restart_signoff_20260616.md](/D:/Tools/Stock_Screener_V3/docs/handover/v3_charter_restart_signoff_20260616.md)
@@ -34,7 +38,8 @@ Original seed charter:
 
 ## Current Next Step
 
-- integrate accepted manifest, slicing, and EMA-high logic from the reviewed seed file into the package under `src/stock_screener_v3`
+- start from `docs/charter/v3_charter_execution_plan.md`
+- produce a charter-to-code gap table before additional engine behavior changes
 - keep `web_app_v3.py` as the active UI surface
 - do not create a parallel desktop-engine path
 
@@ -55,6 +60,12 @@ Expected state:
 ## Canonical Immutable Scope
 
 Read this document first in every future session:
+
+```text
+docs/charter/v3_charter_execution_plan.md
+```
+
+Then read the canonical document:
 
 ```text
 docs/charter/v3_original_intent_and_handover.md
@@ -1144,3 +1155,66 @@ Next exact path:
 1. Add broader date/regime context to calibration reporting before changing evaluator thresholds again.
 2. Review whether February 2026 Industrial weakness coincides with market/sector regime deterioration, ranking collision patterns, or cross-family bearish warnings.
 3. If a diagnostic is added, keep it report-only first; do not demote more Momentum Setup candidates until validated across more dates.
+
+## 2026-06-19 Scoring Config Extraction Update
+
+Moved the remaining evaluator scoring constants into `src/stock_screener_v3/scoring_config.py` without changing behavior.
+
+Extracted config groups:
+
+- route scores for Crossover, Momentum Setup, and Divergence route classification;
+- Crossover MACD zero-line and near-transition distance thresholds;
+- reason-code support thresholds for structure, participation, context, and recent Divergence;
+- component score increments and caps for timing, structure, participation, context, risk, RSI, ADX, Setup, and Divergence;
+- RSI and close-location threshold ranges;
+- ranking class and review-priority weights.
+
+`src/stock_screener_v3/evaluators.py` now reads those defaults through `scoring_config` instead of carrying the corresponding inline literals.
+
+Verification:
+
+```text
+$env:PYTHONPATH='D:\Tools\Stock_Screener_V3\src'
+python -m unittest discover -s tests -v
+78 tests OK
+```
+
+Sandbox note:
+
+- The full suite requires temporary file creation/deletion and was verified outside the sandbox after sandboxed runs hit Windows temp-directory permission errors.
+
+## 2026-06-19 Charter Execution Plan Update
+
+Created the working execution-control document:
+
+- `docs/charter/v3_charter_execution_plan.md`
+
+Purpose:
+
+- keep implementation anchored to the original charter plan;
+- capture deliverables, execution process, filtering logic, computation phases, achieved state, remaining work, and sync discipline;
+- make every future session start by reviewing the original plan, achieved state, and next approved step before coding.
+
+Restart documents updated:
+
+- `README.md`
+- `docs/handover/v3_charter_restart_signoff_20260616.md`
+- `docs/handover/current_session_handover.md`
+
+Current next required step:
+
+1. Produce a charter-to-code gap table before additional engine behavior changes.
+2. Classify each package/module area as:
+   - implemented;
+   - partial;
+   - missing;
+   - naming-misaligned;
+   - validation-needed;
+   - not yet manifest/config-owned.
+3. Use that gap table to sequence the next coding step.
+
+Root/branch discipline:
+
+- all V3 code, docs, tests, reports, validation output, and handover updates remain under `D:\Tools\Stock_Screener_V3`;
+- active branch remains `V3_Charter`;
+- external stock-code master folders are read-only inputs for this project.

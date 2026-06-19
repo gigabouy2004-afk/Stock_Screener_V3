@@ -13,7 +13,7 @@ from stock_screener_v3.models import (
     StageEvaluation,
     UniverseRecord,
 )
-from stock_screener_v3.scoring_config import CROSSOVER_SCORING, DIVERGENCE_SCORING, SETUP_SCORING
+from stock_screener_v3 import scoring_config as score_config
 
 
 @dataclass(frozen=True)
@@ -120,7 +120,7 @@ class StageFamilyEvaluator:
 
 
 def evaluate_crossover(evidence: EvidencePack) -> StageEvaluation:
-    scoring = CROSSOVER_SCORING
+    scoring = score_config.CROSSOVER_SCORING
     diagnostics = evidence_to_diagnostics(evidence)
     momentum = evidence.momentum
     trend = evidence.trend
@@ -184,11 +184,11 @@ def evaluate_crossover(evidence: EvidencePack) -> StageEvaluation:
     risk_tags: list[str] = []
     reason_codes.append(route.reason_code)
 
-    if structure_score >= 14:
+    if structure_score >= score_config.COMPONENT_REASON_THRESHOLDS.crossover_structure_min:
         reason_codes.append("CONSTRUCTIVE_PRICE_STRUCTURE" if route.direction == "BULLISH" else "BEARISH_PRICE_STRUCTURE")
-    if participation_score >= 10:
+    if participation_score >= score_config.COMPONENT_REASON_THRESHOLDS.crossover_participation_min:
         reason_codes.append("PARTICIPATION_SUPPORT" if route.direction == "BULLISH" else "SELLER_PARTICIPATION_SUPPORT")
-    if context_score >= 8:
+    if context_score >= score_config.COMPONENT_REASON_THRESHOLDS.crossover_context_min:
         reason_codes.append("ACCEPTANCE_SUPPORT" if route.direction == "BULLISH" else "BEARISH_ACCEPTANCE_SUPPORT")
     if risk.get("LowLiquidity"):
         risk_tags.append("LOW_LIQUIDITY")
@@ -291,7 +291,7 @@ def _classify_crossover_route(
                 candidate_state="STATUS_QUO",
                 opportunity_type="BULLISH_ABOVE_ZERO_CONTINUATION",
                 direction="NONE",
-                route_score=0.0,
+                route_score=score_config.ROUTE_SCORES.status_quo,
                 reason_code="BULL_CROSS_ABOVE_ZERO_LINE_CONTINUATION",
                 timing_profile="none",
             )
@@ -299,7 +299,7 @@ def _classify_crossover_route(
             candidate_state="PRE_BULL_CROSSOVER",
             opportunity_type="BULLISH_TRANSITION_CROSSOVER",
             direction="BULLISH",
-            route_score=30.0,
+            route_score=score_config.ROUTE_SCORES.fresh_transition,
             reason_code="DAILY_MACD_BULL_CROSS",
             timing_profile="fresh",
         )
@@ -308,7 +308,7 @@ def _classify_crossover_route(
             candidate_state="PRE_BEAR_CROSSOVER",
             opportunity_type="BEARISH_TRANSITION_CROSSOVER",
             direction="BEARISH",
-            route_score=30.0,
+            route_score=score_config.ROUTE_SCORES.fresh_transition,
             reason_code="DAILY_MACD_BEAR_CROSS",
             timing_profile="fresh",
         )
@@ -317,15 +317,15 @@ def _classify_crossover_route(
             histogram_deteriorating
             and macd_distance is not None
             and histogram is not None
-            and macd_distance < 0.15
-            and histogram < 0.15
+            and macd_distance < score_config.CROSSOVER_ROUTE_THRESHOLDS.near_transition_distance_abs_max
+            and histogram < score_config.CROSSOVER_ROUTE_THRESHOLDS.near_transition_distance_abs_max
             and (ema20_below or lower_high or _di_supports_bears(plus_di, minus_di))
         ):
             return CrossoverRoute(
                 candidate_state="PRE_BEAR_CROSSOVER",
                 opportunity_type="BEARISH_NEAR_TRANSITION",
                 direction="BEARISH",
-                route_score=18.0,
+                route_score=score_config.ROUTE_SCORES.near_transition,
                 reason_code="DAILY_MACD_NEAR_BEAR_TRANSITION",
                 timing_profile="early",
             )
@@ -334,7 +334,7 @@ def _classify_crossover_route(
             candidate_state="PRE_BEAR_CROSSOVER",
             opportunity_type="BEARISH_BELOW_SIGNAL_DETERIORATING",
             direction="BEARISH",
-            route_score=20.0,
+            route_score=score_config.ROUTE_SCORES.deteriorating_transition,
             reason_code="DAILY_MACD_BELOW_SIGNAL_DETERIORATING",
             timing_profile="developing",
         )
@@ -343,15 +343,15 @@ def _classify_crossover_route(
         and histogram_improving
         and macd_distance is not None
         and histogram is not None
-        and macd_distance > -0.15
-        and histogram > -0.15
+        and macd_distance > -score_config.CROSSOVER_ROUTE_THRESHOLDS.near_transition_distance_abs_max
+        and histogram > -score_config.CROSSOVER_ROUTE_THRESHOLDS.near_transition_distance_abs_max
         and _macd_pair_is_below_zero_line(macd_value, macd_signal)
     ):
         return CrossoverRoute(
             candidate_state="PRE_BULL_CROSSOVER",
             opportunity_type="BULLISH_NEAR_TRANSITION",
             direction="BULLISH",
-            route_score=18.0,
+            route_score=score_config.ROUTE_SCORES.near_transition,
             reason_code="DAILY_MACD_NEAR_BULL_TRANSITION",
             timing_profile="early",
         )
@@ -359,7 +359,7 @@ def _classify_crossover_route(
         candidate_state="STATUS_QUO",
         opportunity_type="NO_CROSSOVER_ROUTE",
         direction="NONE",
-        route_score=0.0,
+        route_score=score_config.ROUTE_SCORES.status_quo,
         reason_code="NO_CROSSOVER_ROUTE",
         timing_profile="none",
     )
@@ -368,11 +368,14 @@ def _classify_crossover_route(
 def _macd_pair_is_below_zero_line(macd_value: float | None, macd_signal: float | None) -> bool:
     if macd_value is None or macd_signal is None:
         return False
-    return macd_value <= 0.0 and macd_signal <= 0.0
+    return (
+        macd_value <= score_config.CROSSOVER_ROUTE_THRESHOLDS.macd_zero_line_max
+        and macd_signal <= score_config.CROSSOVER_ROUTE_THRESHOLDS.macd_zero_line_max
+    )
 
 
 def evaluate_momentum_setup(evidence: EvidencePack) -> StageEvaluation:
-    scoring = SETUP_SCORING
+    scoring = score_config.SETUP_SCORING
     diagnostics = evidence_to_diagnostics(evidence)
     momentum = evidence.momentum
     trend = evidence.trend
@@ -423,11 +426,11 @@ def evaluate_momentum_setup(evidence: EvidencePack) -> StageEvaluation:
 
     reason_codes: list[str] = [route.reason_code]
     risk_tags: list[str] = []
-    if structure_score >= 14:
+    if structure_score >= score_config.COMPONENT_REASON_THRESHOLDS.setup_structure_min:
         reason_codes.append("BULL_PHASE_STRUCTURE_SUPPORT")
-    if participation_score >= 10:
+    if participation_score >= score_config.COMPONENT_REASON_THRESHOLDS.setup_participation_min:
         reason_codes.append("PARTICIPATION_SUPPORT")
-    if context_score >= 8:
+    if context_score >= score_config.COMPONENT_REASON_THRESHOLDS.setup_context_min:
         reason_codes.append("ACCEPTANCE_SUPPORT")
     if risk.get("LowLiquidity"):
         risk_tags.append("LOW_LIQUIDITY")
@@ -513,7 +516,7 @@ def evaluate_momentum_setup(evidence: EvidencePack) -> StageEvaluation:
 
 
 def evaluate_divergence(evidence: EvidencePack) -> StageEvaluation:
-    scoring = DIVERGENCE_SCORING
+    scoring = score_config.DIVERGENCE_SCORING
     diagnostics = evidence_to_diagnostics(evidence)
     structure = evidence.structure
     trend = evidence.trend
@@ -555,13 +558,13 @@ def evaluate_divergence(evidence: EvidencePack) -> StageEvaluation:
     risk_tags: list[str] = []
     if confirmation_state == "CONFIRMED":
         reason_codes.append("DIVERGENCE_CONFIRMED")
-    if bars_ago is not None and bars_ago <= 5:
+    if bars_ago is not None and bars_ago <= score_config.COMPONENT_REASON_THRESHOLDS.recent_divergence_bars_max:
         reason_codes.append("RECENT_DIVERGENCE")
-    if structure_score >= 12:
+    if structure_score >= score_config.COMPONENT_REASON_THRESHOLDS.divergence_structure_min:
         reason_codes.append("DIVERGENCE_STRUCTURE_SUPPORT")
-    if participation_score >= 8:
+    if participation_score >= score_config.COMPONENT_REASON_THRESHOLDS.divergence_participation_min:
         reason_codes.append("DIVERGENCE_PARTICIPATION_CONTEXT")
-    if context_score >= 8:
+    if context_score >= score_config.COMPONENT_REASON_THRESHOLDS.divergence_context_min:
         reason_codes.append("DIVERGENCE_ACCEPTANCE_CONTEXT")
     if risk.get("LowLiquidity"):
         risk_tags.append("LOW_LIQUIDITY")
@@ -650,7 +653,7 @@ def _classify_divergence_route(candidate: str) -> DivergenceRoute:
             opportunity_type="BULLISH_REGULAR_DIVERGENCE",
             direction="BULLISH",
             divergence_type="REGULAR",
-            route_score=30.0,
+            route_score=score_config.ROUTE_SCORES.regular_divergence,
             reason_code="BULLISH_REGULAR_DIVERGENCE_ROUTE",
             timing_profile="reversal_watch",
         )
@@ -660,7 +663,7 @@ def _classify_divergence_route(candidate: str) -> DivergenceRoute:
             opportunity_type="BEARISH_REGULAR_DIVERGENCE",
             direction="BEARISH",
             divergence_type="REGULAR",
-            route_score=30.0,
+            route_score=score_config.ROUTE_SCORES.regular_divergence,
             reason_code="BEARISH_REGULAR_DIVERGENCE_ROUTE",
             timing_profile="exit_watch",
         )
@@ -670,7 +673,7 @@ def _classify_divergence_route(candidate: str) -> DivergenceRoute:
             opportunity_type="HIDDEN_BULLISH_CONTINUATION",
             direction="BULLISH",
             divergence_type="HIDDEN",
-            route_score=28.0,
+            route_score=score_config.ROUTE_SCORES.hidden_divergence,
             reason_code="HIDDEN_BULLISH_DIVERGENCE_ROUTE",
             timing_profile="continuation",
         )
@@ -680,7 +683,7 @@ def _classify_divergence_route(candidate: str) -> DivergenceRoute:
             opportunity_type="HIDDEN_BEARISH_CONTINUATION",
             direction="BEARISH",
             divergence_type="HIDDEN",
-            route_score=28.0,
+            route_score=score_config.ROUTE_SCORES.hidden_divergence,
             reason_code="HIDDEN_BEARISH_DIVERGENCE_ROUTE",
             timing_profile="failed_recovery",
         )
@@ -689,7 +692,7 @@ def _classify_divergence_route(candidate: str) -> DivergenceRoute:
         opportunity_type="NO_DIVERGENCE_ROUTE",
         direction="NONE",
         divergence_type="NONE",
-        route_score=0.0,
+        route_score=score_config.ROUTE_SCORES.status_quo,
         reason_code="NO_DIVERGENCE_ROUTE",
         timing_profile="none",
     )
@@ -698,15 +701,15 @@ def _classify_divergence_route(candidate: str) -> DivergenceRoute:
 def _divergence_timing_score(bars_ago: float | None, confirmation_state: str) -> float:
     score = 0.0
     if confirmation_state == "CONFIRMED":
-        score += 10.0
+        score += score_config.COMPONENT_SCORES.divergence_confirmation_confirmed
     elif confirmation_state == "RAW":
-        score += 4.0
+        score += score_config.COMPONENT_SCORES.divergence_confirmation_raw
     if bars_ago is not None:
-        if bars_ago <= 5:
-            score += 10.0
-        elif bars_ago <= 12:
-            score += 6.0
-    return min(score, 20.0)
+        if bars_ago <= score_config.COMPONENT_SCORES.divergence_recent_bars_max:
+            score += score_config.COMPONENT_SCORES.divergence_recent_bars_score
+        elif bars_ago <= score_config.COMPONENT_SCORES.divergence_stale_bars_max:
+            score += score_config.COMPONENT_SCORES.divergence_stale_bars_score
+    return min(score, score_config.COMPONENT_SCORES.timing_max)
 
 
 def _divergence_structure_score(
@@ -723,53 +726,68 @@ def _divergence_structure_score(
     score = 0.0
     if direction == "BULLISH":
         if divergence_type == "HIDDEN" and higher_low:
-            score += 5.0
+            score += score_config.COMPONENT_SCORES.divergence_hidden_structure
         if ema20_reclaim:
-            score += 4.0
+            score += score_config.COMPONENT_SCORES.divergence_ema20_signal
         if price is not None and ema200 is not None and price >= ema200:
-            score += 4.0
+            score += score_config.COMPONENT_SCORES.divergence_price_vs_ema200
         if price is not None and ema20 is not None and price >= ema20:
-            score += 3.0
+            score += score_config.COMPONENT_SCORES.divergence_price_vs_ema20
     if direction == "BEARISH":
         if divergence_type == "HIDDEN" and lower_high:
-            score += 5.0
+            score += score_config.COMPONENT_SCORES.divergence_hidden_structure
         if ema20_below:
-            score += 4.0
+            score += score_config.COMPONENT_SCORES.divergence_ema20_signal
         if price is not None and ema20 is not None and price <= ema20:
-            score += 4.0
+            score += score_config.COMPONENT_SCORES.divergence_bear_price_vs_ema20
         if price is not None and ema200 is not None and price <= ema200:
-            score += 3.0
-    return min(score, 15.0)
+            score += score_config.COMPONENT_SCORES.divergence_bear_price_vs_ema200
+    return min(score, score_config.COMPONENT_SCORES.divergence_structure_max)
 
 
 def _divergence_participation_score(direction: str, volume_vs_20: float | None, plus_di: float | None, minus_di: float | None) -> float:
     score = 0.0
-    if volume_vs_20 is not None and volume_vs_20 >= 100:
-        score += 4.0
+    if volume_vs_20 is not None and volume_vs_20 >= score_config.COMPONENT_SCORES.common_relative_volume_min:
+        score += score_config.COMPONENT_SCORES.divergence_relative_volume
     if direction == "BULLISH" and plus_di is not None and minus_di is not None and plus_di >= minus_di:
-        score += 6.0
+        score += score_config.COMPONENT_SCORES.divergence_directional_di
     if direction == "BEARISH" and plus_di is not None and minus_di is not None and minus_di >= plus_di:
-        score += 6.0
-    return min(score, 10.0)
+        score += score_config.COMPONENT_SCORES.divergence_directional_di
+    return min(score, score_config.COMPONENT_SCORES.divergence_participation_max)
 
 
 def _divergence_context_score(direction: str, rsi: float | None, close_location: float | None) -> float:
     score = 0.0
+    thresholds = score_config.COMPONENT_THRESHOLDS
     if direction == "BULLISH" and rsi is not None:
-        if 35 <= rsi <= 60:
-            score += 8.0
-        elif 30 <= rsi < 35 or 60 < rsi <= 68:
-            score += 4.0
+        if thresholds.divergence_bullish_rsi_primary_min <= rsi <= thresholds.divergence_bullish_rsi_primary_max:
+            score += score_config.COMPONENT_SCORES.divergence_rsi_primary
+        elif (
+            thresholds.divergence_bullish_rsi_secondary_low_min
+            <= rsi
+            < thresholds.divergence_bullish_rsi_secondary_low_max
+            or thresholds.divergence_bullish_rsi_secondary_high_min
+            < rsi
+            <= thresholds.divergence_bullish_rsi_secondary_high_max
+        ):
+            score += score_config.COMPONENT_SCORES.divergence_rsi_secondary
     if direction == "BEARISH" and rsi is not None:
-        if 45 <= rsi <= 75:
-            score += 8.0
-        elif 38 <= rsi < 45 or 75 < rsi <= 82:
-            score += 4.0
-    if direction == "BULLISH" and close_location is not None and close_location >= 45:
-        score += 7.0
-    if direction == "BEARISH" and close_location is not None and close_location <= 55:
-        score += 7.0
-    return min(score, 15.0)
+        if thresholds.divergence_bearish_rsi_primary_min <= rsi <= thresholds.divergence_bearish_rsi_primary_max:
+            score += score_config.COMPONENT_SCORES.divergence_rsi_primary
+        elif (
+            thresholds.divergence_bearish_rsi_secondary_low_min
+            <= rsi
+            < thresholds.divergence_bearish_rsi_secondary_low_max
+            or thresholds.divergence_bearish_rsi_secondary_high_min
+            < rsi
+            <= thresholds.divergence_bearish_rsi_secondary_high_max
+        ):
+            score += score_config.COMPONENT_SCORES.divergence_rsi_secondary
+    if direction == "BULLISH" and close_location is not None and close_location >= thresholds.divergence_bullish_close_location_min:
+        score += score_config.COMPONENT_SCORES.divergence_close_location
+    if direction == "BEARISH" and close_location is not None and close_location <= thresholds.divergence_bearish_close_location_max:
+        score += score_config.COMPONENT_SCORES.divergence_close_location
+    return min(score, score_config.COMPONENT_SCORES.divergence_context_max)
 
 
 def _classify_momentum_route(
@@ -792,7 +810,7 @@ def _classify_momentum_route(
             candidate_state="BULL_PULLBACK_REENTRY",
             opportunity_type="BULLISH_PULLBACK_REENTRY",
             direction="BULLISH",
-            route_score=28.0,
+            route_score=score_config.ROUTE_SCORES.pullback_reentry,
             reason_code="BULL_PULLBACK_REENTRY_ROUTE",
             timing_profile="reentry",
         )
@@ -801,16 +819,16 @@ def _classify_momentum_route(
             candidate_state="BULL_CONTINUATION_MOMENTUM",
             opportunity_type="BULLISH_CONTINUATION_MOMENTUM",
             direction="BULLISH",
-            route_score=26.0,
+            route_score=score_config.ROUTE_SCORES.continuation,
             reason_code="BULL_CONTINUATION_ROUTE",
             timing_profile="continuation",
         )
-    if bull_phase and histogram_improving and histogram is not None and histogram > 0:
+    if bull_phase and histogram_improving and histogram is not None and histogram > score_config.COMPONENT_THRESHOLDS.histogram_positive_min:
         return CrossoverRoute(
             candidate_state="BULL_CONTINUATION_MOMENTUM",
             opportunity_type="BULLISH_MOMENTUM_EXPANSION",
             direction="BULLISH",
-            route_score=22.0,
+            route_score=score_config.ROUTE_SCORES.momentum_expansion,
             reason_code="BULL_MOMENTUM_EXPANSION_ROUTE",
             timing_profile="expansion",
         )
@@ -818,7 +836,7 @@ def _classify_momentum_route(
         candidate_state="STATUS_QUO",
         opportunity_type="NO_MOMENTUM_SETUP_ROUTE",
         direction="NONE",
-        route_score=0.0,
+        route_score=score_config.ROUTE_SCORES.status_quo,
         reason_code="NO_MOMENTUM_SETUP_ROUTE",
         timing_profile="none",
     )
@@ -826,13 +844,13 @@ def _classify_momentum_route(
 
 def _momentum_timing_score(histogram: float | None, improving: bool, ema20_reclaim: bool) -> float:
     score = 0.0
-    if histogram is not None and histogram > 0:
-        score += 8.0
+    if histogram is not None and histogram > score_config.COMPONENT_THRESHOLDS.histogram_positive_min:
+        score += score_config.COMPONENT_SCORES.setup_histogram_positive
     if improving:
-        score += 7.0
+        score += score_config.COMPONENT_SCORES.setup_histogram_improving
     if ema20_reclaim:
-        score += 5.0
-    return min(score, 20.0)
+        score += score_config.COMPONENT_SCORES.setup_ema20_reclaim
+    return min(score, score_config.COMPONENT_SCORES.timing_max)
 
 
 def _momentum_structure_score(
@@ -845,29 +863,29 @@ def _momentum_structure_score(
 ) -> float:
     score = 0.0
     if price is not None and ema20 is not None and price >= ema20:
-        score += 5.0
+        score += score_config.COMPONENT_SCORES.setup_price_vs_ema20
     if ema20 is not None and ema50 is not None and ema20 >= ema50:
-        score += 5.0
+        score += score_config.COMPONENT_SCORES.setup_ema20_vs_ema50
     if price is not None and ema200 is not None and price >= ema200:
-        score += 5.0
+        score += score_config.COMPONENT_SCORES.setup_price_vs_ema200
     if higher_low:
-        score += 3.0
+        score += score_config.COMPONENT_SCORES.setup_higher_low
     if price_ladder:
-        score += 2.0
+        score += score_config.COMPONENT_SCORES.setup_price_ladder
     return score
 
 
 def _timing_score(direction: str, crossover_state: str, improving: bool, deteriorating: bool) -> float:
     score = 0.0
     if direction == "BULLISH" and crossover_state == "BULL_CROSS":
-        score += 10.0
+        score += score_config.COMPONENT_SCORES.crossover_fresh_cross
     if direction == "BEARISH" and crossover_state == "BEAR_CROSS":
-        score += 10.0
+        score += score_config.COMPONENT_SCORES.crossover_fresh_cross
     if direction == "BULLISH" and improving:
-        score += 10.0
+        score += score_config.COMPONENT_SCORES.crossover_histogram_direction
     if direction == "BEARISH" and deteriorating:
-        score += 10.0
-    return min(score, 20.0)
+        score += score_config.COMPONENT_SCORES.crossover_histogram_direction
+    return min(score, score_config.COMPONENT_SCORES.timing_max)
 
 
 def _structure_score(
@@ -880,71 +898,76 @@ def _structure_score(
 ) -> float:
     score = 0.0
     if direction == "BULLISH" and price is not None and ema20 is not None and price >= ema20:
-        score += 8.0
+        score += score_config.COMPONENT_SCORES.common_price_vs_ema20
     if direction == "BEARISH" and price is not None and ema20 is not None and price <= ema20:
-        score += 8.0
+        score += score_config.COMPONENT_SCORES.common_price_vs_ema20
     if direction == "BULLISH" and price is not None and ema200 is not None and price >= ema200:
-        score += 7.0
+        score += score_config.COMPONENT_SCORES.common_price_vs_ema200
     if direction == "BEARISH" and price is not None and ema200 is not None and price <= ema200:
-        score += 7.0
+        score += score_config.COMPONENT_SCORES.common_price_vs_ema200
     if direction == "BULLISH" and higher_low:
-        score += 5.0
+        score += score_config.COMPONENT_SCORES.common_short_structure
     if direction == "BEARISH" and lower_high:
-        score += 5.0
+        score += score_config.COMPONENT_SCORES.common_short_structure
     return score
 
 
 def _participation_score(direction: str, volume_vs_20: float | None, plus_di: float | None, minus_di: float | None) -> float:
     score = 0.0
-    if volume_vs_20 is not None and volume_vs_20 >= 100:
-        score += 8.0
+    if volume_vs_20 is not None and volume_vs_20 >= score_config.COMPONENT_SCORES.common_relative_volume_min:
+        score += score_config.COMPONENT_SCORES.common_relative_volume
     if direction == "BULLISH" and plus_di is not None and minus_di is not None and plus_di >= minus_di:
-        score += 7.0
+        score += score_config.COMPONENT_SCORES.common_directional_di
     if direction == "BEARISH" and plus_di is not None and minus_di is not None and minus_di >= plus_di:
-        score += 7.0
+        score += score_config.COMPONENT_SCORES.common_directional_di
     return score
 
 
 def _context_score(direction: str, rsi: float | None, close_location: float | None) -> float:
     score = 0.0
-    if direction == "BULLISH" and rsi is not None and 45 <= rsi <= 70:
-        score += 5.0
-    if direction == "BEARISH" and rsi is not None and 30 <= rsi <= 55:
-        score += 5.0
-    if direction == "BULLISH" and close_location is not None and close_location >= 60:
-        score += 5.0
-    if direction == "BEARISH" and close_location is not None and close_location <= 40:
-        score += 5.0
+    thresholds = score_config.COMPONENT_THRESHOLDS
+    if direction == "BULLISH" and rsi is not None and thresholds.common_bullish_rsi_min <= rsi <= thresholds.common_bullish_rsi_max:
+        score += score_config.COMPONENT_SCORES.common_rsi_context
+    if direction == "BEARISH" and rsi is not None and thresholds.common_bearish_rsi_min <= rsi <= thresholds.common_bearish_rsi_max:
+        score += score_config.COMPONENT_SCORES.common_rsi_context
+    if direction == "BULLISH" and close_location is not None and close_location >= thresholds.common_bullish_close_location_min:
+        score += score_config.COMPONENT_SCORES.common_close_location_context
+    if direction == "BEARISH" and close_location is not None and close_location <= thresholds.common_bearish_close_location_max:
+        score += score_config.COMPONENT_SCORES.common_close_location_context
     return score
 
 
 def _risk_score(direction: str, low_liquidity: bool, below_ema200: bool) -> float:
-    score = 10.0
+    score = score_config.COMPONENT_SCORES.risk_base
     if low_liquidity:
-        score -= 5.0
+        score -= score_config.COMPONENT_SCORES.low_liquidity_penalty
     if direction == "BULLISH" and below_ema200:
-        score -= 5.0
+        score -= score_config.COMPONENT_SCORES.below_ema200_penalty
     return max(score, 0.0)
 
 
 def _rsi_score(rsi: float | None) -> float:
     if rsi is None:
         return 0.0
-    if 50 <= rsi <= 65:
-        return 10.0
-    if 45 <= rsi < 50 or 65 < rsi <= 72:
-        return 6.0
-    return 2.0
+    thresholds = score_config.COMPONENT_THRESHOLDS
+    if thresholds.rsi_score_strong_min <= rsi <= thresholds.rsi_score_strong_max:
+        return score_config.COMPONENT_SCORES.rsi_strong
+    if (
+        thresholds.rsi_score_medium_low_min <= rsi < thresholds.rsi_score_medium_low_max
+        or thresholds.rsi_score_medium_high_min < rsi <= thresholds.rsi_score_medium_high_max
+    ):
+        return score_config.COMPONENT_SCORES.rsi_medium
+    return score_config.COMPONENT_SCORES.rsi_low
 
 
 def _adx_score(adx_value: float | None) -> float:
     if adx_value is None:
         return 0.0
-    if adx_value >= 25:
-        return 10.0
-    if adx_value >= 18:
-        return 6.0
-    return 2.0
+    if adx_value >= score_config.COMPONENT_SCORES.adx_strong_min:
+        return score_config.COMPONENT_SCORES.adx_strong
+    if adx_value >= score_config.COMPONENT_SCORES.adx_medium_min:
+        return score_config.COMPONENT_SCORES.adx_medium
+    return score_config.COMPONENT_SCORES.adx_low
 
 
 def _number(value: object) -> float | None:
@@ -996,10 +1019,10 @@ def rank_stage_evaluations(evaluations: list[StageEvaluation]) -> StageRankingDe
 
 def _evaluation_rank(evaluation: StageEvaluation, order_index: int) -> tuple[int, int, float, float, int]:
     class_rank = {
-        CandidateClass.SELECTED: 4,
-        CandidateClass.WATCH: 3,
-        CandidateClass.REJECTED: 2,
-        CandidateClass.STATUS_QUO: 1,
+        CandidateClass.SELECTED: score_config.RANKING.selected_rank,
+        CandidateClass.WATCH: score_config.RANKING.watch_rank,
+        CandidateClass.REJECTED: score_config.RANKING.rejected_rank,
+        CandidateClass.STATUS_QUO: score_config.RANKING.status_quo_rank,
     }
     return (
         class_rank[evaluation.candidate_class],
@@ -1012,13 +1035,13 @@ def _evaluation_rank(evaluation: StageEvaluation, order_index: int) -> tuple[int
 
 def _priority_rank(priority: ReviewPriority) -> int:
     return {
-        ReviewPriority.A: 60,
-        ReviewPriority.B: 50,
-        ReviewPriority.NEEDS_MANUAL_REVIEW: 40,
-        ReviewPriority.EVENT_RISK: 35,
-        ReviewPriority.LOW_LIQUIDITY: 35,
-        ReviewPriority.C: 30,
-        ReviewPriority.NONE: 0,
+        ReviewPriority.A: score_config.RANKING.priority_a_rank,
+        ReviewPriority.B: score_config.RANKING.priority_b_rank,
+        ReviewPriority.NEEDS_MANUAL_REVIEW: score_config.RANKING.priority_needs_manual_review_rank,
+        ReviewPriority.EVENT_RISK: score_config.RANKING.priority_event_risk_rank,
+        ReviewPriority.LOW_LIQUIDITY: score_config.RANKING.priority_low_liquidity_rank,
+        ReviewPriority.C: score_config.RANKING.priority_c_rank,
+        ReviewPriority.NONE: score_config.RANKING.priority_none_rank,
     }[priority]
 
 

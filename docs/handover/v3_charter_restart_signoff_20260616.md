@@ -18,10 +18,11 @@ Expected branch state:
 
 For a new Codex session, read only these files first:
 
-1. [v3_charter_restart_signoff_20260616.md](/D:/Tools/Stock_Screener_V3/docs/handover/v3_charter_restart_signoff_20260616.md)
-2. [v3_charter_consolidated_engine_design.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_charter_consolidated_engine_design.md)
-3. [v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_original_intent_and_handover.md)
-4. Verify sync:
+1. [v3_charter_execution_plan.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_charter_execution_plan.md)
+2. [v3_charter_restart_signoff_20260616.md](/D:/Tools/Stock_Screener_V3/docs/handover/v3_charter_restart_signoff_20260616.md)
+3. [v3_charter_consolidated_engine_design.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_charter_consolidated_engine_design.md)
+4. [v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_original_intent_and_handover.md)
+5. Verify sync:
 
 ```powershell
 cd D:\Tools\Stock_Screener_V3
@@ -33,6 +34,7 @@ Do not begin by re-reading older June 1, legacy V3 rebuild, or long historical h
 
 ## Current Approved Baseline
 
+- The working execution plan is [v3_charter_execution_plan.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_charter_execution_plan.md). It should be reviewed before coding to restate the original plan, achieved state, remaining deliverables, execution process, filtering logic, computation phases, and next step.
 - The single offline master document is [v3_charter_consolidated_engine_design.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_charter_consolidated_engine_design.md).
 - Current document version is `V1.6`.
 - The original June 13 seed document remains [v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_original_intent_and_handover.md).
@@ -88,15 +90,15 @@ Explicitly not accepted as-is:
 
 ## Current Next Coding Step
 
-The next engineering step is to absorb the accepted parts of `Stock_Engine3_Pythoncode.py` into the real package structure without breaking the charter.
+The next engineering step is to produce a charter-to-code gap table before additional engine behavior changes.
 
 Priority order:
 
-1. Introduce or expand the manifest/config layer inside the package.
-2. Preserve the L0 deep-copy slicing and D-vs-D+X isolation rules in the real provider/execution path.
-3. Move the approved EMA high-boundary calculations into package indicator code.
+1. Review current package modules against `v3_charter_execution_plan.md`.
+2. Classify each major module as implemented, partial, missing, naming-misaligned, validation-needed, or not yet manifest/config-owned.
+3. Use that gap table to sequence the next coding step.
 4. Keep `web_app_v3.py` as the active UI surface.
-5. Do not ship the desktop `tkinter` script as the active engine UI.
+5. Do not create a parallel engine or desktop UI path.
 
 ## Latest Relevant Commits
 
@@ -122,7 +124,8 @@ If a new session starts now, it should begin from this exact instruction:
 
 ```text
 Use V1.6 of the consolidated charter as the source of truth.
+Use v3_charter_execution_plan.md as the execution-control document.
 Use Stock_Engine3_Pythoncode.py only as a seed scaffold.
-Integrate accepted manifest/slicing/EMA-high logic into the real package and web app path.
+Produce the charter-to-code gap table before additional behavior changes.
 Do not invent a new UI surface or a parallel engine.
 ```
