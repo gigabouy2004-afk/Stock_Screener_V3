@@ -16,6 +16,10 @@ Working execution plan:
 
 - [v3_charter_execution_plan.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_charter_execution_plan.md)
 
+Core build-control matrix:
+
+- [v3_stage_family_indicator_working_matrix.md](/D:/Tools/Stock_Screener_V3/docs/architecture/v3_stage_family_indicator_working_matrix.md)
+
 Primary restart/signoff document:
 
 - [v3_charter_restart_signoff_20260616.md](/D:/Tools/Stock_Screener_V3/docs/handover/v3_charter_restart_signoff_20260616.md)
@@ -39,7 +43,8 @@ Original seed charter:
 ## Current Next Step
 
 - start from `docs/charter/v3_charter_execution_plan.md`
-- produce a charter-to-code gap table before additional engine behavior changes
+- finalize `docs/architecture/v3_stage_family_indicator_working_matrix.md` before additional engine behavior changes
+- produce a matrix-to-code implementation assessment, not a generic gap table
 - keep `web_app_v3.py` as the active UI surface
 - do not create a parallel desktop-engine path
 
@@ -75,6 +80,12 @@ Then read the standalone consolidated charter:
 
 ```text
 docs/charter/v3_charter_consolidated_engine_design.md
+```
+
+Then read the core build-control matrix:
+
+```text
+docs/architecture/v3_stage_family_indicator_working_matrix.md
 ```
 
 It is the authoritative source for `V3_Charter` intent: user CSV input, exactly three analysis paths (`CROSSOVER`, `DIVERGENCE`, `SETUP`), V2 L0/L1/L2/L3-style path-first architecture, D-date processing, D+X self-backtesting, and the rule that local documentation and GitHub must be updated before ending a completed step.
@@ -1192,8 +1203,9 @@ Created the working execution-control document:
 Purpose:
 
 - keep implementation anchored to the original charter plan;
-- capture deliverables, execution process, filtering logic, computation phases, achieved state, remaining work, and sync discipline;
-- make every future session start by reviewing the original plan, achieved state, and next approved step before coding.
+- make the stage-family indicator matrix the core build-control artifact;
+- capture matrix definitions, deliverables, execution process, filtering logic, computation phases, achieved state, remaining work, and sync discipline;
+- make every future session start by reviewing the original plan, matrix status, achieved state, and next approved step before coding.
 
 Restart documents updated:
 
@@ -1203,15 +1215,19 @@ Restart documents updated:
 
 Current next required step:
 
-1. Produce a charter-to-code gap table before additional engine behavior changes.
-2. Classify each package/module area as:
+1. Finalize `docs/architecture/v3_stage_family_indicator_working_matrix.md` before additional engine behavior changes.
+2. Confirm each matrix row's input, output, inclusion rule, exclusion rule, path-specific meaning, V3 level, and guardrail.
+3. Produce a matrix-to-code implementation assessment.
+4. Classify each matrix row as:
    - implemented;
    - partial;
    - missing;
    - naming-misaligned;
    - validation-needed;
-   - not yet manifest/config-owned.
-3. Use that gap table to sequence the next coding step.
+   - not yet manifest/config-owned;
+   - future/TBD;
+   - blocked.
+5. Use that assessment to sequence the next coding step.
 
 Root/branch discipline:
 

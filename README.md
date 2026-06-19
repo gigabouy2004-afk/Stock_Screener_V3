@@ -8,7 +8,9 @@ It exists to keep the new program charter, architecture analysis, backtesting pl
 
 Canonical `V3_Charter` intent is recorded in [docs/charter/v3_original_intent_and_handover.md](docs/charter/v3_original_intent_and_handover.md). The standalone consolidated charter is [docs/charter/v3_charter_consolidated_engine_design.md](docs/charter/v3_charter_consolidated_engine_design.md) and should be used as the single offline master document for full engine intent, matrix, interpretation, and scoring behavior.
 
-The working execution plan is [docs/charter/v3_charter_execution_plan.md](docs/charter/v3_charter_execution_plan.md). Use it at the start of every implementation session to review the original plan, achieved state, remaining deliverables, execution process, filtering logic, computation phases, and current next step before changing code.
+The working execution plan is [docs/charter/v3_charter_execution_plan.md](docs/charter/v3_charter_execution_plan.md). Use it at the start of every implementation session to review the original plan, matrix-finalization status, achieved state, remaining deliverables, execution process, filtering logic, computation phases, and current next step before changing code.
+
+The core build-control artifact is [docs/architecture/v3_stage_family_indicator_working_matrix.md](docs/architecture/v3_stage_family_indicator_working_matrix.md). The matrix defines each indicator/evidence row, its inclusion and exclusion rules, required input, outputs, path-specific meaning, and guardrails. Additional algorithm coding should not start until the relevant matrix rows are finalized and mapped to code.
 
 At the core, `V3_Charter` is a CSV-based, user-directed stock analysis engine with exactly three user-facing analysis paths:
 
@@ -75,7 +77,8 @@ Latest restart-relevant commits:
 
 Current restart reading note:
 
-- use [docs/architecture/v3_stage_family_indicator_working_matrix.md](/D:/Tools/Stock_Screener_V3/docs/architecture/v3_stage_family_indicator_working_matrix.md) as the editable matrix
+- use [docs/architecture/v3_stage_family_indicator_working_matrix.md](/D:/Tools/Stock_Screener_V3/docs/architecture/v3_stage_family_indicator_working_matrix.md) as the editable matrix and core build-control artifact
+- finalize matrix row definitions, inclusion/exclusion behavior, required inputs, outputs, and guardrails before algorithm coding
 - read it as a plain-English signoff table, not as shorthand role codes
 - use [C:\Users\dell\OneDrive\Desktop\Stock_Engine3_Pythoncode.py](/C:/Users/dell/OneDrive/Desktop/Stock_Engine3_Pythoncode.py) only as a reviewed seed scaffold, not as the active engine file
 
@@ -84,6 +87,7 @@ Current restart reading note:
 - Working V3 execution plan: [docs/charter/v3_charter_execution_plan.md](docs/charter/v3_charter_execution_plan.md)
 - Canonical V3 original intent and handover: [docs/charter/v3_original_intent_and_handover.md](docs/charter/v3_original_intent_and_handover.md)
 - Standalone consolidated charter: [docs/charter/v3_charter_consolidated_engine_design.md](docs/charter/v3_charter_consolidated_engine_design.md)
+- Core build-control indicator matrix: [docs/architecture/v3_stage_family_indicator_working_matrix.md](docs/architecture/v3_stage_family_indicator_working_matrix.md)
 - Current engine gap analysis: [docs/analysis/current_engine_gap_analysis_against_fresh_charter_2026-06-01.md](docs/analysis/current_engine_gap_analysis_against_fresh_charter_2026-06-01.md)
 - V2 operational parity contract: [docs/architecture/v2_operational_parity_contract.md](docs/architecture/v2_operational_parity_contract.md)
 - V2 scoring logic extraction: [docs/architecture/v2_scoring_logic_and_interpretation_extraction.md](docs/architecture/v2_scoring_logic_and_interpretation_extraction.md)
@@ -236,6 +240,8 @@ The current coding direction on `V3_Charter` is:
 
 - start every implementation pass from [docs/charter/v3_charter_execution_plan.md](docs/charter/v3_charter_execution_plan.md)
 - keep the June 13 charter as the only seed/source-of-truth
+- treat [docs/architecture/v3_stage_family_indicator_working_matrix.md](docs/architecture/v3_stage_family_indicator_working_matrix.md) as the core engine construction table
+- finalize the matrix before additional algorithm behavior changes
 - preserve per-ticker, category-specific scoring grouped by stage family
 - keep indicator processing API-driven behind a provider abstraction
 - represent the working matrix at the indicator-family row level with explicit condition logic inside each stage-family cell
@@ -251,6 +257,7 @@ Completed recent steps:
 
 The next coding focus is:
 
-- produce a charter-to-code gap table before additional engine behavior changes
-- classify each module as implemented, partial, missing, naming-misaligned, validation-needed, or not yet manifest/config-owned
+- finalize the stage-family indicator matrix before additional engine behavior changes
+- produce a matrix-to-code implementation assessment, not a generic gap table
+- classify each matrix row as implemented, partial, missing, naming-misaligned, validation-needed, not yet manifest/config-owned, future/TBD, or blocked
 - keep local `D:\Tools\Stock_Screener_V3` and `origin/V3_Charter` synchronized after each completed step

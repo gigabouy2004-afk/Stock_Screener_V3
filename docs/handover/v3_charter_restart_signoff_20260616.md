@@ -35,6 +35,7 @@ Do not begin by re-reading older June 1, legacy V3 rebuild, or long historical h
 ## Current Approved Baseline
 
 - The working execution plan is [v3_charter_execution_plan.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_charter_execution_plan.md). It should be reviewed before coding to restate the original plan, achieved state, remaining deliverables, execution process, filtering logic, computation phases, and next step.
+- The core build-control artifact is [v3_stage_family_indicator_working_matrix.md](/D:/Tools/Stock_Screener_V3/docs/architecture/v3_stage_family_indicator_working_matrix.md). It must be finalized before additional algorithm coding.
 - The single offline master document is [v3_charter_consolidated_engine_design.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_charter_consolidated_engine_design.md).
 - Current document version is `V1.6`.
 - The original June 13 seed document remains [v3_original_intent_and_handover.md](/D:/Tools/Stock_Screener_V3/docs/charter/v3_original_intent_and_handover.md).
@@ -88,17 +89,21 @@ Explicitly not accepted as-is:
 - early `SETUP` forced-return pattern that skips full score and audit trail
 - direct standalone script placement outside the package/repo structure
 
-## Current Next Coding Step
+## Current Next Step
 
-The next engineering step is to produce a charter-to-code gap table before additional engine behavior changes.
+The next engineering step is documentation/analysis, not algorithm coding.
+
+Finalize the stage-family indicator matrix and produce a matrix-to-code implementation assessment before additional engine behavior changes.
 
 Priority order:
 
-1. Review current package modules against `v3_charter_execution_plan.md`.
-2. Classify each major module as implemented, partial, missing, naming-misaligned, validation-needed, or not yet manifest/config-owned.
-3. Use that gap table to sequence the next coding step.
-4. Keep `web_app_v3.py` as the active UI surface.
-5. Do not create a parallel engine or desktop UI path.
+1. Review `docs/architecture/v3_stage_family_indicator_working_matrix.md`.
+2. Confirm each row's input, output, inclusion rule, exclusion rule, path-specific meaning, level, and guardrail.
+3. Produce a matrix-to-code implementation assessment.
+4. Classify each matrix row as implemented, partial, missing, naming-misaligned, validation-needed, not yet manifest/config-owned, future/TBD, or blocked.
+5. Use that assessment to sequence the next coding step.
+6. Keep `web_app_v3.py` as the active UI surface.
+7. Do not create a parallel engine or desktop UI path.
 
 ## Latest Relevant Commits
 
@@ -125,7 +130,8 @@ If a new session starts now, it should begin from this exact instruction:
 ```text
 Use V1.6 of the consolidated charter as the source of truth.
 Use v3_charter_execution_plan.md as the execution-control document.
+Use v3_stage_family_indicator_working_matrix.md as the core build-control matrix.
 Use Stock_Engine3_Pythoncode.py only as a seed scaffold.
-Produce the charter-to-code gap table before additional behavior changes.
+Finalize the matrix and produce the matrix-to-code implementation assessment before additional behavior changes.
 Do not invent a new UI surface or a parallel engine.
 ```

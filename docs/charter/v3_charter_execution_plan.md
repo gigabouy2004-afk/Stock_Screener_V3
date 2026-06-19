@@ -10,16 +10,17 @@ GitHub: `https://github.com/gigabouy2004-afk/Stock_Screener_V3.git`
 
 ## Purpose
 
-This document is the working execution plan for building the V3 engine from the consolidated charter.
+This document is the working execution plan for building the V3 engine from the consolidated charter and the stage-family indicator matrix.
 
-It is not a replacement for the charter. It is the planning layer that keeps implementation, validation, handover, README updates, and GitHub synchronization aligned with the original engine intent.
+It is not a replacement for the charter or the matrix. It is the planning layer that keeps matrix finalization, implementation, validation, handover, README updates, and GitHub synchronization aligned with the original engine intent.
 
 Every future implementation session should start by reviewing:
 
 1. the original plan and charter contract;
-2. what has already been achieved;
-3. what remains to be built;
-4. the next approved execution step.
+2. the stage-family indicator matrix and its current finalization status;
+3. what has already been achieved;
+4. what remains to be built;
+5. the next approved execution step.
 
 ## Source Of Truth
 
@@ -45,6 +46,61 @@ V3_Charter
 All project code, documentation, tests, validation artifacts, reports, and handover updates must be created or modified inside this root and on this branch.
 
 External stock-code master folders may be used as read-only input sources only. They are not implementation roots and must not receive V3 engine updates.
+
+## Core Build Control: The Matrix
+
+The stage-family indicator matrix is the core construction artifact for the engine:
+
+```text
+docs/architecture/v3_stage_family_indicator_working_matrix.md
+```
+
+The charter defines why the engine exists and what boundaries it must obey. The matrix defines what the engine actually computes.
+
+The matrix must be finalized before additional algorithm coding begins. Coding directly from memory, V2 fragments, old scripts, or evaluator convenience is not allowed.
+
+Each matrix row must define:
+
+- the indicator or evidence family;
+- the provider/API input required;
+- the V3 level that owns it;
+- the meaning under `CROSSOVER`;
+- the meaning under `DIVERGENCE`;
+- the meaning under `SETUP`;
+- whether the row is route, timing, quality, context, scoring, audit, or validation;
+- the D / D+X validation role;
+- the primary output fields;
+- inclusion rules;
+- exclusion rules;
+- guardrails that prevent the row from overriding another path.
+
+The matrix is not a list of indicators to calculate globally. It is the path-specific contract for when an indicator is allowed to matter and what it is allowed to mean.
+
+Examples:
+
+- `MACD` in `CROSSOVER` is transition route/timing evidence.
+- `MACD` in `DIVERGENCE` is price-versus-momentum disagreement evidence.
+- `MACD` in `SETUP` supports continuation or pullback re-entry logic.
+- `EMA200` may be risk/context/headroom evidence, but it is not a universal hard route gate unless the matrix explicitly says so.
+
+## Matrix Finalization Objective
+
+The first objective is to have the actual plan ready with the matrix as its core.
+
+Before further coding, the project must produce a matrix-finalization pass that answers:
+
+- Are all required V2/V3 indicator families represented as rows?
+- Does every row have explicit path-specific meaning for `CROSSOVER`, `DIVERGENCE`, and `SETUP`?
+- Does every row state its required input data?
+- Does every row state its output fields?
+- Does every row state inclusion and exclusion behavior?
+- Does every row state whether it is route, timing, quality, context, scoring, audit, or validation?
+- Does every row state what it must not override?
+- Does every row state whether it is approved for current implementation, future implementation, or still TBD?
+
+Rows with unclear meaning must remain `TBD` and must not be implemented.
+
+Rows approved for implementation must be precise enough that a developer can map them to code without reinterpreting the charter.
 
 ## Original Engine Plan
 
@@ -87,6 +143,7 @@ Implementation must preserve these principles:
 - User-selected paths control which evaluators may run.
 - Filters are first-class inputs before candidate display.
 - Provider data is fetched only as required by the selected path and evidence rows.
+- Matrix row approval is required before an indicator/evidence behavior is implemented.
 - D-date computation must be isolated from D+X validation data.
 - Route logic comes before scoring.
 - Score is family-specific and post-qualification.
@@ -113,6 +170,8 @@ CSV input
 ```
 
 The web UI, CLI, backtesting, reports, and future automation must all call the same engine path. They must not create parallel engines.
+
+The execution flow is subordinate to the matrix. Each L1-L5 computation must trace back to an approved matrix row or to core engine infrastructure such as input loading, provider access, logging, or report writing.
 
 ## Filtering Logic
 
@@ -208,7 +267,8 @@ Current status:
 
 Deliverables:
 
-- Indicator-family rows implemented only when approved in the working matrix.
+- Indicator-family rows finalized in the working matrix before implementation.
+- Matrix-to-code traceability for every implemented evidence row.
 - Path-specific evidence packaging.
 - Provider-backed calculations.
 - Lower-timeframe evidence nested under daily route only.
@@ -219,7 +279,8 @@ Current status:
 
 - Daily MACD/RSI/ADX/EMA/volume/structure evidence exists.
 - Divergence and Setup evidence slices exist.
-- Remaining matrix rows must be added only after row/cell meaning is clear.
+- Remaining matrix rows must be finalized before coding.
+- Existing implemented rows still need a formal matrix-to-code assessment.
 
 ### L4: Classification, Scoring, And Interpretation
 
@@ -268,10 +329,13 @@ Current status:
 ### Documentation Deliverables
 
 - Consolidated charter kept as the master design source.
+- Stage-family indicator working matrix finalized before further algorithm implementation.
+- Matrix rows maintained as the primary inclusion/exclusion contract for indicators and evidence.
 - Execution plan kept current after meaningful implementation changes.
 - README restart path points to the execution plan and charter.
 - Handover documents start from original plan review, achieved state, and next work.
-- Working matrix updated before indicator behavior is implemented.
+- Working matrix updated and signed off before indicator behavior is implemented.
+- Matrix-to-code implementation assessment maintained as the bridge from plan to package.
 - Validation artifacts stored under `validation/`.
 
 ### Code Deliverables
@@ -342,16 +406,18 @@ Recent local implementation work:
 
 Priority order:
 
-1. Ensure all restart/handover/README flows begin from this execution plan and the consolidated charter.
-2. Normalize user-facing `SETUP` naming across UI, CLI, reports, docs, and internals where safe, preserving compatibility where needed.
-3. Build or expand the manifest/config layer so scoring defaults are declarative and versioned.
-4. Integrate approved L0 deep-copy slicing and D-vs-D+X isolation rules throughout provider/execution paths.
-5. Implement approved long-boundary calculations, including `EMA52High` and `EMA200High`, in package indicator code.
-6. Add regression dataset layout and acceptance test matrix under `tests/regression/`.
-7. Add manifest drift-tolerance and regression-gate tests.
-8. Continue matrix-approved evidence rows only after their condition logic is signed off.
-9. Validate each signal-rule change with before/after backtest evidence before promotion.
-10. Keep web UI, CLI, reports, and validation on the same runner path.
+1. Finalize the stage-family indicator matrix as the core build-control artifact.
+2. Produce a matrix-to-code implementation assessment, not a generic gap table.
+3. Classify each matrix row as implemented, partial, missing, naming-misaligned, validation-needed, not yet manifest/config-owned, future/TBD, or blocked.
+4. Normalize user-facing `SETUP` naming across UI, CLI, reports, docs, and internals where safe, preserving compatibility where needed.
+5. Build or expand the manifest/config layer so scoring defaults are declarative and versioned.
+6. Integrate approved L0 deep-copy slicing and D-vs-D+X isolation rules throughout provider/execution paths.
+7. Implement approved long-boundary calculations, including `EMA52High` and `EMA200High`, in package indicator code.
+8. Add regression dataset layout and acceptance test matrix under `tests/regression/`.
+9. Add manifest drift-tolerance and regression-gate tests.
+10. Continue matrix-approved evidence rows only after their condition logic is signed off.
+11. Validate each signal-rule change with before/after backtest evidence before promotion.
+12. Keep web UI, CLI, reports, and validation on the same runner path.
 
 ## Session Execution Process
 
@@ -369,12 +435,13 @@ git log --oneline --decorate -8
 
 - `docs/charter/v3_charter_execution_plan.md`
 - `docs/charter/v3_charter_consolidated_engine_design.md`
+- `docs/architecture/v3_stage_family_indicator_working_matrix.md`
 - `docs/handover/current_session_handover.md`
 - `README.md`
 
-3. State the current achieved state and next intended step before editing code.
+3. State the current matrix status, achieved state, and next intended step before editing code.
 
-4. If the step changes behavior, update the working matrix or charter-owned config first.
+4. If the step changes indicator behavior, route behavior, scoring behavior, inclusion/exclusion behavior, or output evidence, update/finalize the working matrix first.
 
 5. Make scoped code/doc changes only under `D:\Tools\Stock_Screener_V3`.
 
@@ -388,17 +455,27 @@ git log --oneline --decorate -8
 
 ## Current Next Step
 
-After this execution plan is installed and synced, the next implementation step is:
+The next step is documentation and analysis, not algorithm coding:
 
 ```text
-Review the current package against this plan and produce a charter-to-code gap table before additional engine behavior changes.
+Finalize the stage-family indicator matrix and produce a matrix-to-code implementation assessment before additional engine behavior changes.
 ```
 
-That gap table should identify:
+The assessment should include:
 
-- implemented;
-- partially implemented;
-- missing;
-- implemented but naming-misaligned;
-- implemented but requiring validation;
-- implemented but not yet manifest/config-owned.
+- matrix row;
+- required input;
+- V3 level;
+- `CROSSOVER` meaning;
+- `DIVERGENCE` meaning;
+- `SETUP` meaning;
+- inclusion rule;
+- exclusion rule;
+- primary outputs;
+- current code location;
+- test coverage;
+- validation coverage;
+- status;
+- required action.
+
+No additional algorithm coding should start until this matrix-first assessment is available.

@@ -1,8 +1,8 @@
 # V3 Stage-Family Indicator Working Matrix
 
-Last updated: 2026-06-13
+Last updated: 2026-06-19
 
-Purpose: working table for constructing the V3 engine from V2 design intents without re-discovery. This is the editable matrix where indicator families, gates, evidence modules, inputs, outputs, and path-specific processing functions can be added, removed, or modified before coding.
+Purpose: core build-control table for constructing the V3 engine from the charter and V2 design intents without re-discovery. This is the editable matrix where indicator families, gates, evidence modules, inputs, outputs, inclusion/exclusion rules, guardrails, and path-specific processing functions must be added, removed, finalized, or modified before coding.
 
 Canonical scope: `docs/charter/v3_original_intent_and_handover.md`
 
@@ -25,7 +25,35 @@ Each row must answer:
 - whether the item is route, timing, quality, context, scoring, audit, or validation;
 - which path can use it;
 - what exact processing function or condition set it should produce inside each stage-family cell;
+- what inclusion rule allows it into the engine;
+- what exclusion rule prevents it from affecting the wrong path or candidate;
+- what output fields prove it was evaluated;
 - what it must not override.
+
+Algorithm coding is blocked until the relevant matrix row is finalized. Rows that remain `TBD` are future/blocked rows and must not be implemented as production behavior.
+
+## Matrix Finalization Gate
+
+Before additional engine behavior is coded, this matrix must be reviewed row by row.
+
+Each row must be classified as one of:
+
+- `APPROVED_CURRENT`
+- `PARTIAL_CURRENT`
+- `FUTURE_TBD`
+- `BLOCKED_PENDING_SIGNOFF`
+- `REFERENCE_ONLY`
+
+For every `APPROVED_CURRENT` row, the implementation plan must identify:
+
+- input source;
+- output field names;
+- owning module or intended module;
+- required tests;
+- required validation artifact if behavior changes;
+- whether scoring belongs in code config or an external manifest.
+
+The matrix-to-code implementation assessment must be produced from this table before further algorithm changes.
 
 ## Matrix Representation Rule
 
